@@ -60,6 +60,30 @@
 		file_server
 	}
 
+	# --- Element Call well-known (group calls module — bootstrap-calls.sh renders the file) ---
+	handle /.well-known/element/call.json {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		rewrite * /call.json
+		root * /srv/well-known
+		file_server
+	}
+
+	# --- LiveKit JWT service (group calls module) ---
+	handle /_livekit/* {
+		uri strip_prefix /_livekit
+		reverse_proxy lk-jwt-service:8080 {
+			import sanitize
+		}
+	}
+
+	# --- matrix-viewer public preview (viewer profile) ---
+	handle /viewer/* {
+		reverse_proxy matrix-viewer:3050 {
+			import sanitize
+		}
+	}
+
 	# --- Element Web (the soft-fork build) — front proxies / to the element container ---
 	handle {
 		reverse_proxy element:80 {

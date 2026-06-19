@@ -338,11 +338,28 @@ correctly-bound context recovers. Items 4–5 remain before a port ships. The po
    `ecies_seal` in `primitives.json` now uses `aad = canonical{dir_version, m, member, mode, n}` — a port
    that passes `aad=None` fails the GCM tag. Self-check in `export.py` explicitly verifies `aad=None` rejects.
 
-### To build (NOT yet done — deliberately not shipped as unverified code)
+### Built (verified by behavioral tests, not yet live-stack-tested)
 
-- **TS port of the crypto** into the Element fork (WebCrypto P-256 ECIES + an _audited_ JS Shamir lib),
-  cross-checked against test vectors exported from spikes 05–07, **with the AAD/directory authentication
-  above**. Not written yet: porting security crypto to an untested target would overstate "done."
+- ✅ **TS port of the crypto** — `escrow.ts` (createEscrow, unsealShare, recoverEscrow, reshareEscrow),
+  `ecies.ts` (P-256 ECIES with on-curve validation), `shamir.ts` (audited `shamir-secret-sharing` wrapper).
+  Cross-checked against test vectors (37/37 PASS). AAD binding + canonical context matching spike 09.
+- ✅ **Ed25519 directory authentication** — `directory.ts` (signDirectory, verifyDirectory). Organizer
+  signs the moderator directory offline; clients verify against a pinned public key. Tampered version,
+  policy, and wrong-key rejection all verified (4/4 PASS).
+- ✅ **Matrix event protocol** — `events.ts`. Event types: `org.rednet.recovery.directory` (room state),
+  `org.rednet.recovery.escrow` (account_data), `org.rednet.recovery.request` + `.share` (room events).
+  Serialize/deserialize round-trip verified (2/2 PASS).
+- ✅ **Escrow lifecycle module** — `escrow-lifecycle.ts`. Deposit, recovery request (ephemeral keypair +
+  binding code), share collection + reconstruction, reseal-to-device, health checks (stale directory,
+  moderator mismatch detection). Recovery handshake verified end-to-end: reseal to ephemeral key +
+  unseal + reconstruct (2/2 PASS), passphrase mode (2/2 PASS).
+- ✅ **CryptoSetup integration** — `RednetCryptoSetup.ts` extended with `configurePhase2()`, escrow
+  deposit on fresh account (when directory available), Phase-2 recovery path (moderator-assisted),
+  escrow health check API.
+
+### To build (remaining — runtime infrastructure, not crypto)
+
 - **Moderator approval tool** (D) — native app, secure-element binding (§5b decision: native keystore).
-- **Coordination bot** (keyless) + the recovery room protocol (F).
-- **Lifecycle** (G) — re-escrow prompts when a member's escrow references a revoked moderator.
+- **Coordination bot** (keyless) + the recovery room event relay (F).
+- **Lifecycle prompts** (G) — "your escrow references a revoked moderator" detection is built;
+  the UI prompts + re-escrow trigger are not.

@@ -14,9 +14,9 @@ REDnet creates accounts and bootstraps E2EE keys for people whose threat model i
 The onboarding/recovery code is **bespoke and security-critical**, and self-review is not sufficient for
 code at this stakes level.
 
-- **Scope:** the silent onboarding + Phase-1 passphrase recovery (`deploy/element-web/rednet-module/`,
-  `prototype/onboarding/`); the hardening in `deploy/setup.sh`; the two-tier isolation; the Phase-2 crypto
-  design (`RECOVERY.md`, spikes 05–09) before any Phase-2 code ships.
+- **Scope:** the silent onboarding + Phase-1 passphrase recovery + Phase-2 escrow lifecycle
+  (`deploy/element-web/rednet-module/`, spikes 05–09); the hardening in `deploy/setup.sh`; the two-tier
+  isolation; `RECOVERY.md` design + the TS crypto port (47/47 behavioral tests).
 - **Form:** an external reviewer with Matrix-E2EE + applied-crypto expertise. Provide them the spikes,
   the test vectors, `DESIGN.md`/`RECOVERY.md`/`ARCHITECTURE.md`, and the threat model.
 - **Acceptance:** findings triaged; criticals fixed and re-reviewed; the recovery-key custody + the

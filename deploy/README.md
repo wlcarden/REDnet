@@ -75,6 +75,10 @@ bypasses the token gate).
 - [x] restic transport wrapper + backup heartbeat (`backup.sh`, verified: restic snapshot created, heartbeat reaches Prometheus and clears `BackupHeartbeat*` alerts)
 - [x] Element Web **soft fork** build context (`element-web/`: config locks to our server + CryptoSetupExtensions module + integration.patch + Dockerfile + `web` profile, front proxies to it). _Build context only: the webpack build runs at deploy time (`element-web/build.sh`). Phase-1 passphrase recovery: browser E2E proven (2/2 PASS, 2026-06-19), silent onboarding + passphrase recovery work end-to-end._
 - [x] Ansible two-host wrapper (`ansible/`: CORE+FRONT split, WireGuard overlay, front Caddyfile, **front-tripwire** seizure alert + heartbeat). _Scaffold: YAML/compose validated; not run against real hosts._
+- [x] QR-card onboarding (`generate-invite.sh` + `/join` landing page + platform detection). _Scaffold: needs live-stack validation._
+- [x] Phase-2 recovery lifecycle (`escrow-lifecycle.ts` + `directory.ts` + `events.ts`, 47/47 crypto+lifecycle tests). _Moderator approval tool + coordination bot not built._
+- [x] Group calls module (`bootstrap-calls.sh`, LiveKit + JWT + Caddy + Element config, `calls` profile). _Scaffold: needs live-stack + production media node._
+- [x] matrix-viewer public preview (`bootstrap-viewer.sh`, `viewer` profile). _Scaffold: OFF by default, conflicts with mandatory E2EE (SPEC §11)._
 
 ## ⚠️ Before production
 
@@ -85,6 +89,30 @@ Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. 
 ```bash
 ./setup.sh                                   # core+front (default)
 ./bootstrap-draupnir.sh                       # + moderation (compose --profile moderation)
+./bootstrap-calls.sh                          # + group calls (compose --profile calls; DESIGN §8)
 docker compose --profile monitoring up -d     # + Prometheus/Grafana/Pushgateway/Alertmanager (localhost-bound)
 RESTIC_REPOSITORY=s3:... RESTIC_PASSWORD=... ./backup.sh   # encrypted off-box backup + heartbeat
 ```
+
+### Group calls module (DESIGN §8)
+
+E2EE group video/voice via Element Call (MatrixRTC + LiveKit SFU). A deferred post-v1 module —
+**not deployed by default**. In production, the LiveKit SFU runs on a **separate public-IP box**
+(WebRTC needs direct UDP; can't go behind a proxy). The media node has no DB, no inbound path to
+the core, and stores no history. Seizure yields live-call metadata only.
+
+```bash
+# Set in rednet.env:
+REDNET_CALLS_ENABLED=true
+
+# Generate LiveKit secrets + start the calls profile:
+./bootstrap-calls.sh
+
+# Rebuild Element Web with call features enabled:
+./element-web/build.sh
+```
+
+The bootstrap generates LiveKit API keys (gitignored), renders the `.well-known/element/call.json`
+discovery endpoint, and starts the LiveKit SFU + JWT auth service. Caddy routes `/_livekit/*` to the
+JWT service and serves the well-known. Element Web picks up call support via `element_call` config +
+feature flags (rendered from `REDNET_CALLS_ENABLED`).

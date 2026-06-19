@@ -6,14 +6,16 @@ cd "$(dirname "$0")/.." || exit 1   # -> deploy/
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"; : "${REDNET_BRAND:=REDnet}"; : "${ELEMENT_VERSION:=v1.11.86}"
 : "${REDNET_PUBLIC_BASE:=https://${REDNET_DOMAIN}}"
+: "${REDNET_CALLS_ENABLED:=false}"
 say(){ printf '\n=== %s ===\n' "$*"; }
 
 say "render element-web/config.json (homeserver + brand from rednet.env)"
 sed -e "s#__REDNET_DOMAIN__#${REDNET_DOMAIN}#g" \
     -e "s#__REDNET_BRAND__#${REDNET_BRAND}#g" \
     -e "s#__REDNET_PUBLIC_BASE__#${REDNET_PUBLIC_BASE}#g" \
+    -e "s#__REDNET_CALLS_ENABLED__#${REDNET_CALLS_ENABLED}#g" \
     element-web/config.json.template > element-web/config.json
-echo "config.json -> ${REDNET_PUBLIC_BASE}, brand=${REDNET_BRAND}, element=${ELEMENT_VERSION}"
+echo "config.json -> ${REDNET_PUBLIC_BASE}, brand=${REDNET_BRAND}, calls=${REDNET_CALLS_ENABLED}, element=${ELEMENT_VERSION}"
 
 say "build (compose profile 'web')"
 ELEMENT_VERSION="$ELEMENT_VERSION" docker compose --profile web build element

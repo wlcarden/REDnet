@@ -55,7 +55,15 @@
     "UIFeature.widgets": false,
     "e2ee.manuallyVerifyAllSessions": false
   },
-  "features": { "feature_video_rooms": false },
+  "features": {
+    "feature_video_rooms": __REDNET_CALLS_ENABLED__,
+    "feature_group_calls": __REDNET_CALLS_ENABLED__,
+    "feature_element_call_video_rooms": __REDNET_CALLS_ENABLED__
+  },
+  "element_call": {
+    "participant_limit": 25,
+    "brand": "__REDNET_BRAND__ Call"
+  },
   "mobile_guide_toast": false,
   "_comment_user_notice": "Tier-1 EXPOSURE BANNER (DESIGN §4: the in-UI label IS the exposure control). Element's built-in user_notice — zero fork. show_once:true = shown once per device (dismissed state stored in local storage). The exposure info is ALSO in #welcome's topic (persistent, always visible in that room) and #reference's topic — so the user can revisit it without the banner. Set show_once:false if a deployment needs the banner on every load.",
   "user_notice": {

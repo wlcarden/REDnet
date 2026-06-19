@@ -88,6 +88,46 @@ services:
       - rednet_draupnir:/data
       - ./draupnir/config/production.yaml:/data/config/production.yaml:ro
 
+  # --- Group calls (profile "calls"). LiveKit SFU + JWT auth service. DESIGN §8: this module
+  # runs on a SEPARATE public-IP box in production (WebRTC needs direct UDP). Single-host dev
+  # runs it here. bootstrap-calls.sh generates secrets and starts this profile. ---
+  livekit:
+    image: livekit/livekit-server:v1.8
+    profiles: ["calls"]
+    restart: unless-stopped
+    command: ["--config", "/etc/livekit.yaml", "--config", "/etc/livekit.secrets.yaml"]
+    volumes:
+      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
+      - ./livekit/livekit.secrets.yaml:/etc/livekit.secrets.yaml:ro
+    ports:
+      - "7881:7881/tcp"
+      - "50000-50200:50000-50200/udp"
+
+  lk-jwt-service:
+    image: ghcr.io/element-hq/lk-jwt-service:v0.3.0
+    profiles: ["calls"]
+    restart: unless-stopped
+    depends_on:
+      - livekit
+      - synapse
+    env_file: livekit/.env
+
+  # --- Public preview (profile "viewer"). ⚠️ Requires world_readable rooms = NOT E2EE.
+  # Only for intentionally public, non-sensitive content. SPEC §11: OFF by default. ---
+  matrix-viewer:
+    image: ghcr.io/nicebooks-com/matrix-viewer:v0.1.0
+    profiles: ["viewer"]
+    restart: unless-stopped
+    depends_on:
+      - synapse
+    environment:
+      MATRIX_VIEWER_MATRIX_SERVER_URL: http://synapse:8008
+      MATRIX_VIEWER_BASE_PATH: /viewer
+      MATRIX_VIEWER_ARCHIVE_MESSAGE_LIMIT: "500"
+      MATRIX_VIEWER_STOP_SEARCH_ENGINE_INDEXING: "true"
+    volumes:
+      - ./matrix-viewer/config.json:/app/config.json:ro
+
   # --- Monitoring (CORE, profile "monitoring"). Ports bind to 127.0.0.1 ONLY — never public.
   # Production: bind to the WireGuard interface; operators reach Grafana over the tunnel. ---
   prometheus: # scrapes Synapse's CORE-internal metrics listener + the backup heartbeat

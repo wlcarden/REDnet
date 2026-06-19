@@ -12,7 +12,8 @@
     "build": "esbuild src/index.ts --bundle --format=cjs --platform=browser --target=es2021 --external:matrix-js-sdk --external:@matrix-org/react-sdk-module-api --outfile=lib/index.js",
     "test:shamir": "node test/shamir-behavioral.mjs",
     "test:escrow": "node test/escrow-behavioral.mjs",
-    "test": "node test/shamir-behavioral.mjs && node test/escrow-behavioral.mjs"
+    "test:lifecycle": "node test/lifecycle-behavioral.mjs",
+    "test": "node test/shamir-behavioral.mjs && node test/escrow-behavioral.mjs && node test/lifecycle-behavioral.mjs"
   },
   "license": "AGPL-3.0-only",
   "devDependencies": {
@@ -22,6 +23,7 @@
     "typescript": "5.4.5"
   },
   "dependencies": {
+    "@noble/curves": "^1.9.7",
     "@noble/hashes": "^2.2.0",
     "shamir-secret-sharing": "^0.0.4"
   }

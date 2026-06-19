@@ -42,6 +42,13 @@ element-web/rednet-module/package-lock.json
 # Generated invite cards (contain single-use tokens). NEVER commit.
 invites/
 
+# LiveKit secrets (API key + secret). NEVER commit.
+livekit/livekit.secrets.yaml
+livekit/.env
+
+# Rendered well-known call discovery (contains deploy-specific URL).
+caddy/well-known-call.json
+
 # E2E test artifacts (the spec + config ARE committed).
 element-web/e2e/node_modules/
 element-web/e2e/test-results/

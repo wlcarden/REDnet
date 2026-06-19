@@ -215,10 +215,10 @@ Fork **`matrix-docker-ansible-deploy` (MASH)** — Ansible + Docker, first-class
 
 ## 12. Deferred / explicitly OFF in v1
 
-- **Group calls** — post-v1 isolated Tier-1 module on a separate public-IP media box (DESIGN §8). Not in v1.
-- **matrix-viewer public preview — OFF.** It requires `world_readable` rooms (cannot be E2EE) and is explicitly SEO-indexed — in direct conflict with mandatory-E2EE + minimize-exposure. If ever wanted, scope to a single intentional non-sensitive public lobby with a loud UI warning; never member rooms. Default: no public preview.
+- **Group calls** — post-v1 isolated Tier-1 module on a separate public-IP media box (DESIGN §8). Scaffolded (`calls` compose profile, `bootstrap-calls.sh`); not deployed by default.
+- **matrix-viewer public preview — OFF.** It requires `world_readable` rooms (cannot be E2EE) and is explicitly SEO-indexed — in direct conflict with mandatory-E2EE + minimize-exposure. Scaffolded (`viewer` compose profile, `bootstrap-viewer.sh`); off by default. If ever wanted, scope to a single intentional non-sensitive public lobby with a loud UI warning; never member rooms.
 - **Policy Servers (MSC4284)** — emerging; revisit post-v1.
-- **v2 identity recovery** — hooks reserved (§5); flow not built.
+- **v2 identity recovery** — crypto + lifecycle built (47/47 tests, `escrow-lifecycle.ts` + `directory.ts`); moderator approval tool + coordination bot not built. See RECOVERY.md §12.
 
 ## 13. Remaining spikes (verify on real infra before / during build)
 

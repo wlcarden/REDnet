@@ -64,7 +64,7 @@ jobs:
       - name: TypeScript typecheck
         run: npm run typecheck
 
-      - name: Behavioral tests (Shamir + escrow)
+      - name: Behavioral tests (Shamir + escrow + lifecycle)
         run: npm test
 
       - name: Cross-language test vectors

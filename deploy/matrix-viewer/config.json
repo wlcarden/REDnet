@@ -1,0 +1,5 @@
+{
+  "_comment": "matrix-viewer config. The basePath and matrixServerUrl are overridden by env vars in docker-compose. Only rooms listed here are exposed; everything else stays private.",
+  "archiveMessageLimit": 500,
+  "stopSearchEngineIndexing": true
+}

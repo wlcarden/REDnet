@@ -111,15 +111,16 @@ On a returning device, the module prompts for the passphrase and recovers identi
 
 ### Verified (in-house, no external review)
 
-| Track                  | Status                                          | Evidence                                             |
-| ---------------------- | ----------------------------------------------- | ---------------------------------------------------- |
-| **CI harness**         | 3 tiers: static lint, integration, Docker build | `deploy/ci-check.sh`, all tiers GREEN                |
-| **Silent onboarding**  | Module typechecks, builds, wires into Element   | Browser E2E 2/2 PASS (Playwright)                    |
-| **Operational drills** | Metadata scrub, backup/restore, restic          | All 3 drills PASS on live stack                      |
-| **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM        | 37/37 checks PASS (14 ECIES + 10 Shamir + 13 escrow) |
-| **Two-host isolation** | Docker firewall bypass, WG aperture             | In-sandbox + KVM validation PASS                     |
-| **Supply chain**       | All images digest-pinned                        | Smoke-tested, boots + self-checks PASS               |
-| **Security review**    | AI-assisted, 9-dimension swarm (71 agents)      | 53 findings; all critical/high remediated            |
+| Track                  | Status                                           | Evidence                                             |
+| ---------------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| **CI harness**         | 3 tiers: static lint, integration, Docker build  | `deploy/ci-check.sh`, all tiers GREEN                |
+| **Silent onboarding**  | Module typechecks, builds, wires into Element    | Browser E2E 2/2 PASS (Playwright)                    |
+| **Operational drills** | Metadata scrub, backup/restore, restic           | All 3 drills PASS on live stack                      |
+| **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM         | 37/37 checks PASS (14 ECIES + 10 Shamir + 13 escrow) |
+| **Escrow lifecycle**   | Directory auth, event protocol, deposit/recovery | 10/10 checks PASS (Ed25519 + round-trip + handshake) |
+| **Two-host isolation** | Docker firewall bypass, WG aperture              | In-sandbox + KVM validation PASS                     |
+| **Supply chain**       | All images digest-pinned                         | Smoke-tested, boots + self-checks PASS               |
+| **Security review**    | AI-assisted, 9-dimension swarm (71 agents)       | 53 findings; all critical/high remediated            |
 
 ### Remaining (external, not skippable)
 
@@ -131,9 +132,9 @@ On a returning device, the module prompts for the passphrase and recovers identi
 ### Not yet built
 
 - QR-card printing and batch invite workflow (generate-invite.sh + /join landing page built; needs live-stack validation)
-- Phase-2 recovery (governance-gated escrow). Crypto layer done, UX/lifecycle not built.
-- Group calls (deferred Tier-1 module; [DESIGN.md §8](DESIGN.md))
-- matrix-viewer public preview
+- Phase-2 recovery: crypto + lifecycle built (47/47 tests); moderator approval tool + coordination bot not built ([RECOVERY.md §12](RECOVERY.md))
+- Group calls: scaffolded (LiveKit SFU + JWT service + Caddy routing + Element config); needs live-stack validation + production media-node deployment ([DESIGN.md §8](DESIGN.md))
+- matrix-viewer: scaffolded (compose profile + Caddy routing + bootstrap script); OFF by default — conflicts with mandatory E2EE ([SPEC.md §11](SPEC.md))
 
 ## Threat model summary
 

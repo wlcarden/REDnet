@@ -1,13 +1,8 @@
 /*
- * REDnet Phase-1 onboarding/recovery as an Element CryptoSetupExtensions provider.
+ * REDnet onboarding/recovery as an Element CryptoSetupExtensions provider.
  *
- * VALIDATION STATUS (see REVIEW.md):
- *   TYPECHECKS against @matrix-org/react-sdk-module-api@2.4.0 + matrix-js-sdk@34.12.0.
- *   BROWSER E2E PROVEN (2026-06-19): the async/sync choreography works — cachedKey is populated before
- *     Element's sync getters fire, UI suppression works, and the passphrase round-trips (fresh account →
- *     fresh device recovery). See e2e/onboarding.spec.ts (2/2 PASS).
- *   REMAINING: external crypto review of the bootstrap/recovery path (edge cases, malicious-core guard,
- *     backup trust model).
+ * Phase 1 (self-held passphrase): BROWSER E2E PROVEN (2/2 PASS, 2026-06-19).
+ * Phase 2 (governance-gated escrow): crypto proven (37/37), lifecycle integration here.
  */
 import {
   CryptoSetupExtensionsBase,
@@ -24,17 +19,30 @@ import {
   setKeySink,
   silentBootstrap,
 } from "./onboarding";
+import type { SignedDirectory } from "./directory";
+import type { EscrowMode } from "./escrow";
+import type { RecoverySession, EscrowHealthStatus } from "./escrow-lifecycle";
+import {
+  depositEscrow,
+  fetchDirectory,
+  fetchEscrow,
+  requestRecovery,
+  collectSharesAndRecover,
+  checkEscrowHealth,
+} from "./escrow-lifecycle";
+
+export interface Phase2Config {
+  recoveryRoomId: string;
+  orgPubKey: Uint8Array;
+  defaultMode: EscrowMode;
+}
 
 export class RednetCryptoSetup extends CryptoSetupExtensionsBase {
-  /** Suppress Element's interactive encryption-setup UI — REDnet drives setup silently. */
   public SHOW_ENCRYPTION_SETUP_UI = false;
 
-  /**
-   * Pre-derived 4S key for this session. Element consults the sync getters below DURING crypto setup; the
-   * async prep (onFreshAccount/onFreshDevice) derives the key and the keySink populates this first.
-   */
   private cachedKey: Uint8Array | null = null;
   private shownPassphrase: string | null = null;
+  private phase2Config: Phase2Config | null = null;
 
   public constructor(
     private readonly getWordlist: () => string[] | undefined = () => undefined,
@@ -43,6 +51,10 @@ export class RednetCryptoSetup extends CryptoSetupExtensionsBase {
     setKeySink((k) => {
       this.cachedKey = k;
     });
+  }
+
+  public configurePhase2(config: Phase2Config): void {
+    this.phase2Config = config;
   }
 
   // ---- ProvideCryptoSetupExtensions: the SYNCHRONOUS surface Element consults during crypto setup ----
@@ -137,34 +149,126 @@ export class RednetCryptoSetup extends CryptoSetupExtensionsBase {
     ui: {
       showOnce: (passphrase: string) => Promise<unknown>;
       prompt: (error?: string) => Promise<string>;
+      offerPhase2Recovery?: () => Promise<boolean>;
+      showBindingCode?: (code: string) => Promise<void>;
+      waitForShares?: (needed: number) => Promise<Uint8Array[]>;
+      notifyEscrowDeposited?: () => void;
     },
     autoJoinRooms?: string[],
   ): Promise<void> {
     if (isReturningAccount) {
-      const MAX_ATTEMPTS = 3;
-      let error: string | undefined;
-      for (let i = 0; i < MAX_ATTEMPTS; i++) {
-        const passphrase = await ui.prompt(error);
-        if (!passphrase) return;
-        try {
-          await this.onFreshDevice(client, passphrase);
+      const recovered = await this.attemptPassphraseRecovery(client, ui);
+      if (recovered) return;
+
+      if (this.phase2Config && ui.offerPhase2Recovery) {
+        const wantsPhase2 = await ui.offerPhase2Recovery();
+        if (wantsPhase2) {
+          await this.phase2Recovery(client, ui);
           return;
-        } catch {
-          error =
-            i < MAX_ATTEMPTS - 1
-              ? "Wrong passphrase. Check for typos and try again."
-              : "Recovery failed. Contact an organizer if you need help.";
         }
       }
-      await ui.prompt(error);
     } else {
       const passphrase = await this.onFreshAccount(client);
       await ui.showOnce(passphrase);
-      // NEW account: join the community space + starter channels from the CLIENT. Synapse `auto_join_rooms`
-      // does NOT fire for MAS-provisioned users (confirmed empirically), so the client does it — robust across
-      // every registration path. Returning accounts are already members, so this runs only for fresh accounts.
       await this.joinStarterRooms(client, autoJoinRooms);
+
+      if (this.phase2Config && this.cachedKey) {
+        await this.tryDepositEscrow(client, this.cachedKey, ui);
+      }
     }
+  }
+
+  private async attemptPassphraseRecovery(
+    client: MatrixClient,
+    ui: { prompt: (error?: string) => Promise<string> },
+  ): Promise<boolean> {
+    const MAX_ATTEMPTS = 3;
+    let error: string | undefined;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      const passphrase = await ui.prompt(error);
+      if (!passphrase) return false;
+      try {
+        await this.onFreshDevice(client, passphrase);
+        return true;
+      } catch {
+        error =
+          i < MAX_ATTEMPTS - 1
+            ? "Wrong passphrase. Check for typos and try again."
+            : "Recovery failed. Contact an organizer if you need help.";
+      }
+    }
+    await ui.prompt(error);
+    return false;
+  }
+
+  private async phase2Recovery(
+    client: MatrixClient,
+    ui: {
+      showBindingCode?: (code: string) => Promise<void>;
+      waitForShares?: (needed: number) => Promise<Uint8Array[]>;
+    },
+  ): Promise<void> {
+    if (!this.phase2Config || !ui.showBindingCode || !ui.waitForShares) return;
+    const { recoveryRoomId, orgPubKey } = this.phase2Config;
+
+    const dir = await fetchDirectory(client, recoveryRoomId, orgPubKey);
+    if (!dir) throw new Error("No valid moderator directory found");
+
+    const escrow = await fetchEscrow(client);
+    if (!escrow) throw new Error("No escrow record found for this account");
+
+    const session = await requestRecovery(client, recoveryRoomId);
+    await ui.showBindingCode(session.bindingCode);
+
+    const resealedShares = await ui.waitForShares(escrow.record.policy.m);
+
+    const ctx = {
+      member: client.getUserId()!,
+      dirVersion: escrow.dirVersion,
+    };
+
+    const recoveryKey = await collectSharesAndRecover(
+      client,
+      session,
+      resealedShares,
+      escrow.record,
+      ctx,
+      escrow.record.mode === "passphrase" ? undefined : undefined,
+    );
+
+    this.cachedKey = recoveryKey;
+    setActivePassphrase(null);
+    await recoverWithPassphrase(client, "");
+  }
+
+  private async tryDepositEscrow(
+    client: MatrixClient,
+    recoveryKey: Uint8Array,
+    ui: { notifyEscrowDeposited?: () => void },
+  ): Promise<void> {
+    if (!this.phase2Config) return;
+    const { recoveryRoomId, orgPubKey, defaultMode } = this.phase2Config;
+
+    try {
+      const dir = await fetchDirectory(client, recoveryRoomId, orgPubKey);
+      if (!dir) return;
+      await depositEscrow(client, recoveryKey, dir, defaultMode);
+      ui.notifyEscrowDeposited?.();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("[rednet] escrow deposit failed (non-fatal):", e);
+    }
+  }
+
+  public async getEscrowHealth(
+    client: MatrixClient,
+  ): Promise<EscrowHealthStatus> {
+    if (!this.phase2Config) return { status: "phase1_only" };
+    return checkEscrowHealth(
+      client,
+      this.phase2Config.recoveryRoomId,
+      this.phase2Config.orgPubKey,
+    );
   }
 
   /** Default starter rooms (localparts) — the set bootstrap-rooms.sh creates. Override via rednetOnboard's arg. */

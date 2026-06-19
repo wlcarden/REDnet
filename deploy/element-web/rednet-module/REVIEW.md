@@ -70,6 +70,30 @@ The full escrow construction (RECOVERY.md §5-§12) is now implemented and teste
 can re-share without the member's passphrase); `shareAad(member, mode, dir_version, m, n)` includes the
 policy, binding shares to their quorum context.
 
+## Phase-2 escrow lifecycle — BEHAVIORALLY VERIFIED (2026-06-19)
+
+The lifecycle layer bridges the verified crypto primitives to the Matrix client:
+
+- **Directory authentication:** `src/directory.ts` — Ed25519 signed moderator directory (`@noble/curves`).
+  **4/4 checks PASS** (valid sig, wrong pubkey, tampered version, tampered policy).
+- **Event protocol:** `src/events.ts` — 4 custom Matrix event types (`org.rednet.recovery.{directory,
+escrow, request, share}`) + serialize/deserialize round-trip. **2/2 checks PASS**.
+- **Recovery handshake:** `src/escrow-lifecycle.ts` — deposit, recovery request (ephemeral P-256 keypair
+  - 6-digit binding code), reseal-to-device, share collection + reconstruction, health checks. **4/4
+    checks PASS** (moderators-only + passphrase mode handshake, wrong-key rejection).
+- **CryptoSetup integration:** `src/RednetCryptoSetup.ts` — `configurePhase2()`, automatic escrow deposit
+  on fresh account (when directory available), Phase-2 recovery path with moderator-assisted flow,
+  escrow health check API.
+
+**Total verified checks: 47/47** (10 Shamir + 13 escrow + 14 ECIES + 10 lifecycle).
+
+### Not built (runtime infrastructure, not crypto)
+
+- **Moderator approval tool** — native app with secure-element P-256 key binding (RECOVERY.md §5b).
+- **Coordination bot** — keyless relay for recovery requests + share delivery.
+- **Lifecycle prompt UI** — "your escrow references a revoked moderator" detection is built; the
+  user-facing prompt + re-escrow trigger are not.
+
 ## Remaining (needs external review)
 
 The module is now **implemented, build-integrated, and behaviorally verified**. What remains is an **external
@@ -82,3 +106,4 @@ the external review is needed for:
 - The malicious-core re-provision guard in `silentBootstrap` (does it actually prevent a rogue server
   from re-keying the member?)
 - Key backup trust model: does `checkKeyBackupAndEnable()` verify the backup signature, or trust blindly?
+- Phase-2 AAD binding + directory authentication under adversarial conditions
