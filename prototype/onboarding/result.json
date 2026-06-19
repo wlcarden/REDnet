@@ -1,0 +1,11 @@
+{
+  "crossSigning_publicKeysOnDevice": true,
+  "crossSigning_privateKeysInSecretStorage": true,
+  "keyBackup_activeVersion": "2",
+  "keyBackup_onServer": "2",
+  "recoveryKey_generatedByApp": true,
+  "recoveryKey_lengthChars": 59,
+  "recoveryKey_shownToUser": false,
+  "errors": [],
+  "PASS": true
+}

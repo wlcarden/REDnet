@@ -1,0 +1,27 @@
+# REDnet two-host VALIDATION harness — stands up a real CORE + FRONT pair (separate kernels) so the
+# Ansible can be run for real and the "core is dark" property PROVEN with an off-host port scan.
+# This is the faithful test the in-sandbox environment cannot do (it has no net privileges).
+#
+# Needs: Vagrant + a provider (VirtualBox or libvirt) + wireguard-tools + ansible + nmap/ncat ON THE HOST.
+# Run:   ./gen-config.sh && vagrant up && ansible-playbook -i ../inventory.ini ../site.yml && ./validate.sh
+#
+# The host-only `private_network` (192.168.56.0/24) STANDS IN FOR THE PUBLIC INTERNET: the host can reach
+# both VMs on it, so scanning the core's 192.168.56.10 from the host == an off-host attacker scanning the
+# core's public IP. The WireGuard overlay (10.13.13.0/24) runs on top, exactly as in production.
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 2048
+    vb.cpus = 2
+  end
+
+  config.vm.define "core" do |core|
+    core.vm.hostname = "rednet-core"
+    core.vm.network "private_network", ip: "192.168.56.10" # the "public" face (what an off-host scanner sees)
+  end
+
+  config.vm.define "front" do |front|
+    front.vm.hostname = "rednet-front"
+    front.vm.network "private_network", ip: "192.168.56.20"
+  end
+end

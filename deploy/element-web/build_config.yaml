@@ -1,0 +1,6 @@
+# REDnet: install the local onboarding module into the Element bundle at build time. This REPLACES the
+# old integration.patch soft fork (which was a non-applying TEMPLATE — every build silently shipped
+# stock onboarding). Element's module_system runs `yarn add` on each entry; a local file: path works.
+# See docs/modules.md in element-web.
+modules:
+  - "file:./rednet-module"

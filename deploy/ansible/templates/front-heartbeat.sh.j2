@@ -1,0 +1,7 @@
+#!/bin/sh
+# FRONT -> CORE liveness heartbeat over WireGuard. A systemd timer runs this every minute.
+# If the CORE's Prometheus stops seeing rednet_front_alive_timestamp_seconds, FrontTripwire fires:
+# the front is down, unplugged, or SEIZED (a seizure drops the tunnel, so detection is ~3 minutes).
+printf 'rednet_front_alive_timestamp_seconds %s\n' "$(date +%s)" \
+	| curl -s --max-time 5 --data-binary @- \
+		"http://{{ wg_core_ip }}:9091/metrics/job/rednet_front/instance/{{ inventory_hostname }}" >/dev/null

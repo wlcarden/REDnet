@@ -1,0 +1,10 @@
+# /etc/wireguard/wg0.conf on the CORE. Managed by Ansible.
+[Interface]
+Address = {{ wg_core_ip }}/24
+ListenPort = {{ wg_listen_port }}
+PrivateKey = {{ wg_core_private_key }}
+
+# FRONT peer(s) — the only hosts allowed across the tunnel.
+[Peer]
+PublicKey = {{ wg_front_public_key }}
+AllowedIPs = {{ wg_front_ip }}/32

@@ -1,0 +1,37 @@
+name: rednet-spike-03
+services:
+  postgres: # CORE — no published ports
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: synapse
+      POSTGRES_DB: synapse
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  synapse: # CORE — no published ports (this is the point: no public IP)
+    image: ghcr.io/element-hq/synapse:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SYNAPSE_SERVER_NAME: rednet.test
+      SYNAPSE_REPORT_STATS: "no"
+    volumes:
+      - synapse_data:/data
+
+  caddy: # FRONT — the ONLY published port; reverse-proxies to the core
+    image: caddy:2-alpine
+    depends_on:
+      - synapse
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "8080:8080"
+
+volumes:
+  synapse_data:

@@ -1,0 +1,42 @@
+# REDnet alert rules. The two latent failures that hurt most:
+#   1. Synapse silently down  -> users can't talk and nobody notices until they complain.
+#   2. Backups silently stopped -> you only discover it when you need a restore and there isn't one.
+groups:
+  - name: rednet-core
+    rules:
+      - alert: SynapseDown
+        expr: up{job="synapse"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Synapse metrics endpoint unreachable for 2m"
+          description: "Prometheus cannot scrape synapse:9000. The homeserver may be down."
+
+      - alert: BackupHeartbeatStale
+        # backup.sh pushes rednet_backup_last_success_timestamp; alert if no success in >48h.
+        expr: (time() - max(rednet_backup_last_success_timestamp_seconds)) > 172800
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "No successful REDnet backup in over 48 hours"
+          description: "The backup heartbeat is stale. A restore may not be possible — investigate now."
+
+      - alert: BackupHeartbeatMissing
+        # No heartbeat metric at all (pushgateway empty) for 6h after start = backups never ran.
+        expr: absent(rednet_backup_last_success_timestamp_seconds)
+        for: 6h
+        labels: { severity: warning }
+        annotations:
+          summary: "No backup heartbeat metric present"
+          description: "backup.sh has never reported success to the pushgateway."
+
+      - alert: FrontTripwire
+        # The FRONT box pushes a liveness heartbeat to the CORE over WireGuard every minute
+        # (ansible/templates/front-heartbeat.sh). If the CORE stops seeing it, the front is down,
+        # unplugged, or SEIZED. Tunnel drop on seizure makes this fire within ~3 minutes.
+        expr: (time() - max(rednet_front_alive_timestamp_seconds)) > 180
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "FRONT box heartbeat lost (down / unplugged / seized)"
+          description: "No front liveness over WireGuard for >3m. Treat as possible seizure: rotate the front, assume its IP is burned."

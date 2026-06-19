@@ -1,0 +1,8 @@
+# REDnet CI lint policy. We enforce up to the `safety` profile (file permissions, command safety,
+# parser/runtime correctness) — currently clean. The stricter `shared`/`production` idiom rules are
+# deliberately NOT enforced here, with rationale:
+#   no-changed-when : setup.sh and `docker compose up` are deploy actions that DO change state every run;
+#                     a fake `changed_when` would be dishonest noise.
+#   no-handler      : the inline "restart docker when _daemonjson.changed" is correct for this linear,
+#                     two-play deploy — a handler adds indirection without benefit at this size.
+profile: safety

@@ -1,0 +1,10 @@
+{
+  "device2_derivedKeyFromPassphrase": true,
+  "device2_crossSigning_privateKeysCached": true,
+  "device2_recoveredSameIdentity": true,
+  "device2_keyBackup_imported": 1,
+  "device2_keyBackup_total": 1,
+  "wrongPassphrase_yieldsDifferentKey": true,
+  "errors": [],
+  "PASS": true
+}

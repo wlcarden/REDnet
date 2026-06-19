@@ -1,0 +1,25 @@
+# REDnet Alertmanager — routes firing alerts (SynapseDown / BackupHeartbeat* / FrontTripwire) to an
+# operator. ⚠️ CRITICAL: the receiver MUST be OUT-OF-BAND — a down/seized REDnet can't page you through
+# itself. Use Slack/PagerDuty/email/SMS, or Matrix on a DIFFERENT homeserver — never this deployment.
+# Replace the placeholder webhook url below with your real channel before production (PRODUCTION.md #7).
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: rednet-oncall
+  group_by: ["alertname"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # criticals (Synapse down, backups stopped, front seized) page more often
+    - matchers: ['severity="critical"']
+      receiver: rednet-oncall
+      repeat_interval: 1h
+
+receivers:
+  - name: rednet-oncall
+    webhook_configs:
+      # PLACEHOLDER — point at your real out-of-band endpoint. Kept as a webhook so it's channel-agnostic.
+      - url: "http://alert-sink:9000/"
+        send_resolved: true

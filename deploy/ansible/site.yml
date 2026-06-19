@@ -1,0 +1,226 @@
+---
+# REDnet two-host provisioning. SCAFFOLD — adapt + test on real hosts before relying on it.
+# Topology: CORE (dark, holds everything) + FRONT (disposable, public TLS) joined by WireGuard.
+#   ansible-playbook -i inventory.ini site.yml
+#
+# The CORE runs the data-plane services with the WG port-publishing override (NOT caddy — the front
+# is the caddy). The FRONT runs only a Caddy container + a liveness heartbeat. Burning a front means
+# re-running the `front` play against a fresh host; the core never moves.
+
+- name: CORE — homeserver, auth, db, monitoring (dark except the WireGuard port)
+  hosts: core
+  become: true
+  tasks:
+    - name: Install docker + wireguard + iptables-persistent
+      ansible.builtin.apt:
+        # docker-compose-v2 is Ubuntu's compose-v2 plugin (provides `docker compose`); docker-compose-plugin
+        # only exists in Docker's official apt repo, which we don't add. python3-yaml backs setup.sh's MAS
+        # config render on hosts without uv. Both caught by the KVM validation (pass 5).
+        name: [docker.io, docker-compose-v2, python3-yaml, wireguard, ufw, iptables-persistent]
+        update_cache: true
+
+    - name: Docker daemon log rotation (bound container-log client-IP retention — R2)
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        content: '{ "log-driver": "json-file", "log-opts": { "max-size": "5m", "max-file": "2" } }'
+        mode: "0644"
+      register: _daemonjson
+    - name: Restart docker to apply log rotation (safe — before the stack is up)
+      ansible.builtin.systemd: { name: docker, state: restarted }
+      when: _daemonjson.changed
+
+    - name: Firewall — allow only SSH + the WireGuard port inbound
+      community.general.ufw: { rule: allow, port: "{{ item }}", proto: "{{ 'udp' if item == wg_listen_port else 'tcp' }}" }
+      loop: [22, "{{ wg_listen_port }}"]
+    - name: Firewall — default deny inbound
+      community.general.ufw: { state: enabled, policy: deny, direction: incoming }
+
+    # R2 CRITICAL: Docker's DNAT rules live in the DOCKER chain, evaluated BEFORE ufw-user-input — so a
+    # published container port (e.g. a stray caddy 0.0.0.0:8080) is reachable on the core's PUBLIC IP even
+    # with UFW deny. Drop ALL public-NIC -> container forwarding so the core stays dark; wg0 still works.
+    - name: "DOCKER-USER — drop public->container forwarding (re-darken the core; UFW alone can't)"
+      ansible.builtin.iptables:
+        chain: DOCKER-USER
+        in_interface: "{{ wan_iface | default(ansible_default_ipv4.interface) }}"
+        jump: DROP
+        action: insert
+        comment: "REDnet R2: no container port reachable from the public NIC (WG only)"
+
+    # R2 HIGH (pass 5 — validated in-sandbox: validate/validate-wg-aperture.sh). The wg0 aperture MUST be
+    # enforced in DOCKER-USER, not only in ufw. The core's proxy ports are Docker-published on the WG IP, so
+    # front->core traffic is DNAT'd and FORWARDED; a ufw 'direction: in' (INPUT-chain) deny cannot restrict it
+    # (proven: an INPUT deny left a published :5432 reachable from the front). Allow ONLY the 4 proxy ports —
+    # matched on the ORIGINAL pre-DNAT dport via conntrack so it survives the port rewrite — from the front,
+    # and drop all other wg0->container forwarding. A future stray 'wg_core_ip:5432:5432' then fails closed.
+    - name: "DOCKER-USER — scope the wg0 aperture to the 4 proxy ports (the control ufw/INPUT can't provide)"
+      ansible.builtin.shell: |
+        set -e
+        iptables -C DOCKER-USER -i wg0 -j DROP 2>/dev/null || iptables -I DOCKER-USER -i wg0 -j DROP
+        for p in 9091 8088 8080 8008; do
+          iptables -C DOCKER-USER -i wg0 -p tcp -m conntrack --ctorigdstport "$p" -s {{ wg_front_ip }} -j RETURN 2>/dev/null \
+            || iptables -I DOCKER-USER -i wg0 -p tcp -m conntrack --ctorigdstport "$p" -s {{ wg_front_ip }} -j RETURN
+        done
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Persist iptables (survive reboot)
+      ansible.builtin.command: netfilter-persistent save
+      changed_when: false
+
+    # These ufw INPUT-chain rules scope wg0 traffic destined to the CORE HOST ITSELF (host-bound listeners).
+    # Container/proxy ports are DNAT'd (FORWARD) and are governed by the DOCKER-USER aperture above, NOT here —
+    # see validate/validate-wg-aperture.sh. Kept as defense-in-depth for any non-container service on wg0.
+    - name: WG-inbound (host) — allow only the 4 proxy ports from the front
+      community.general.ufw: { rule: allow, direction: in, interface: wg0, proto: tcp, from_ip: "{{ wg_front_ip }}", to_port: "{{ item }}" }
+      loop: ["8008", "8080", "8088", "9091"]
+    - name: WG-inbound (host) — deny everything else on wg0
+      community.general.ufw: { rule: deny, direction: in, interface: wg0 }
+
+    - name: WireGuard config
+      ansible.builtin.template: { src: templates/wg-core.conf.j2, dest: /etc/wireguard/wg0.conf, mode: "0600" }
+    - name: WireGuard up + enabled
+      ansible.builtin.systemd: { name: wg-quick@wg0, enabled: true, state: started }
+
+    - name: "Sync the deploy/ CODE to the core (R2: exclude ALL local secrets/state so dev creds never leak to the core)"
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: /opt/rednet/
+        rsync_opts:
+          - "--exclude=ansible"
+          - "--exclude=data"
+          - "--exclude=backups"
+          - "--exclude=restic-repo"
+          - "--exclude=.env"
+          - "--exclude=rednet.env"
+          - "--exclude=mas/config.yaml"
+          - "--exclude=draupnir/config"
+          - "--exclude=element-web/config.json"
+    - name: Provide the production rednet.env on the core (domain + public base; the core generates its own secrets)
+      ansible.builtin.copy:
+        dest: /opt/rednet/rednet.env
+        mode: "0600"
+        content: |
+          REDNET_DOMAIN={{ rednet_domain }}
+          REDNET_PUBLIC_BASE=https://{{ rednet_domain }}
+          REDNET_RETENTION_DAYS={{ rednet_retention_days | default(7) }}
+          REDNET_MEDIA_RETENTION_DAYS={{ rednet_media_retention_days | default(7) }}
+          REDNET_BRAND={{ rednet_brand | default('REDnet') }}
+    - name: Render the WG port-publishing override
+      ansible.builtin.template: { src: templates/docker-compose.wg.yml.j2, dest: /opt/rednet/docker-compose.wg.yml, mode: "0644" }
+
+    - name: Render + harden the core configs (REDNET_ROLE=core -> NO caddy / no public host port — R2 CRITICAL)
+      ansible.builtin.command: ./setup.sh
+      args: { chdir: /opt/rednet }
+      environment: { REDNET_ROLE: core }
+    - name: Bring up core services on the WG interface (no caddy here; front is the caddy)
+      ansible.builtin.command: >
+        docker compose -f docker-compose.yml -f docker-compose.wg.yml --profile web --profile monitoring
+        up -d postgres mas synapse element prometheus grafana pushgateway
+      args: { chdir: /opt/rednet }
+
+    # R2 HIGH: the scrub + backups were "schedule hourly" in prose but no timer existed — ship them as code.
+    - name: Scrub + backup systemd services
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/rednet-{{ item.n }}.service"
+        content: |
+          [Unit]
+          Description=REDnet {{ item.n }}
+          [Service]
+          Type=oneshot
+          WorkingDirectory=/opt/rednet
+          ExecStart=/opt/rednet/{{ item.s }}
+        mode: "0644"
+      loop:
+        - { n: scrub, s: scrub-metadata.sh }
+        - { n: backup, s: backup.sh }
+    - name: Scrub + backup systemd timers (hourly)
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/rednet-{{ item }}.timer"
+        content: |
+          [Unit]
+          Description=Run REDnet {{ item }} hourly
+          [Timer]
+          OnUnitActiveSec=1h
+          OnBootSec=10min
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+        mode: "0644"
+      loop: [scrub, backup]
+    - name: Enable scrub + backup timers
+      ansible.builtin.systemd: { name: "rednet-{{ item }}.timer", enabled: true, state: started, daemon_reload: true }
+      loop: [scrub, backup]
+    # NOTE: in REDNET_ROLE=core, setup.sh does NOT self-check or bootstrap rooms (no front on the core).
+    # Run the self-check + ./bootstrap-rooms.sh + ./bootstrap-draupnir.sh AGAINST THE FRONT, after the front play.
+
+- name: FRONT — disposable public TLS proxy + liveness heartbeat
+  hosts: front
+  become: true
+  tasks:
+    - name: Install docker + wireguard
+      # python3-docker is required by community.docker.docker_container (the Caddy task below); without it
+      # the front play fails at runtime. Caught by the in-sandbox KVM validation (pass 5).
+      ansible.builtin.apt: { name: [docker.io, python3-docker, wireguard, ufw, curl], update_cache: true }
+
+    - name: "Docker daemon log rotation (the front's Caddy error logs carry real client IPs — R2 #4)"
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        content: '{ "log-driver": "json-file", "log-opts": { "max-size": "5m", "max-file": "1" } }'
+        mode: "0644"
+      register: _fdaemonjson
+    - name: Restart docker to apply log rotation
+      ansible.builtin.systemd: { name: docker, state: restarted }
+      when: _fdaemonjson.changed
+
+    - name: Firewall — allow SSH + HTTP/HTTPS only
+      community.general.ufw: { rule: allow, port: "{{ item }}", proto: tcp }
+      loop: [22, 80, 443]
+    - name: Firewall — default deny inbound
+      community.general.ufw: { state: enabled, policy: deny, direction: incoming }
+
+    - name: WireGuard config
+      ansible.builtin.template: { src: templates/wg-front.conf.j2, dest: /etc/wireguard/wg0.conf, mode: "0600" }
+    - name: WireGuard up + enabled
+      ansible.builtin.systemd: { name: wg-quick@wg0, enabled: true, state: started }
+
+    - name: Create the front config directory (template won't create parents) — caught by KVM validation (pass 5)
+      ansible.builtin.file: { path: /opt/rednet-front, state: directory, mode: "0755" }
+    - name: Render the front Caddyfile (proxies to the core over WG)
+      ansible.builtin.template: { src: templates/Caddyfile.front.j2, dest: /opt/rednet-front/Caddyfile, mode: "0644" }
+    - name: Run Caddy (auto-TLS on the real domain)
+      community.docker.docker_container:
+        name: rednet-front
+        image: caddy:2-alpine
+        restart_policy: unless-stopped
+        network_mode: host
+        volumes:
+          - /opt/rednet-front/Caddyfile:/etc/caddy/Caddyfile:ro
+          - rednet_front_caddy:/data
+
+    - name: Install the liveness heartbeat (FrontTripwire source)
+      ansible.builtin.template: { src: templates/front-heartbeat.sh.j2, dest: /usr/local/bin/rednet-front-heartbeat, mode: "0755" }
+    - name: Heartbeat systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/rednet-front-heartbeat.service
+        content: |
+          [Unit]
+          Description=REDnet front liveness heartbeat -> core
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/local/bin/rednet-front-heartbeat
+        mode: "0644"
+    - name: Heartbeat systemd timer (every minute)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/rednet-front-heartbeat.timer
+        content: |
+          [Unit]
+          Description=Run REDnet front heartbeat every minute
+          [Timer]
+          OnUnitActiveSec=60
+          OnBootSec=30
+          [Install]
+          WantedBy=timers.target
+        mode: "0644"
+    - name: Enable the heartbeat timer
+      ansible.builtin.systemd: { name: rednet-front-heartbeat.timer, enabled: true, state: started, daemon_reload: true }

@@ -1,0 +1,69 @@
+{
+	# Dev: plain HTTP on :8080. PRODUCTION: delete this block and use the real domain as the
+	# site address so Caddy auto-provisions TLS (ACME). The CORE is reached over WireGuard.
+	auto_https off
+}
+
+# Forwarded-header policy (R2): the CORE must NOT see real client IPs (seized-core threat model) — it's an
+# IP honeypot otherwise. The front forwards a CONSTANT placeholder (192.0.2.1 = RFC5737 TEST-NET), strips any
+# client-supplied Forwarded/X-Real-IP. Per-IP rate-limiting moves to the FRONT edge, where the real IP is
+# unavoidable anyway (the front terminates TLS); the core relies on per-USER/per-ACCOUNT limits.
+(sanitize) {
+	header_up X-Forwarded-Proto https
+	header_up X-Forwarded-For 192.0.2.1
+	header_up X-Real-IP 192.0.2.1
+	header_up -Forwarded
+}
+
+:8080 {
+	# --- defense in depth (R2): never let federation / server-key / metrics / admin reach the core ---
+	# (federation is closed server-side too; this blocks probes at the edge.) Case-INSENSITIVE.
+	@blocked path_regexp (?i)^/(_matrix/(federation|key)|_synapse/(admin|metrics))(/.*)?$
+	handle @blocked {
+		respond "Forbidden" 403
+	}
+
+	# --- Matrix auth endpoints (compat layer) -> MAS --- (case-insensitive)
+	@mas_compat path_regexp (?i)^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$
+	handle @mas_compat {
+		reverse_proxy mas:8080 {
+			import sanitize
+		}
+	}
+
+	# --- MAS's own UI + OAuth/OIDC surfaces -> MAS --- (case-insensitive)
+	@mas path_regexp (?i)^/(account|login|register|reauth|add-email|verify-email|recover|change-password|consent|authorize|oauth2|assets|graphql|complete-compat-sso|upstream|\.well-known/openid-configuration|\.well-known/oauth-authorization-server|\.well-known/change-password)(/.*)?$
+	handle @mas {
+		reverse_proxy mas:8080 {
+			import sanitize
+		}
+	}
+
+	# --- everything else Matrix -> Synapse (CORE) ---
+	handle /_matrix/* {
+		reverse_proxy synapse:8008 {
+			import sanitize
+		}
+	}
+	handle /_synapse/* {
+		reverse_proxy synapse:8008 {
+			import sanitize
+		}
+	}
+
+	# --- client well-known (static, served by the front) ---
+	handle /.well-known/matrix/client {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		rewrite * /client
+		root * /srv/well-known
+		file_server
+	}
+
+	# --- Element Web (the soft-fork build) — front proxies / to the element container ---
+	handle {
+		reverse_proxy element:80 {
+			import sanitize
+		}
+	}
+}

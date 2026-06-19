@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 64" role="img" aria-label="REDnet">
+  <!-- DEFAULT REDnet brand mark — a secure mesh node. Replace this file (+ favicon, + the user_notice copy
+       and brand name in rednet.env) to white-label a deployment. Works on light or dark backgrounds. -->
+  <title>REDnet</title>
+  <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+    <line x1="32" y1="32" x2="32" y2="14"/>
+    <line x1="32" y1="32" x2="48" y2="23"/>
+    <line x1="32" y1="32" x2="48" y2="41"/>
+    <line x1="32" y1="32" x2="32" y2="50"/>
+    <line x1="32" y1="32" x2="16" y2="41"/>
+    <line x1="32" y1="32" x2="16" y2="23"/>
+  </g>
+  <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z" fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+  <g fill="#E5484D">
+    <circle cx="32" cy="32" r="5.5"/>
+    <circle cx="32" cy="14" r="3.2"/>
+    <circle cx="48" cy="23" r="3.2"/>
+    <circle cx="48" cy="41" r="3.2"/>
+    <circle cx="32" cy="50" r="3.2"/>
+    <circle cx="16" cy="41" r="3.2"/>
+    <circle cx="16" cy="23" r="3.2"/>
+  </g>
+  <text x="74" y="42" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5">
+    <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+  </text>
+</svg>

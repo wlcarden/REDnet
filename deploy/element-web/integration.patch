@@ -1,0 +1,51 @@
+REDnet Phase-1 silent onboarding — the postLoginSetup hook (git apply scans for the first 'diff --git').
+Pairs with the rednet-onboarding MODULE (cryptoSetup extension, build_config.yaml) + src/RednetRecoveryKeyDialog.tsx
+(both COPY'd/installed by the Dockerfile). Re-anchor against your pinned ELEMENT_VERSION if it stops applying.
+
+diff --git a/src/components/structures/MatrixChat.tsx b/src/components/structures/MatrixChat.tsx
+index 80a648b..d2be16e 100644
+--- a/src/components/structures/MatrixChat.tsx
++++ b/src/components/structures/MatrixChat.tsx
+@@ -78,6 +78,7 @@ import { shouldUseLoginForWelcome } from "../../utils/pages";
+ import RoomListStore from "../../stores/room-list/RoomListStore";
+ import { RoomUpdateCause } from "../../stores/room-list/models";
+ import { ModuleRunner } from "../../modules/ModuleRunner";
++import RednetRecoveryKeyDialog from "../../RednetRecoveryKeyDialog"; // :REDNET: soft-fork onboarding UI
+ import Spinner from "../views/elements/Spinner";
+ import QuestionDialog from "../views/dialogs/QuestionDialog";
+ import UserSettingsDialog from "../views/dialogs/UserSettingsDialog";
+@@ -417,6 +418,34 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
+             return;
+         }
+ 
++        // :REDNET: drive E2EE silently — generate + show a recovery passphrase on a fresh account, or prompt +
++        // recover on a fresh device — instead of Element's COMPLETE_SECURITY / E2E_SETUP views. The crypto lives
++        // in the rednet-onboarding module (cryptoSetup extension); we provide only the Modal UI here.
++        const rednetCryptoSetup = ModuleRunner.instance.extensions.cryptoSetup as unknown as {
++            SHOW_ENCRYPTION_SETUP_UI?: boolean;
++            rednetOnboard?: (
++                cli: unknown,
++                isReturning: boolean,
++                ui: { showOnce: (p: string) => Promise<unknown>; prompt: (error?: string) => Promise<string> },
++            ) => Promise<void>;
++        };
++        if (rednetCryptoSetup.SHOW_ENCRYPTION_SETUP_UI === false && typeof rednetCryptoSetup.rednetOnboard === "function") {
++            try {
++                await rednetCryptoSetup.rednetOnboard(cli, crossSigningIsSetUp, {
++                    showOnce: (p: string) => Modal.createDialog(RednetRecoveryKeyDialog, { mode: "show", value: p }).finished,
++                    prompt: async (error?: string): Promise<string> => {
++                        const [v] = await Modal.createDialog(RednetRecoveryKeyDialog, { mode: "prompt", error }).finished;
++                        return (v as string) ?? "";
++                    },
++                });
++            } catch (e) {
++                logger.error("[rednet] silent onboarding failed; continuing to the app", e);
++            }
++            this.onLoggedIn();
++            this.setState({ pendingInitialSync: false });
++            return;
++        }
++
+         if (crossSigningIsSetUp) {
+             // if the user has previously set up cross-signing, verify this device so we can fetch the
+             // private keys.

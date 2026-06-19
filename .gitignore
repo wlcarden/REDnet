@@ -1,0 +1,40 @@
+# Secrets (NEVER commit)
+deploy/rednet.env
+deploy/.env
+deploy/mas/config.yaml
+deploy/draupnir/config/
+deploy/ansible/inventory.ini
+deploy/ansible/group_vars/all.yml
+*.key
+*.pub
+*.token
+
+# Config rendered from templates (contains secrets)
+deploy/element-web/config.json
+
+# Backups and restic repos
+deploy/backups/
+deploy/restic-repo/
+
+# Build artifacts
+node_modules/
+lib/
+dist/
+*.js.map
+
+# Lock files (regenerated per environment)
+package-lock.json
+
+# Prototype secrets
+prototype/onboarding-mas/mas/config.yaml
+
+# Docker / runtime
+*.log
+synapse_data/
+postgres_data/
+mas_data/
+grafana_data/
+
+# OS
+.DS_Store
+Thumbs.db

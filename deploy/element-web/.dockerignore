@@ -1,0 +1,4 @@
+# The module's local build artifacts — the Dockerfile reinstalls + rebuilds them in-image.
+rednet-module/node_modules
+rednet-module/lib
+rednet-module/package-lock.json

@@ -1,0 +1,35 @@
+# Draupnir config TEMPLATE (committed, no secrets). bootstrap-draupnir.sh renders the real
+# config/production.yaml from this, injecting the bot accessToken + managementRoom id.
+# Draupnir is REDnet's moderation engine: bans, policy lists, server ACLs, redactions. These
+# act on room STATE + event ids, so they work on E2EE rooms WITHOUT decrypting message content.
+# The management room is deliberately UNENCRYPTED (an operator control channel) so the crypto-less
+# bot can read commands; experimentalRustCrypto can later enable an encrypted management room.
+
+homeserverUrl: "http://synapse:8008"      # CORE-internal; token introspection still hits MAS server-side
+rawHomeserverUrl: "http://synapse:8008"
+accessToken: "RENDER_ME"                   # bot compat-token, injected by bootstrap
+managementRoom: "RENDER_ME"                # room id, injected by bootstrap
+
+dataPath: "/data/storage"
+pantalaimon:
+  use: false
+experimentalRustCrypto: false              # management room is unencrypted; flip to true to encrypt it
+
+autojoinOnlyIfManager: true                # only follow invites from managers (anti-hijack)
+protectAllJoinedRooms: true                # R2: moderate EVERY room the bot is in, incl. member-created channels
+                                           # (was false → new rooms were unmoderated until manually added).
+recordIgnoredInvites: false
+# Community ban-lists: subscribe Draupnir to one or more POLICY ROOMS so bans/ACLs from a trusted curator
+# (or peer community) apply automatically. After start, from the management room:
+#   !draupnir watch <#policy-list-room:domain>      (e.g. a shared org block-list room you create)
+# Policy lists are Matrix room state — they sync to every protected room without decrypting content.
+admin:
+  enableMakeRoomAdminCommand: false        # R2: bot token is NOT synapse-admin (no god-credential on the core).
+                                           # make-room-admin needs admin; ban/redact/ACL/policy use room power levels.
+commands:
+  allowNoPrefix: false
+  additionalPrefixes: ["draupnir"]
+logLevel: "INFO"
+health:
+  healthz:
+    enabled: false

@@ -1,0 +1,22 @@
+{
+	auto_https off
+}
+
+# FRONT proxy. In production this terminates TLS (Caddy auto-ACME) and tunnels to the
+# core over WireGuard. Here it listens HTTP :8080 and sets X-Forwarded-Proto https to
+# mirror TLS termination. The SPEC §3 reverse-proxy split: auth endpoints -> MAS,
+# everything else -> Synapse. (No MAS in this spike, so the @auth branch also points at
+# Synapse — it demonstrates the routing shape; MAS slots into the @auth handle.)
+:8080 {
+	@auth path_regexp authpath ^/_matrix/client/.*/(login|logout|refresh)$
+	handle @auth {
+		reverse_proxy synapse:8008 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+	handle {
+		reverse_proxy synapse:8008 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+}

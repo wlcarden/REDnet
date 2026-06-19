@@ -1,0 +1,12 @@
+# Ansible-rendered compose OVERRIDE for the CORE. Publishes service ports on the WireGuard IP ONLY
+# (never 0.0.0.0) so the FRONT can reach them across the tunnel and nothing is exposed publicly.
+# Used on the core as:  docker compose -f docker-compose.yml -f docker-compose.wg.yml up -d <services>
+services:
+  synapse:
+    ports: ["{{ wg_core_ip }}:8008:8008"]
+  mas:
+    ports: ["{{ wg_core_ip }}:8080:8080"]
+  element:
+    ports: ["{{ wg_core_ip }}:8088:80"]
+  pushgateway:
+    ports: ["{{ wg_core_ip }}:9091:9091"]

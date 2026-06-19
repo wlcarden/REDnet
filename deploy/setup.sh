@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# REDnet deploy — assemble the hardened core+front stack from rednet.env, bring it up, self-check.
+set -uo pipefail
+cd "$(dirname "$0")" || exit 1
+say(){ printf '\n=== %s ===\n' "$*"; }
+# Secrets hygiene (R2): host-only secret files are locked 0600; files bind-mounted into NON-root containers
+# (mas/config.yaml -> MAS uid 65532; initdb/init.sql -> postgres) must stay readable by that uid, so we
+# chown-to-the-uid when we can (root/Ansible) and fall back to readable otherwise. A blanket umask 077
+# breaks those mounts — handled per-file below instead.
+jqpy(){ python3 -c "import sys,json;d=json.load(sys.stdin);print($1)" 2>/dev/null; }
+genpw(){ LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32; }  # always exactly 32 alnum chars (~190 bits)
+MASIMG=ghcr.io/element-hq/matrix-authentication-service@sha256:fb25648b12e985d1192ea3dc7b6def38f97ca79bacba262daca5b82532e3a3dd # MAS 1.19.0 (digest-pinned; matches docker-compose.yml)
+
+[ -f rednet.env ] || { echo "Copy rednet.env.example -> rednet.env and edit it first."; exit 1; }
+set -a; . ./rednet.env; set +a
+: "${REDNET_DOMAIN:?}"; : "${REDNET_HTTP_PORT:=8080}"; : "${REDNET_RETENTION_DAYS:=7}"; : "${REDNET_MEDIA_RETENTION_DAYS:=7}"
+ACCESS="http://localhost:${REDNET_HTTP_PORT}"   # LOCAL url for the self-check curls (single-host only)
+# Advertised PUBLIC base — MAS issuer/public_base + Synapse public_baseurl + the client well-known. MUST be the
+# real https://<domain> in a two-host/production deploy (OIDC issuer + cookie Secure flag); localhost in dev. R2.
+PUBLIC_BASE="${REDNET_PUBLIC_BASE:-$ACCESS}"
+case "$PUBLIC_BASE" in https://*) : ;; *) [ "${REDNET_ROLE:-single}" = core ] && echo "⚠️  REDNET_PUBLIC_BASE is not https:// — set REDNET_PUBLIC_BASE=https://<domain> for production (OIDC/cookie security)";; esac
+mkdir -p mas initdb caddy
+
+say "secrets (.env)"
+PGPW=""; [ -f .env ] && PGPW=$(grep -E '^POSTGRES_PASSWORD=' .env | head -1 | cut -d= -f2-)
+[ -z "$PGPW" ] && PGPW=$(genpw)
+cat > .env <<EOF
+POSTGRES_PASSWORD=${PGPW}
+REDNET_DOMAIN=${REDNET_DOMAIN}
+REDNET_HTTP_PORT=${REDNET_HTTP_PORT}
+EOF
+chmod 600 .env 2>/dev/null || true
+echo "POSTGRES_PASSWORD set; REDNET_DOMAIN=${REDNET_DOMAIN}"
+
+say "render MAS config (no-PII, delegated)"
+[ -f mas/config.yaml ] || docker run --rm $MASIMG config generate 2>/dev/null > mas/config.yaml
+# uv (dev machine) supplies an ephemeral pyyaml; on a clean deploy host fall back to system python3 +
+# the python3-yaml package (installed by the Ansible). Keeps dev behavior, removes the hard uv dependency.
+if command -v uv >/dev/null 2>&1; then PYRUN="uv run --quiet --with pyyaml python3"; else PYRUN="python3"; fi
+MAS_SECRET=$($PYRUN - "$REDNET_DOMAIN" "$PUBLIC_BASE" "$PGPW" <<'PY'
+import sys,yaml
+domain,access,pgpw=sys.argv[1],sys.argv[2],sys.argv[3]
+p="mas/config.yaml"; c=yaml.safe_load(open(p))
+c["database"]={"uri":f"postgresql://synapse:{pgpw}@postgres/mas"}
+c["http"]["public_base"]=access+"/"; c["http"]["issuer"]=access+"/"
+c["http"]["trusted_proxies"]=["172.16.0.0/12"]  # R2: only the docker network (where Caddy connects from), not the default over-broad range
+c["matrix"]["homeserver"]=domain; c["matrix"]["endpoint"]="http://synapse:8008/"
+acct=c.setdefault("account",{})
+acct["password_registration_enabled"]=True
+acct["password_registration_email_required"]=False  # no PII (SPEC §5)
+acct["password_registration_token_required"]=True    # ★ invite-token gate: closed, attributable entry (SPEC §5).
+# Organizers mint registration tokens via the MAS admin API / `mas-cli manage`; the append-only mint log is
+# the coercion canary (DESIGN §7/§11). Without this, anyone reaching the front can self-register.
+yaml.safe_dump(c,open(p,"w")); print(c["matrix"]["secret"])
+PY
+)
+[ -n "${MAS_SECRET:-}" ] || { echo "MAS config render failed"; exit 1; }
+# carries secrets.encryption + the DB password; read by the MAS container (uid 65532, non-root).
+if chown 65532:65532 mas/config.yaml 2>/dev/null; then chmod 600 mas/config.yaml; else chmod 644 mas/config.yaml; fi
+echo "CREATE DATABASE mas;" > initdb/init.sql
+cat > caddy/well-known-client.json <<EOF
+{"m.homeserver":{"base_url":"${PUBLIC_BASE}"}}
+EOF
+echo "MAS config rendered (shared secret ${MAS_SECRET:0:6}...)"
+
+say "start postgres (synapse + mas DBs)"
+docker compose up -d postgres
+until docker compose exec -T postgres pg_isready -U synapse >/dev/null 2>&1; do sleep 2; done
+echo "postgres ready"
+
+say "MAS: migrate + start"
+docker compose run --rm -T mas database migrate --config /config.yaml 2>&1 | tail -2 || true
+docker compose up -d mas
+
+say "Synapse: generate + HARDEN + delegate to MAS"
+docker compose run --rm -T synapse generate >/dev/null 2>&1
+DOMAIN="$REDNET_DOMAIN" PGPW="$PGPW" ACCESS="$PUBLIC_BASE" RET="$REDNET_RETENTION_DAYS" MRET="$REDNET_MEDIA_RETENTION_DAYS" MAS_SECRET="$MAS_SECRET" \
+docker compose run --rm -T -e DOMAIN -e PGPW -e ACCESS -e RET -e MRET -e MAS_SECRET --entrypoint python3 synapse - <<'PY'
+import yaml,os
+p="/data/homeserver.yaml"; c=yaml.safe_load(open(p))
+c["database"]={"name":"psycopg2","args":{"user":"synapse","password":os.environ["PGPW"],"database":"synapse","host":"postgres","cp_min":5,"cp_max":10}}
+c["report_stats"]=False; c["public_baseurl"]=os.environ["ACCESS"]+"/"; c["serve_server_wellknown"]=False
+# delegate auth to MAS (stable block; secret via file to avoid the inline-secret restriction)
+open("/data/mas_shared_secret","w").write(os.environ["MAS_SECRET"])
+c["matrix_authentication_service"]={"enabled":True,"endpoint":"http://mas:8080","secret_path":"/data/mas_shared_secret"}
+c["password_config"]={"enabled":False}
+c.pop("enable_registration",None); c.pop("registration_shared_secret",None)
+# --- HARDENING (SPEC §4) ---
+c["federation_domain_whitelist"]=[]
+c["trusted_key_servers"]=[]   # closed island — drop the default outbound matrix.org key-server dependency (R2)
+c["presence"]={"enabled":False}
+c["url_preview_enabled"]=False
+c["encryption_enabled_by_default_for_room_type"]="all"  # R2: force E2EE on EVERY new room incl. member-created — no accidental plaintext rooms
+# push hygiene: stock apps route through Element's gateway (a known metadata vector, ARCHITECTURE.md);
+# never hand message content to it. For E2EE rooms the body is ciphertext anyway — this is belt+braces.
+c["push"]={"include_content":False}
+RET=os.environ["RET"]; MRET=os.environ["MRET"]
+c["retention"]={"enabled":True,"default_policy":{"max_lifetime":f"{RET}d"},
+  "allowed_lifetime_min":"1h","allowed_lifetime_max":"30d",
+  "purge_jobs":[{"longest_max_lifetime":"1d","interval":"30m"},{"shortest_max_lifetime":"1d","interval":"12h"}]}
+c["media_retention"]={"local_media_lifetime":f"{MRET}d"}
+c["user_ips_max_age"]="1d"; c["redaction_retention_period"]="1d"
+c["rc_registration"]={"per_second":0.05,"burst_count":3}
+# Per-IP login throttle is now the FRONT's job (the core sees a placeholder IP — R2 privacy), so `address`
+# is effectively off here; per-ACCOUNT throttle + failed-attempt lockout (unaffected by the placeholder) is
+# the real brute-force defense, kept tight. Add per-IP rate-limiting at the front edge for credential-stuffing.
+c["rc_login"]={"address":{"per_second":1000,"burst_count":1000},"account":{"per_second":0.17,"burst_count":5},"failed_attempts":{"per_second":0.17,"burst_count":5}}
+c["rc_invites"]={"per_room":{"per_second":0.1,"burst_count":5},"per_user":{"per_second":0.1,"burst_count":5},"per_issuer":{"per_second":0.1,"burst_count":5}}  # SPEC §4 (R2)
+# auto-join the system rooms (created by bootstrap-rooms.sh)
+_d=os.environ['DOMAIN']  # land members inside the space + its starter channels
+c["auto_join_rooms"]=[f"#{a}:{_d}" for a in ("community","welcome","announcements","reference","general")]
+c["auto_join_mxid_localpart"]="rednet-system"
+c["autocreate_auto_join_rooms"]=False
+# close the federation port: keep only the client resource on the 8008 listener + trust the proxy
+for l in c.get("listeners",[]):
+    if l.get("port")==8008:
+        l["x_forwarded"]=True
+        for r in l.get("resources",[]):
+            if "names" in r: r["names"]=[n for n in r["names"] if n!="federation"]
+# metrics listener — CORE-internal only (NOT published to the host); Prometheus scrapes it over the
+# private docker network / WireGuard. enable_metrics gates Synapse's /_synapse/metrics exporter.
+c["enable_metrics"]=True
+if not any(l.get("type")=="metrics" for l in c.get("listeners",[])):
+    c["listeners"].append({"port":9000,"type":"metrics","bind_addresses":["0.0.0.0"]})
+# quiet per-request access logging — it records client IP + MXID + path (who-did-what-when). LOG-HYGIENE.md
+lcp=c.get("log_config")
+if lcp and os.path.exists(lcp):
+    lc=yaml.safe_load(open(lcp)); lc.setdefault("loggers",{})["synapse.access"]={"level":"WARN"}; yaml.safe_dump(lc,open(lcp,"w"))
+yaml.safe_dump(c,open(p,"w")); print("synapse hardened + delegating to MAS")
+PY
+
+ROLE="${REDNET_ROLE:-single}"   # single = dev/single-host (caddy on a host port) | core = two-host data plane
+if [ "$ROLE" = core ]; then
+  # R2 CRITICAL: the core must be DARK. setup.sh must NOT start caddy or publish any 0.0.0.0 host port here —
+  # the Ansible core play brings up the WG-bound stack (-f docker-compose.wg.yml); the front lives on its own box.
+  say "CORE mode: configs rendered + HARDENED; NO caddy / NO public host port started on the core"
+  echo "The Ansible core play brings up the WG-bound data plane. Self-check + ./bootstrap-rooms.sh run AGAINST THE"
+  echo "FRONT, post-front-deploy. Verify dark: from off-host, 'nc -vz <core_public_ip> 8008 8080' must FAIL."
+  exit 0
+fi
+say "start synapse + caddy (front)"
+docker compose up -d synapse caddy
+echo "waiting for the front..."
+for _ in $(seq 1 60); do curl -sf $ACCESS/_matrix/client/versions >/dev/null 2>&1 && break; sleep 2; done
+curl -sf $ACCESS/_matrix/client/versions >/dev/null 2>&1 || { echo "FRONT->SYNAPSE UNREACHABLE"; docker compose logs synapse caddy | tail -50; exit 1; }
+echo "Synapse reachable via the front"
+for _ in $(seq 1 30); do curl -sf $ACCESS/.well-known/openid-configuration >/dev/null 2>&1 && break; sleep 2; done
+curl -sf $ACCESS/.well-known/openid-configuration >/dev/null 2>&1 && echo "MAS reachable via the front" || { echo "FRONT->MAS UNREACHABLE"; docker compose logs mas caddy | tail -40; exit 1; }
+
+say "SELF-CHECK: no-PII account + MAS-delegated token accepted by Synapse through the front"
+docker compose exec -T mas mas-cli manage register-user rednetcheck --password "$(genpw)" --yes --ignore-password-complexity --config /config.yaml 2>&1 | tail -1
+TOK=$(docker compose exec -T mas mas-cli manage issue-compatibility-token rednetcheck CHECKDEV --config /config.yaml 2>&1 | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
+WHO=$(curl -s -H "Authorization: Bearer $TOK" $ACCESS/_matrix/client/v3/account/whoami | jqpy "d.get('user_id','')")
+echo "whoami via front -> ${WHO:-<failed>}"
+EMAILS=$(docker compose exec -T postgres psql -U synapse -d mas -tAc "SELECT count(*) FROM user_emails;" 2>/dev/null | tr -d '[:space:]')
+docker compose exec -T mas mas-cli manage lock-user rednetcheck --config /config.yaml >/dev/null 2>&1 || true
+
+say "VERDICT"
+PASS=1
+[ "$WHO" = "@rednetcheck:${REDNET_DOMAIN}" ] || { PASS=0; echo "FAIL: MAS delegation through the front not working"; }
+[ "${EMAILS:-1}" = "0" ] || { PASS=0; echo "FAIL: a PII email exists in MAS (${EMAILS})"; }
+grep -q 'password_registration_token_required: true' mas/config.yaml || { PASS=0; echo "FAIL: OPEN REGISTRATION — invite-token gate not set (SPEC §5); anyone reaching the front could self-register"; }
+# behavioral: drive a token-less registration through the front; it must create NO account (SPEC §5 gate).
+# MAS registration is multi-step + CSRF-protected; the token is enforced before account creation, so a
+# token-less attempt cannot complete. (Parallel to the no-PII email assertion above.)
+RJ=$(mktemp); RH=$(mktemp)
+curl -s -c "$RJ" "$ACCESS/register/password" -o "$RH" 2>/dev/null
+RCSRF=$(grep -ioE 'name="csrf"[^>]*value="[^"]*"' "$RH" 2>/dev/null | grep -ioE 'value="[^"]*"' | sed 's/value="//;s/"//' | head -1)
+curl -s -b "$RJ" -XPOST "$ACCESS/register/password" -o /dev/null 2>/dev/null \
+  -d "username=gatecheck&password=Gate-Check-Pw-42x&password_confirm=Gate-Check-Pw-42x&csrf=${RCSRF}"
+GATEREG=$(docker compose exec -T postgres psql -U synapse -d mas -tAc "SELECT count(*) FROM users WHERE username='gatecheck';" 2>/dev/null | tr -d '[:space:]')
+rm -f "$RJ" "$RH"
+[ "${GATEREG:-1}" = "0" ] || { PASS=0; echo "FAIL: token-less registration CREATED an account — the SPEC §5 invite-token gate is not enforced"; }
+# confirm hardening landed
+HARD=$(docker compose exec -T synapse python3 -c "import yaml;c=yaml.safe_load(open('/data/homeserver.yaml'));print('fed=%s presence=%s urlprev=%s push_content=%s metrics=%s ret=%s'%(c.get('federation_domain_whitelist'),c['presence']['enabled'],c.get('url_preview_enabled'),c.get('push',{}).get('include_content'),c.get('enable_metrics'),c['retention']['default_policy']['max_lifetime']))" 2>/dev/null)
+echo "hardening: $HARD"
+if [ "$PASS" = 1 ]; then
+  echo "PASS: hardened, MAS-delegated, two-tier stack is UP — no-PII account works through the front."
+  ./bootstrap-rooms.sh || echo "(room bootstrap had issues — see above)"
+fi
+echo; echo "Front: $ACCESS   ·   stop: docker compose down   ·   wipe: docker compose down -v"

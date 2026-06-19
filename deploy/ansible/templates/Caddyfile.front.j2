@@ -1,0 +1,58 @@
+# FRONT Caddyfile (rendered by Ansible). Same hardened reverse-proxy split as the dev Caddyfile, but every
+# upstream is the CORE reached over WireGuard ({{ wg_core_ip }}). The real domain => auto-TLS (ACME).
+
+# Forwarded-header policy (R2): the CORE must NOT see real client IPs (seized-core threat model). The front
+# forwards a CONSTANT placeholder (192.0.2.1 = RFC5737 TEST-NET) and strips client-supplied Forwarded/X-Real-IP.
+# Per-IP rate-limiting belongs at the FRONT edge (the real IP is unavoidable here); the core uses per-USER limits.
+(sanitize) {
+	header_up X-Forwarded-Proto https
+	header_up X-Forwarded-For 192.0.2.1
+	header_up X-Real-IP 192.0.2.1
+	header_up -Forwarded
+}
+
+{{ rednet_domain }} {
+	# defense in depth (R2): never let federation / server-key / metrics / admin reach the core (case-insensitive)
+	@blocked path_regexp (?i)^/(_matrix/(federation|key)|_synapse/(admin|metrics))(/.*)?$
+	handle @blocked {
+		respond "Forbidden" 403
+	}
+
+	@mas_compat path_regexp (?i)^/_matrix/client/[^/]+/(login|logout|refresh)(/.*)?$
+	handle @mas_compat {
+		reverse_proxy {{ wg_core_ip }}:8080 {
+			import sanitize
+		}
+	}
+
+	@mas path_regexp (?i)^/(account|login|register|reauth|add-email|verify-email|recover|change-password|consent|authorize|oauth2|assets|graphql|\.well-known/openid-configuration|\.well-known/oauth-authorization-server|\.well-known/change-password)(/.*)?$
+	handle @mas {
+		reverse_proxy {{ wg_core_ip }}:8080 {
+			import sanitize
+		}
+	}
+
+	handle /_matrix/* {
+		reverse_proxy {{ wg_core_ip }}:8008 {
+			import sanitize
+		}
+	}
+	handle /_synapse/* {
+		reverse_proxy {{ wg_core_ip }}:8008 {
+			import sanitize
+		}
+	}
+
+	handle /.well-known/matrix/client {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		respond `{"m.homeserver":{"base_url":"https://{{ rednet_domain }}"}}` 200
+	}
+
+	# Element Web (served from the CORE, proxied over WG)
+	handle {
+		reverse_proxy {{ wg_core_ip }}:8088 {
+			import sanitize
+		}
+	}
+}

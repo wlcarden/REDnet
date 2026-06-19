@@ -1,0 +1,143 @@
+name: rednet
+# Single-host deploy (dev / Pi / small). Production splits `caddy` (FRONT) onto a separate
+# disposable box reaching the CORE (synapse/mas/postgres) over WireGuard. Only the front
+# publishes a port.
+# Images are DIGEST-PINNED (supply-chain lock). Digests are multi-arch manifest lists, captured
+# 2026-06-16 from official registries. ⚠️ At deploy time, re-verify each digest against the project's
+# published release for that version before trusting it (PRODUCTION.md #2). Bump = re-pin + re-review.
+
+services:
+  postgres: # CORE
+    image: postgres@sha256:d845e7f0ac8517b9d9868b6d20379f9688ba3676595e50ca7c0b664964b2a760 # postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run ./setup.sh first}
+      POSTGRES_DB: synapse
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - rednet_postgres:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mas: # CORE — auth / no-PII accounts; Synapse delegates all auth here
+    image: ghcr.io/element-hq/matrix-authentication-service@sha256:fb25648b12e985d1192ea3dc7b6def38f97ca79bacba262daca5b82532e3a3dd # MAS 1.19.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["server", "--config", "/config.yaml"]
+    volumes:
+      - ./mas/config.yaml:/config.yaml:ro
+
+  synapse: # CORE — the homeserver (hardened config rendered into the volume by setup.sh)
+    image: ghcr.io/element-hq/synapse@sha256:da325af40104051923899e5f5a2f1d537e6e3ccf2f0f38285689ae9bbfdb190a # Synapse 1.155.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mas:
+        condition: service_started
+    environment:
+      SYNAPSE_SERVER_NAME: ${REDNET_DOMAIN:?}
+      SYNAPSE_REPORT_STATS: "no"
+    volumes:
+      - rednet_synapse:/data
+
+  caddy: # FRONT — the only public face; TLS + reverse-proxy split + serves Element Web
+    image: caddy@sha256:77c07d5ebfa5be9fd6c820d2094ae662c9e7eeb9bf98346b7f639900263ee2a2 # Caddy v2.11.4 (2-alpine)
+    restart: unless-stopped
+    depends_on:
+      - synapse
+      - mas
+    environment:
+      REDNET_DOMAIN: ${REDNET_DOMAIN:?}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/well-known-client.json:/srv/well-known/client:ro
+      - rednet_caddy:/data
+    ports:
+      - "${REDNET_HTTP_PORT:-8080}:8080"
+
+  element: # FRONT-served web client — the REDnet Element Web soft fork. Build: ./element-web/build.sh
+           # `web` profile keeps the heavy webpack image out of the default `up`. The front Caddy
+           # reverse-proxies / to this container (no public port of its own).
+    build:
+      context: ./element-web
+      args:
+        ELEMENT_VERSION: ${ELEMENT_VERSION:-v1.11.86}
+    profiles: ["web"]
+    restart: unless-stopped
+    depends_on:
+      - synapse
+
+  draupnir: # CORE — moderation bot. Started only after bootstrap-draupnir.sh renders its config
+            # (which holds the bot token). `profiles` keeps it out of the default `up`.
+    image: gnuxie/draupnir@sha256:73ec686da490a01e9cb6473ae186f73ab2bc399984f2979efa7c40152c2dbb2a # Draupnir v3.1.0
+    profiles: ["moderation"]
+    restart: unless-stopped
+    depends_on:
+      synapse:
+        condition: service_started
+    command: ["bot", "--draupnir-config", "/data/config/production.yaml"]  # `bot` triggers the launcher; flag sets config
+    volumes:
+      - rednet_draupnir:/data
+      - ./draupnir/config/production.yaml:/data/config/production.yaml:ro
+
+  # --- Monitoring (CORE, profile "monitoring"). Ports bind to 127.0.0.1 ONLY — never public.
+  # Production: bind to the WireGuard interface; operators reach Grafana over the tunnel. ---
+  prometheus: # scrapes Synapse's CORE-internal metrics listener + the backup heartbeat
+    image: prom/prometheus@sha256:a75c5a35bc21d7afe69551eefa3cb1e1fb1775fe759408007a66b54ec3de1f29 # prom/prometheus (latest @ 2026-06-16)
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - rednet_prometheus:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+
+  pushgateway: # backup.sh pushes its success-timestamp here for the heartbeat alert
+    image: prom/pushgateway@sha256:74fa117cef2d7e383112d25139ff1c2d2e309c35389a9e0554a47136a1482e48 # prom/pushgateway (latest @ 2026-06-16)
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9091:9091"
+
+  grafana:
+    image: grafana/grafana-oss@sha256:5dad0df181cb644a14e13617b913b261a54f7d4fd4510721dba420929f35bea2 # grafana-oss (latest @ 2026-06-16)
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/datasource.yml:/etc/grafana/provisioning/datasources/rednet.yml:ro
+      - rednet_grafana:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  alertmanager: # routes firing alerts OUT-OF-BAND (set the real channel in monitoring/alertmanager.yml)
+    image: prom/alertmanager@sha256:af26fbe4dd1886ac0efd7bd55cd9027da262e105b137a376522b7c14c3626e4a # prom/alertmanager (latest @ 2026-06-16)
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - rednet_alertmanager:/alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+
+volumes:
+  rednet_postgres:
+  rednet_synapse:
+  rednet_caddy:
+  rednet_draupnir:
+  rednet_prometheus:
+  rednet_grafana:
+  rednet_alertmanager:

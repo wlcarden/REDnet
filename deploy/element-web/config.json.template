@@ -1,0 +1,44 @@
+{
+  "_comment": "REDnet Element Web config. Rendered by build.sh from rednet.env. Locks the client to OUR homeserver, forces E2EE-by-default, and strips features that leak metadata or confuse non-technical users.",
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "__REDNET_PUBLIC_BASE__",
+      "server_name": "__REDNET_DOMAIN__"
+    }
+  },
+  "disable_custom_urls": true,
+  "disable_guests": true,
+  "disable_3pid_login": true,
+  "brand": "__REDNET_BRAND__",
+  "branding": { "auth_header_logo_url": "themes/element/img/logos/rednet.svg" },
+  "default_theme": "dark",
+  "show_labs_settings": false,
+  "room_directory": { "servers": [] },
+  "io.element.e2ee": {
+    "default": true,
+    "secure_backup_required": true,
+    "secure_backup_setup_methods": ["key"],
+    "force_disable": false
+  },
+  "setting_defaults": {
+    "UIFeature.urlPreviews": false,
+    "UIFeature.feedback": false,
+    "UIFeature.registration": false,
+    "UIFeature.passwordReset": false,
+    "UIFeature.deactivate": false,
+    "UIFeature.identityServer": false,
+    "UIFeature.thirdPartyId": false,
+    "UIFeature.shareSocial": false,
+    "UIFeature.locationSharing": false,
+    "UIFeature.widgets": false,
+    "e2ee.manuallyVerifyAllSessions": false
+  },
+  "features": { "feature_video_rooms": false },
+  "mobile_guide_toast": false,
+  "_comment_user_notice": "Tier-1 EXPOSURE BANNER (DESIGN §4: the in-UI label IS the exposure control). Element's built-in user_notice — zero fork. show_once:true = shown once per device (dismissed state stored in local storage). The exposure info is ALSO in #welcome's topic (persistent, always visible in that room) and #reference's topic — so the user can revisit it without the banner. Set show_once:false if a deployment needs the banner on every load.",
+  "user_notice": {
+    "title": "How private is this?",
+    "description": "Your messages are end-to-end encrypted — the __REDNET_BRAND__ server can't read them. But it can still see WHO you message and WHEN. Keep real names, locations, and plans out of here — use your secure (Tier-2) channel for those. Chat messages auto-delete after a few days; durable info lives in #reference.",
+    "show_once": true
+  }
+}

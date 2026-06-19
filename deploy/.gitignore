@@ -1,0 +1,46 @@
+# Secrets & rendered configs — NEVER commit
+rednet.env
+.env
+rednet.secrets
+mas/config.yaml
+
+# Element Web build context is COMMITTED (Dockerfile, template, src/, patch, build.sh, README);
+# only the rendered config (carries the deploy's domain) is generated.
+element-web/config.json
+
+# Local data
+data/
+
+# Backups — contain the MAS encryption key + full DB dumps. NEVER commit.
+backups/
+
+# Draupnir rendered config holds the bot access token. NEVER commit.
+draupnir/config/
+
+# Local restic repo (encrypted backup data). NEVER commit.
+restic-repo/
+
+# Ansible live inventory + group_vars hold real host IPs + WireGuard key material (R2). NEVER commit.
+# (the *.example.* files ARE committed.)
+ansible/inventory.ini
+ansible/group_vars/all.yml
+ansible/group_vars/vault.yml
+ansible/*.key
+ansible/*.pub
+
+# Vagrant VM state from the validation harness.
+ansible/validate/.vagrant/
+
+# KVM validation runtime (cloud image, overlays, seeds, SSH key) — never commit.
+ansible/validate/.kvm/
+
+# Onboarding module build artifacts (the src/ + package.json + build_config.yaml ARE committed).
+element-web/rednet-module/node_modules/
+element-web/rednet-module/lib/
+element-web/rednet-module/package-lock.json
+
+# E2E test artifacts (the spec + config ARE committed).
+element-web/e2e/node_modules/
+element-web/e2e/test-results/
+element-web/e2e/package-lock.json
+element-web/e2e/debug-*.png

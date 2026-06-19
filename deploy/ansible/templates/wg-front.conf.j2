@@ -1,0 +1,10 @@
+# /etc/wireguard/wg0.conf on the FRONT. Managed by Ansible.
+[Interface]
+Address = {{ wg_front_ip }}/24
+PrivateKey = {{ wg_front_private_key }}
+
+[Peer]
+PublicKey = {{ wg_core_public_key }}
+Endpoint = {{ wg_core_endpoint }}
+AllowedIPs = {{ wg_core_ip }}/32
+PersistentKeepalive = 25

@@ -1,0 +1,45 @@
+name: rednet-onboarding-mas
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: synapse
+      POSTGRES_DB: synapse
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  mas:
+    image: ghcr.io/element-hq/matrix-authentication-service:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["server", "--config", "/config.yaml"]
+    volumes:
+      - ./mas/config.yaml:/config.yaml:ro
+    ports:
+      - "8080:8080"
+
+  synapse:
+    image: ghcr.io/element-hq/synapse:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mas:
+        condition: service_started
+    environment:
+      SYNAPSE_SERVER_NAME: rednet.test
+      SYNAPSE_REPORT_STATS: "no"
+    volumes:
+      - synapse_data:/data
+    ports:
+      - "8008:8008"
+
+volumes:
+  synapse_data:

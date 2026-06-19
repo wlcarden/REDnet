@@ -1,0 +1,14 @@
+{
+  "device1_onboarding_session": {
+    "crossSigningVerified": true,
+    "privateKeysCachedLocally": true,
+    "wouldElementWebNag": false
+  },
+  "device2_fresh_handoff_login": {
+    "crossSigningVerified": false,
+    "privateKeysCachedLocally": false,
+    "secretStorageSetUpOnServer": true,
+    "keyBackupOnServer": "1",
+    "wouldElementWebNag": true
+  }
+}

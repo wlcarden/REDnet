@@ -1,0 +1,11 @@
+{
+  "account_created_by": "MAS (no-PII)",
+  "user_id": "@alice:rednet.test",
+  "crossSigning_publicKeysOnDevice": true,
+  "crossSigning_privateKeysInSecretStorage": true,
+  "keyBackup_onServer": "1",
+  "recoveryKey_generatedByApp": true,
+  "recoveryKey_shownToUser": false,
+  "errors": [],
+  "PASS": true
+}

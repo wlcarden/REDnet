@@ -1,0 +1,53 @@
+{
+  "_about": "Deterministic Phase-2 crypto vectors. The TS/WebCrypto port + native moderator tool MUST reproduce these byte-for-byte. All hex. See README.md.",
+  "curve": "P-256 (secp256r1)",
+  "ecdh": {
+    "recipient_priv_raw": "00112233445566778899aabbccddeeff00112233445566778899aabbccddee01",
+    "recipient_pub_uncompressed": "04e184ae8152166cbf2ed1a6647627d0d3e6d2c806e79e383865e67ac14273ce8e5f2549640fd707f6347253a2e0959d572ee8298dc1cf1f90130fc3097fe8fb7c",
+    "ephemeral_priv_raw": "00fedcba9876543210fedcba9876543210fedcba9876543210fedcba98765432",
+    "ephemeral_pub_uncompressed": "04a17d7a9c3692db94349d4c47e2eadff7336c26ff3d17cd3cb489aed9e35ba8bea19710b054f03944ad23c71a648fb96920f9bb1494ed74b5232f215a88ec2afa",
+    "shared_secret_x": "43ca9dbf9ca8eb907f8a9c926ae50a7cc4ca5ce87e79afd90b6fad1225744c27"
+  },
+  "hkdf_sha256": {
+    "ikm": "43ca9dbf9ca8eb907f8a9c926ae50a7cc4ca5ce87e79afd90b6fad1225744c27",
+    "salt": "",
+    "info": "7265646e65742d6563696573",
+    "length": 32,
+    "out": "6a43998343045402c8bb14ddcdc23dac7ea148525e4c08b10b1c10282c50d1b2"
+  },
+  "aes_256_gcm": {
+    "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "nonce": "000102030405060708090a0b",
+    "plaintext": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+    "aad": "7265646e65742d7631",
+    "ciphertext_with_tag": "4713f42881b0a46c05d83d307d34969283c7a507b42e390bb0fe4f3ed1b4ee4dfd92fb5e2701762e86d8e3edd55230cf"
+  },
+  "scrypt": {
+    "passphrase": "correct horse battery staple",
+    "salt": "000102030405060708090a0b0c0d0e0f",
+    "n": 16384,
+    "r": 8,
+    "p": 1,
+    "length": 32,
+    "out": "d7590aca2c9801cf06eeba772a69dc31ce3862591d96522ac4e6bba6ad1f31a5"
+  },
+  "ecies_seal": {
+    "construction": "blob = ephemeral_pub_uncompressed(65) || nonce(12) || AES-256-GCM(key=HKDF-SHA256(ECDH(eph_priv, recip_pub), info='rednet-ecies'), nonce, plaintext, aad=escrow_aad)",
+    "recipient_pub_uncompressed": "04e184ae8152166cbf2ed1a6647627d0d3e6d2c806e79e383865e67ac14273ce8e5f2549640fd707f6347253a2e0959d572ee8298dc1cf1f90130fc3097fe8fb7c",
+    "ephemeral_priv_raw": "00fedcba9876543210fedcba9876543210fedcba9876543210fedcba98765432",
+    "nonce": "0102030405060708090a0b0c",
+    "plaintext": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+    "aad": "7b226469725f76657273696f6e223a312c226d223a332c226d656d626572223a2240616c6963653a7265646e65742e74657374222c226d6f6465223a226d6f64657261746f72735f6f6e6c79222c226e223a357d",
+    "aad_json": "{\"dir_version\":1,\"m\":3,\"member\":\"@alice:rednet.test\",\"mode\":\"moderators_only\",\"n\":5}",
+    "blob": "04a17d7a9c3692db94349d4c47e2eadff7336c26ff3d17cd3cb489aed9e35ba8bea19710b054f03944ad23c71a648fb96920f9bb1494ed74b5232f215a88ec2afa0102030405060708090a0b0c092aa3a51db50e3560e80840031e9d65127c34f705e3f4a0755d09aaecc77bc2f610e42f37d10ea186d2b7d84b5b666c"
+  },
+  "ecies_unseal_reject": {
+    "_about": "Negative vectors \u2014 unseal MUST reject these (invalid-curve attack defense, RECOVERY.md \u00a712 item 4). A port that accepts any of these is vulnerable to static-key extraction.",
+    "offcurve_blob": "04a17d7a9c3692db94349d4c47e2eadff7336c26ff3d17cd3cb489aed9e35ba8bea19710b054f03944ad23c71a648fb96920f9bb1494ed74b5232f215a88ec2afb0102030405060708090a0b0c85ac111cca7bb7d372f838761058e9069feb994fe8d94d3ef25e13d13705ea4ecb196e62",
+    "offcurve_description": "Valid ephemeral pub with y-coordinate flipped by 1 bit in the low byte \u2014 off-curve. ECDH with this point leaks bits of the static key.",
+    "identity_point": "0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "identity_description": "The (0,0) 'point' \u2014 not on P-256. Accepting it as a public key is a degenerate-input bug.",
+    "low_order_point": "040000000000000000000000000000000000000000000000000000000000000000ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+    "low_order_description": "x=0, y=p (the field prime) \u2014 encodes as (0,0) mod p, also not on curve."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "rednet-onboarding-proto",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PWA milestone A: prove silent E2EE bootstrap (no visible recovery key) via matrix-js-sdk",
+  "dependencies": {
+    "matrix-js-sdk": "latest"
+  }
+}

@@ -1,0 +1,21 @@
+# Copy to group_vars/all.yml and fill in. Keep PRIVATE keys in an Ansible Vault, never here.
+rednet_domain: rednet.example
+
+# WireGuard overlay (private). CORE is .1; fronts are .2, .3, ...
+wg_subnet: "10.13.13.0/24"
+wg_core_ip: "10.13.13.1"
+wg_front_ip: "10.13.13.2"
+wg_listen_port: 51820
+
+# The CORE's real public endpoint that the FRONT dials. This WG port is the ONLY inbound the CORE
+# firewall permits — everything else about the core is dark.
+wg_core_endpoint: "203.0.113.10:51820"
+
+# --- Keys: generate with `wg genkey | tee privkey | wg pubkey > pubkey`, store privates in vault ---
+# wg_core_private_key:  "{{ vault_wg_core_private_key }}"
+wg_core_public_key: "PUT_CORE_PUBKEY_HERE"
+# wg_front_private_key: "{{ vault_wg_front_private_key }}"
+wg_front_public_key: "PUT_FRONT_PUBKEY_HERE"
+
+# Ports the CORE publishes ON THE WIREGUARD INTERFACE ONLY (never 0.0.0.0):
+#   8008 Synapse C-S · 8080 MAS · 8088 Element Web · 9091 Pushgateway (front heartbeat target)
