@@ -39,18 +39,7 @@ export default function RednetRecoveryKeyDialog({
           offline. No one, not even the server operators, can recover it for
           you.
         </p>
-        <pre
-          style={{
-            userSelect: "all",
-            padding: "12px",
-            borderRadius: "8px",
-            background: "rgba(0,0,0,0.2)",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}
-        >
-          {value}
-        </pre>
+        <pre className="rednet-passphrase">{value}</pre>
         <DialogButtons
           primaryButton="I've saved it"
           onPrimaryButtonClick={() => onFinished()}
@@ -72,7 +61,7 @@ export default function RednetRecoveryKeyDialog({
       {error && (
         <p
           style={{
-            color: "var(--cpd-color-text-critical-primary, #ff5b55)",
+            color: "var(--cpd-color-text-critical-primary, #FF6369)",
             margin: "0 0 12px",
           }}
         >

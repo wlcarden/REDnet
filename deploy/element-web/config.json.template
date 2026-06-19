@@ -11,7 +11,7 @@
   "disable_3pid_login": true,
   "brand": "__REDNET_BRAND__",
   "branding": { "auth_header_logo_url": "themes/element/img/logos/rednet.svg" },
-  "default_theme": "dark",
+  "default_theme": "custom-REDnet Dark",
   "show_labs_settings": false,
   "room_directory": { "servers": [] },
   "io.element.e2ee": {
@@ -21,6 +21,28 @@
     "force_disable": false
   },
   "setting_defaults": {
+    "custom_themes": [
+      {
+        "name": "REDnet Dark",
+        "is_dark": true,
+        "colors": {
+          "accent-color": "#E5484D",
+          "primary-color": "#E5484D",
+          "warning-color": "#FF6369",
+          "sidebar-color": "#111316",
+          "roomlist-background-color": "#16181B",
+          "roomlist-text-color": "#ECEDEE",
+          "roomlist-text-secondary-color": "#8B8D98",
+          "roomlist-highlights-color": "#1C1F23",
+          "roomlist-separator-color": "rgba(255,255,255,0.06)",
+          "timeline-background-color": "#16181B",
+          "timeline-text-color": "#ECEDEE",
+          "timeline-text-secondary-color": "#8B8D98",
+          "timeline-highlights-color": "#1C1F23",
+          "reaction-row-button-selected-bg-color": "rgba(229,72,77,0.15)"
+        }
+      }
+    ],
     "UIFeature.urlPreviews": false,
     "UIFeature.feedback": false,
     "UIFeature.registration": false,

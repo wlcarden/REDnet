@@ -41,7 +41,9 @@ COPY config.json ./webapp/config.json
 # REDnet brand logo — config branding.auth_header_logo_url points here. Replace branding/ to white-label.
 COPY branding/rednet-logo.svg ./webapp/themes/element/img/logos/rednet.svg
 COPY branding/favicon.svg ./webapp/vector-icons/favicon.svg
-RUN sed -i 's|<link rel="shortcut icon" href="vector-icons/favicon\.[^"]*\.ico">|<link rel="icon" href="vector-icons/favicon.svg" type="image/svg+xml">|' webapp/index.html
+COPY branding/rednet-overrides.css ./webapp/rednet-overrides.css
+RUN sed -i 's|<link rel="shortcut icon" href="vector-icons/favicon\.[^"]*\.ico">|<link rel="icon" href="vector-icons/favicon.svg" type="image/svg+xml">|' webapp/index.html \
+ && sed -i 's|</head>|<link rel="stylesheet" href="rednet-overrides.css">\n</head>|' webapp/index.html
 
 # R2: a SILENT integration.patch miss ships STOCK onboarding — a recovery-capability regression (Security
 # Key, not the passphrase; breaks N=1 / new-device recovery), yet the build still exits 0. Make it

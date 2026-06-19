@@ -150,16 +150,17 @@ The full 9-scenario compromise map is in [DESIGN.md §9](DESIGN.md).
 
 ## Documentation
 
-| Document                                 | Purpose                                                             |
-| ---------------------------------------- | ------------------------------------------------------------------- |
-| [DESIGN.md](DESIGN.md)                   | Why: threat model, tier doctrine, design decisions                  |
-| [ARCHITECTURE.md](ARCHITECTURE.md)       | How: runtime wiring, E2EE mechanics, traced lifecycles              |
-| [SPEC.md](SPEC.md)                       | What to build: components, versions, hardened config                |
-| [RECOVERY.md](RECOVERY.md)               | Phase-2 escrow design: Shamir + ECIES construction                  |
-| [PRODUCTION.md](PRODUCTION.md)           | Gap list between verified-in-sandbox and real deployment            |
-| [SAFETY.md](SAFETY.md)                   | Plain-language guide for end users (no technical background needed) |
-| [SECURITY-REVIEW.md](SECURITY-REVIEW.md) | AI-assisted security review findings + remediation status           |
-| [deploy/](deploy/)                       | The runnable deployment stack                                       |
+| Document                                 | Purpose                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| [DESIGN.md](DESIGN.md)                   | Why: threat model, tier doctrine, design decisions                   |
+| [ARCHITECTURE.md](ARCHITECTURE.md)       | How: runtime wiring, E2EE mechanics, traced lifecycles               |
+| [SPEC.md](SPEC.md)                       | What to build: components, versions, hardened config                 |
+| [RECOVERY.md](RECOVERY.md)               | Phase-2 escrow design: Shamir + ECIES construction                   |
+| [PRODUCTION.md](PRODUCTION.md)           | Gap list between verified-in-sandbox and real deployment             |
+| [SAFETY.md](SAFETY.md)                   | Plain-language guide for end users (no technical background needed)  |
+| [SECURITY-REVIEW.md](SECURITY-REVIEW.md) | AI-assisted security review findings + remediation status            |
+| [BRAND.md](BRAND.md)                     | Visual identity: color palette, typography, voice, design principles |
+| [deploy/](deploy/)                       | The runnable deployment stack                                        |
 
 ### Spike validation
 

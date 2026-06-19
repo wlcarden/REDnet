@@ -1,0 +1,151 @@
+/*
+ * REDnet brand overrides. Injected at build time (Dockerfile) on top of the
+ * custom theme defined in config.json. Targets surfaces the theme system
+ * can't reach: auth pages, buttons, dialogs, passphrase display.
+ *
+ * Color tokens (from BRAND.md):
+ *   Red:     #E5484D   Red-dim:  rgba(229,72,77,0.15)
+ *   Base:    #111316   Ground:   #16181B
+ *   Card:    #1C1F23   Raised:   #23262B
+ *   Text:    #ECEDEE   Muted:    #8B8D98   Subtle: #62646C
+ *   Secure:  #30A46C   Caution:  #E5A536   Critical: #FF6369
+ */
+
+:root {
+  --cpd-color-bg-action-primary-rest: #e5484d;
+  --cpd-color-bg-action-primary-hovered: #dc3d43;
+  --cpd-color-bg-action-primary-pressed: #ce2c31;
+  --cpd-color-text-action-accent: #e5484d;
+  --cpd-color-icon-accent-tertiary: #e5484d;
+  --cpd-color-text-link-external: #e5484d;
+}
+
+/* Auth/login page */
+.mx_AuthPage {
+  background: #111316 !important;
+}
+
+.mx_AuthPage_modal {
+  background: #16181b !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.mx_AuthPage .mx_AuthBody {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Primary buttons */
+.mx_AccessibleButton.mx_AccessibleButton_kind_primary,
+.mx_Dialog_primary {
+  background-color: #e5484d !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+  transition: background-color 120ms ease !important;
+}
+
+.mx_AccessibleButton.mx_AccessibleButton_kind_primary:hover,
+.mx_Dialog_primary:hover {
+  background-color: #dc3d43 !important;
+}
+
+.mx_AccessibleButton.mx_AccessibleButton_kind_primary:active,
+.mx_Dialog_primary:active {
+  background-color: #ce2c31 !important;
+}
+
+/* Dialogs */
+.mx_Dialog {
+  background: #1c1f23 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+}
+
+.mx_Dialog_title {
+  font-weight: 600 !important;
+  letter-spacing: -0.3px !important;
+}
+
+/* Left panel / room list */
+.mx_LeftPanel {
+  background: #111316 !important;
+}
+
+.mx_SpacePanel {
+  background: #111316 !important;
+}
+
+/* Room header */
+.mx_RoomHeader {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Message composer */
+.mx_MessageComposer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Input fields */
+.mx_Field input,
+.mx_Field textarea {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  color: #ecedee !important;
+  transition: border-color 120ms ease !important;
+}
+
+.mx_Field input:focus,
+.mx_Field textarea:focus {
+  border-color: rgba(229, 72, 77, 0.5) !important;
+}
+
+/* User notice / exposure banner */
+.mx_UserNotice {
+  border-left: 3px solid #e5484d !important;
+  background: #1c1f23 !important;
+  border-radius: 0 10px 10px 0 !important;
+}
+
+/* Encryption shield icon overrides */
+.mx_E2EIcon_verified {
+  color: #30a46c !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* REDnet recovery dialog (complements RednetRecoveryKeyDialog.tsx) */
+.mx_Dialog .rednet-passphrase {
+  user-select: all;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  font-family:
+    "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", monospace;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #ecedee;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
