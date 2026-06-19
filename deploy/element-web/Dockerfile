@@ -42,6 +42,7 @@ COPY config.json ./webapp/config.json
 COPY branding/rednet-logo.svg ./webapp/themes/element/img/logos/rednet.svg
 COPY branding/favicon.svg ./webapp/vector-icons/favicon.svg
 COPY branding/rednet-overrides.css ./webapp/rednet-overrides.css
+COPY branding/join.html ./webapp/join.html
 RUN sed -i 's|<link rel="shortcut icon" href="vector-icons/favicon\.[^"]*\.ico">|<link rel="icon" href="vector-icons/favicon.svg" type="image/svg+xml">|' webapp/index.html \
  && sed -i 's|</head>|<link rel="stylesheet" href="rednet-overrides.css">\n</head>|' webapp/index.html
 
@@ -62,5 +63,5 @@ RUN if grep -rqlF 'Save your recovery passphrase' webapp/ 2>/dev/null; then \
 # caddy:2-alpine v2.11.4
 FROM caddy@sha256:77c07d5ebfa5be9fd6c820d2094ae662c9e7eeb9bf98346b7f639900263ee2a2 AS serve
 COPY --from=build /src/webapp /srv/element
-RUN printf ':80 {\n\troot * /srv/element\n\ttry_files {path} /index.html\n\tfile_server\n}\n' > /etc/caddy/Caddyfile
+RUN printf ':80 {\n\troot * /srv/element\n\t@join path /join /join/\n\trewrite @join /join.html\n\ttry_files {path} /index.html\n\tfile_server\n}\n' > /etc/caddy/Caddyfile
 EXPOSE 80

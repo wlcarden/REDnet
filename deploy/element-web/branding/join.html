@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Join</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111316; color: #ECEDEE; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    max-width: 400px; width: 100%; background: #16181B;
+    border-radius: 16px; padding: 32px 28px;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .logo { text-align: center; margin-bottom: 24px; }
+  .logo svg { width: 160px; height: auto; }
+  h1 {
+    font-size: 20px; font-weight: 600; letter-spacing: -0.3px;
+    text-align: center; margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 13px; color: #8B8D98; text-align: center;
+    line-height: 1.5; margin-bottom: 24px;
+  }
+  .token-box {
+    background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px;
+  }
+  .token-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #62646C; margin-bottom: 8px;
+  }
+  .token-value {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 15px; letter-spacing: 0.5px; word-break: break-all;
+    user-select: all; cursor: text;
+  }
+  .copy-btn {
+    display: inline-block; margin-top: 8px; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; color: #E5484D;
+    background: rgba(229,72,77,0.1); border: 1px solid rgba(229,72,77,0.2);
+    border-radius: 6px; cursor: pointer; transition: background 120ms;
+  }
+  .copy-btn:hover { background: rgba(229,72,77,0.2); }
+  .steps {
+    list-style: none; counter-reset: step; margin-bottom: 24px;
+  }
+  .steps li {
+    counter-increment: step; font-size: 13px; color: #8B8D98;
+    line-height: 1.5; padding: 6px 0 6px 32px; position: relative;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(229,72,77,0.15); color: #E5484D;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .platform-buttons { display: flex; flex-direction: column; gap: 8px; }
+  .btn {
+    display: block; text-align: center; text-decoration: none;
+    padding: 12px 16px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; letter-spacing: 0.2px; transition: background 120ms;
+  }
+  .btn-primary { background: #E5484D; color: #fff; }
+  .btn-primary:hover { background: #DC3D43; }
+  .btn-secondary {
+    background: #23262B; color: #ECEDEE;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .btn-secondary:hover { background: #2A2D33; }
+  .btn-icon {
+    display: inline-block; width: 18px; height: 18px;
+    vertical-align: middle; margin-right: 6px;
+  }
+  .exposure {
+    margin-top: 20px; padding: 12px 14px;
+    background: #1C1F23; border-radius: 0 8px 8px 0;
+    border-left: 3px solid #E5484D; font-size: 11px;
+    color: #8B8D98; line-height: 1.5;
+  }
+  .exposure strong { color: #ECEDEE; font-weight: 600; }
+  .no-token {
+    text-align: center; padding: 40px 20px;
+    font-size: 14px; color: #8B8D98;
+  }
+  #web-section, #mobile-section { display: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg viewBox="0 0 252 64" role="img" aria-label="REDnet">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z"
+        fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/>
+        <circle cx="48" cy="23" r="3.2"/><circle cx="48" cy="41" r="3.2"/>
+        <circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/>
+        <circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, sans-serif" font-size="30"
+        font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <div id="no-token" class="no-token">
+    <p>No invite token found. Ask an organizer for a link or QR card.</p>
+  </div>
+
+  <div id="has-token" style="display:none;">
+    <h1 id="heading">Join the community</h1>
+    <p class="subtitle">You've been invited. Set up takes about two minutes.</p>
+
+    <div class="token-box">
+      <div class="token-label">Your invite token</div>
+      <div class="token-value" id="token-display"></div>
+      <span class="copy-btn" id="copy-btn" role="button" tabindex="0">Copy</span>
+    </div>
+
+    <div id="web-section">
+      <ol class="steps">
+        <li>Click "Open REDnet" below</li>
+        <li>Click "Create Account," paste your token when asked</li>
+        <li>Pick a username (no real name needed) and a password</li>
+        <li>Save the recovery passphrase you're shown. Write it down</li>
+      </ol>
+      <div class="platform-buttons">
+        <a id="web-link" class="btn btn-primary" href="/">Open REDnet</a>
+        <span class="btn btn-secondary" id="show-mobile" role="button" tabindex="0"
+          style="cursor:pointer;">I'm on a phone</span>
+      </div>
+    </div>
+
+    <div id="mobile-section">
+      <ol class="steps">
+        <li>Install Element X from your app store</li>
+        <li>Open it, tap "Create Account," enter the server URL shown below</li>
+        <li>Paste your invite token when asked</li>
+        <li>Pick a username (no real name needed) and save the recovery passphrase</li>
+      </ol>
+      <div class="token-box">
+        <div class="token-label">Server address</div>
+        <div class="token-value" id="server-display"></div>
+        <span class="copy-btn" id="copy-server-btn" role="button" tabindex="0">Copy</span>
+      </div>
+      <div class="platform-buttons">
+        <a class="btn btn-primary"
+          href="https://apps.apple.com/app/element-x-secure-messenger/id6448614740"
+          target="_blank" rel="noopener">
+          App Store (iPhone)
+        </a>
+        <a class="btn btn-secondary"
+          href="https://play.google.com/store/apps/details?id=io.element.android.x"
+          target="_blank" rel="noopener">
+          Play Store (Android)
+        </a>
+        <span class="btn btn-secondary" id="show-web" role="button" tabindex="0"
+          style="cursor:pointer;">I'm on a computer</span>
+      </div>
+    </div>
+
+    <div class="exposure">
+      <strong>How private is this?</strong> Your messages are end-to-end encrypted.
+      The server can see who you message and when, but not what you say.
+      Keep real names and locations out of here.
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var token = location.hash.replace(/^#/, '').trim();
+  if (!token) return;
+
+  document.getElementById('no-token').style.display = 'none';
+  document.getElementById('has-token').style.display = 'block';
+  document.getElementById('token-display').textContent = token;
+  document.getElementById('server-display').textContent = location.hostname;
+
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  document.getElementById(isMobile ? 'mobile-section' : 'web-section').style.display = 'block';
+
+  document.getElementById('show-mobile').addEventListener('click', function() {
+    document.getElementById('web-section').style.display = 'none';
+    document.getElementById('mobile-section').style.display = 'block';
+  });
+  document.getElementById('show-web').addEventListener('click', function() {
+    document.getElementById('mobile-section').style.display = 'none';
+    document.getElementById('web-section').style.display = 'block';
+  });
+
+  function copyText(text, btn) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        btn.textContent = 'Copied';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = 'Copied';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+    }
+  }
+
+  document.getElementById('copy-btn').addEventListener('click', function() {
+    copyText(token, this);
+  });
+  document.getElementById('copy-server-btn').addEventListener('click', function() {
+    copyText(location.hostname, this);
+  });
+})();
+</script>
+</body>
+</html>

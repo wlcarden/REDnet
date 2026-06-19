@@ -46,10 +46,22 @@ docker compose exec mas mas-cli manage issue-user-registration-token --config /c
 # options: --usage-limit N  ·  --unlimited  ·  --expires-in <seconds>  ·  --token <specific-string>
 ```
 
-Give that token to the invitee; they register with it at the front. _Note:_ DESIGN's polished
-"single-use token in a QR card" onboarding is **not yet built**. Today a token + the standard MAS
-registration page is the flow. Admin/system accounts are created out-of-band with `mas-cli manage
-register-user` (admin path, bypasses the token gate).
+Give that token to the invitee. They can register via the MAS registration page at the front, or use
+the **QR invite flow**:
+
+```bash
+./generate-invite.sh                  # mint a token + generate a printable QR card
+./generate-invite.sh --batch 5        # mint 5 tokens + 5 cards
+./generate-invite.sh --token TOKEN    # card for an already-minted token
+```
+
+The script produces a branded HTML card in `invites/` (one per token). Open it in a browser and print.
+The QR encodes `https://DOMAIN/join#TOKEN`, which loads a branded landing page with platform detection
+(desktop vs. mobile), the token for copy-paste, and step-by-step instructions. The landing page is
+served by the Element container at `/join`.
+
+Admin/system accounts are created out-of-band with `mas-cli manage register-user` (admin path,
+bypasses the token gate).
 
 ## Build checklist
 

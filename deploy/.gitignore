@@ -39,6 +39,9 @@ element-web/rednet-module/node_modules/
 element-web/rednet-module/lib/
 element-web/rednet-module/package-lock.json
 
+# Generated invite cards (contain single-use tokens). NEVER commit.
+invites/
+
 # E2E test artifacts (the spec + config ARE committed).
 element-web/e2e/node_modules/
 element-web/e2e/test-results/

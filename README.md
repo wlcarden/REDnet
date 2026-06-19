@@ -130,7 +130,7 @@ On a returning device, the module prompts for the passphrase and recovers identi
 
 ### Not yet built
 
-- Polished QR-card onboarding flow (today: token + standard MAS registration form)
+- QR-card printing and batch invite workflow (generate-invite.sh + /join landing page built; needs live-stack validation)
 - Phase-2 recovery (governance-gated escrow). Crypto layer done, UX/lifecycle not built.
 - Group calls (deferred Tier-1 module; [DESIGN.md §8](DESIGN.md))
 - matrix-viewer public preview
