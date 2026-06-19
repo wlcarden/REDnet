@@ -3,15 +3,17 @@
 # in #vouch-log + vouch.jsonl, and produce a printable QR card.
 #
 # Usage:
-#   ./mint-invite.sh --voucher @alice --label "Maria, Tuesday group"
-#   ./mint-invite.sh --voucher @alice --label "workshop batch" --batch 5
-#   ./mint-invite.sh --voucher @alice --label "existing" --token TOKEN
-#   ./mint-invite.sh --voucher @alice --label "ops recruit" --compartment ops-team
+#   ./mint-invite.sh --label "Maria, Tuesday group"
+#   ./mint-invite.sh --label "workshop batch" --batch 5
+#   ./mint-invite.sh --label "existing" --token TOKEN
+#   ./mint-invite.sh --label "ops recruit" --compartment ops-team
+#   ./mint-invite.sh --label "for Bob's contact" --voucher @bob   # override: Bob is vouching
 #
-# Every invite is attributed: who minted it, who it's for, and when. The vouch is
-# recorded as an org.rednet.vouch event in #vouch-log (append-only, E2EE) and
-# indexed locally in vouch.jsonl. This is the coercion canary from DESIGN.md §11:
-# a burst of mints by one organizer is a visible anomaly.
+# The voucher defaults to REDNET_OPERATOR (set in rednet.env or your shell). Every
+# invite is attributed: who minted it, who it's for, and when. The vouch is recorded
+# as an org.rednet.vouch event in #vouch-log (append-only, E2EE) and indexed locally
+# in vouch.jsonl. This is the coercion canary from DESIGN.md §11: a burst of mints
+# by one organizer is a visible anomaly.
 #
 # Requires: jq, qrencode, stack running, #vouch-log room exists (bootstrap-governance.sh).
 set -uo pipefail
@@ -178,7 +180,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ -n "$VOUCHER" ] || { echo "ERR: --voucher is required (who is vouching for this person?)" >&2; exit 1; }
+if [ -z "$VOUCHER" ]; then
+  VOUCHER="${REDNET_OPERATOR:-}"
+fi
+[ -n "$VOUCHER" ] || { echo "ERR: no voucher identity. Set REDNET_OPERATOR in rednet.env or pass --voucher." >&2; exit 1; }
 [ -n "$LABEL" ]   || { echo "ERR: --label is required (who is this invite for?)" >&2; exit 1; }
 
 SYS_TOK=$(mas issue-compatibility-token rednet-system MINTSYS | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)

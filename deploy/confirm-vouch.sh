@@ -4,8 +4,9 @@
 # #welcome so members can see who vouched for the newcomer.
 #
 # Usage:
-#   ./confirm-vouch.sh @username --voucher @alice
-#   ./confirm-vouch.sh @username --voucher @alice --label "Maria, Tuesday group"
+#   ./confirm-vouch.sh @username
+#   ./confirm-vouch.sh @username --label "Maria, Tuesday group"
+#   ./confirm-vouch.sh @username --voucher @alice    # override: Alice vouched, not you
 #
 # The operator who minted the invite confirms the person arrived. If --label matches
 # an existing vouch.jsonl entry, the confirmation links to that record. Otherwise it
@@ -42,7 +43,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ -n "$VOUCHER" ] || { echo "ERR: --voucher is required" >&2; exit 1; }
+if [ -z "$VOUCHER" ]; then
+  VOUCHER="${REDNET_OPERATOR:-}"
+fi
+[ -n "$VOUCHER" ] || { echo "ERR: no voucher identity. Set REDNET_OPERATOR in rednet.env or pass --voucher." >&2; exit 1; }
 
 SYS_TOK=$(mas issue-compatibility-token rednet-system CLAIMSYS | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 [ -n "${SYS_TOK:-}" ] || { echo "ERR: no system token" >&2; exit 1; }

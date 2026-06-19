@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REDnet Governance</title>
+<style>
+  :root {
+    --bg: #111316;
+    --surface: #16181B;
+    --surface-hover: #1C1F23;
+    --border: rgba(255,255,255,0.06);
+    --text: #ECEDEE;
+    --text-muted: #8B8D98;
+    --text-dim: #62646C;
+    --red: #E5484D;
+    --red-dim: rgba(229,72,77,0.15);
+    --amber: #E5A536;
+    --amber-dim: rgba(229,165,54,0.15);
+    --green: #46A758;
+    --green-dim: rgba(70,167,88,0.15);
+    --blue: #3E93DE;
+    --blue-dim: rgba(62,147,222,0.15);
+    --radius: 8px;
+    --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  .widget-root { padding: 12px 16px; min-height: 100vh; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-brand {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header-brand .r { color: var(--red); }
+  .header-brand .g { color: var(--text-muted); }
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 3px;
+  }
+  .tab {
+    flex: 1;
+    padding: 7px 12px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: none;
+    background: none;
+  }
+  .tab:hover { color: var(--text); background: var(--surface-hover); }
+  .tab.active { color: var(--text); background: var(--bg); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+  }
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    margin-top: 16px;
+  }
+
+  .activity-list { list-style: none; }
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    transition: background 0.1s;
+  }
+  .activity-item:hover { background: var(--surface); }
+  .activity-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .activity-icon.mint { background: var(--green-dim); color: var(--green); }
+  .activity-icon.claim { background: var(--blue-dim); color: var(--blue); }
+  .activity-icon.revoke { background: var(--red-dim); color: var(--red); }
+  .activity-icon.role { background: var(--amber-dim); color: var(--amber); }
+  .activity-icon.compartment { background: var(--blue-dim); color: var(--blue); }
+  .activity-body { flex: 1; min-width: 0; }
+  .activity-text { font-size: 13px; }
+  .activity-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+  .user-tag {
+    font-weight: 600;
+    color: var(--blue);
+  }
+
+  .search-box {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-box:focus { border-color: var(--red); }
+  .search-box::placeholder { color: var(--text-dim); }
+
+  .vouch-chain {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 12px;
+  }
+  .chain-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+  }
+  .chain-connector {
+    width: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-dim);
+  }
+  .chain-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+  .chain-line {
+    width: 2px;
+    height: 20px;
+    background: var(--border);
+  }
+  .chain-name { font-weight: 600; }
+  .chain-label { color: var(--text-muted); font-size: 12px; }
+  .chain-date { color: var(--text-dim); font-size: 11px; font-family: var(--mono); }
+
+  .tree-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .tree-root { list-style: none; }
+  .tree-node { padding: 2px 0; }
+  .tree-node .label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .tree-node .label:hover { background: var(--surface-hover); }
+  .tree-children { margin-left: 20px; border-left: 1px solid var(--border); padding-left: 8px; }
+
+  .alert-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .alert-card.warn { border-left: 3px solid var(--amber); }
+  .alert-card.crit { border-left: 3px solid var(--red); }
+  .alert-card.ok { border-left: 3px solid var(--green); }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-title { font-weight: 600; font-size: 13px; }
+  .alert-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .compartment-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .compartment-name { font-weight: 600; font-size: 14px; }
+  .compartment-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .compartment-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .member-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .status-dot.connected { background: var(--green); }
+  .status-dot.disconnected { background: var(--red); }
+  .status-dot.loading { background: var(--amber); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-state .msg { font-size: 13px; }
+
+  .per-voucher-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .per-voucher-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .per-voucher-table td {
+    padding: 6px 8px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .per-voucher-table tr:hover td { background: var(--surface-hover); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="widget-root">
+  <div class="header">
+    <div class="header-brand"><span class="r">RED</span><span class="g">net</span></div>
+    <div class="header-sub">Governance</div>
+  </div>
+
+  <div class="status-bar" id="status-bar">
+    <div class="status-dot loading" id="status-dot"></div>
+    <span id="status-text">Connecting to widget host...</span>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="dashboard" role="tab">Dashboard</button>
+    <button class="tab" data-tab="provenance" role="tab">Provenance</button>
+    <button class="tab" data-tab="audit" role="tab">Audit</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="panel active" id="panel-dashboard">
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-members" style="color:var(--blue)">--</div>
+        <div class="stat-label">Confirmed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-pending" style="color:var(--amber)">--</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-vouchers" style="color:var(--green)">--</div>
+        <div class="stat-label">Vouchers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-revoked" style="color:var(--red)">--</div>
+        <div class="stat-label">Revoked</div>
+      </div>
+    </div>
+
+    <div class="section-title">Recent activity</div>
+    <ul class="activity-list" id="activity-list">
+      <li class="empty-state" id="activity-empty">
+        <div class="icon">&#128203;</div>
+        <div class="msg">Activity will appear here once vouch events are loaded.</div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Provenance -->
+  <div class="panel" id="panel-provenance">
+    <input type="text" class="search-box" id="provenance-search"
+           placeholder="Search by @username or label...">
+    <div id="provenance-result"></div>
+
+    <div class="section-title" style="margin-top:20px">Per-voucher summary</div>
+    <table class="per-voucher-table" id="voucher-table">
+      <thead>
+        <tr>
+          <th>Voucher</th>
+          <th>Minted</th>
+          <th>Confirmed</th>
+          <th>Pending</th>
+        </tr>
+      </thead>
+      <tbody id="voucher-table-body"></tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:20px">Full vouch tree</div>
+    <div class="tree-container" id="vouch-tree-container">
+      <div class="empty-state">
+        <div class="msg">Loading vouch graph...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit -->
+  <div class="panel" id="panel-audit">
+    <div class="section-title">Canary checks</div>
+    <div id="canary-alerts">
+      <div class="empty-state">
+        <div class="icon">&#128302;</div>
+        <div class="msg">Canary analysis runs when vouch data loads.</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:20px">Unclaimed invites</div>
+    <div id="unclaimed-list">
+      <div class="empty-state"><div class="msg">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  var vouchEvents = [];
+  var claimEvents = [];
+  var revokeEvents = [];
+  var roleEvents = [];
+  var compartmentEvents = [];
+  var widgetId = null;
+  var requestId = 0;
+  var pendingRequests = {};
+  var connected = false;
+  var capabilitiesGranted = false;
+
+  // --- Matrix Widget API v2 ---
+
+  function getWidgetId() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get("widgetId") || params.get("parentUrl") || "governance-widget";
+  }
+
+  function sendToHost(action, data, reqId) {
+    var msg = {
+      api: "fromWidget",
+      widgetId: widgetId,
+      action: action,
+      requestId: reqId || ("req-" + (++requestId)),
+      data: data || {}
+    };
+    try {
+      window.parent.postMessage(msg, "*");
+    } catch (e) {
+      // ignore
+    }
+    return msg.requestId;
+  }
+
+  function sendResponse(reqId, action, data) {
+    window.parent.postMessage({
+      api: "toWidget",
+      widgetId: widgetId,
+      action: action,
+      requestId: reqId,
+      data: data || {},
+      response: data || {}
+    }, "*");
+  }
+
+  function requestCapabilities() {
+    var rid = sendToHost("content_loaded", {});
+    pendingRequests[rid] = function() {
+      var rid2 = sendToHost("org.matrix.msc2871.read_events", {
+        type: "m.room.message",
+        msgtype: "org.rednet.vouch",
+        limit: 500
+      });
+      pendingRequests[rid2] = handleVouchEvents;
+
+      var rid3 = sendToHost("org.matrix.msc2871.read_events", {
+        type: "m.room.message",
+        msgtype: "org.rednet.vouch.claimed",
+        limit: 500
+      });
+      pendingRequests[rid3] = handleClaimEvents;
+    };
+  }
+
+  function handleVouchEvents(data) {
+    if (data && data.events) {
+      data.events.forEach(function(ev) {
+        var c = ev.content;
+        if (!c) return;
+        var v = c["org.rednet.vouch"];
+        if (v) {
+          vouchEvents.push({
+            type: "vouch",
+            tokenHash: v.token_hash,
+            voucher: v.voucher,
+            label: v.label,
+            compartment: v.compartment || null,
+            timestamp: v.timestamp,
+            eventId: ev.event_id
+          });
+        }
+      });
+    }
+    refreshUI();
+  }
+
+  function handleClaimEvents(data) {
+    if (data && data.events) {
+      data.events.forEach(function(ev) {
+        var c = ev.content;
+        if (!c) return;
+        var v = c["org.rednet.vouch.claimed"];
+        if (v) {
+          claimEvents.push({
+            type: "claimed",
+            account: v.account,
+            voucher: v.voucher,
+            label: v.label || null,
+            confirmedAt: v.confirmed_at,
+            eventId: ev.event_id
+          });
+        }
+        var r = c["org.rednet.vouch.revoked"];
+        if (r) {
+          revokeEvents.push({
+            type: "revoked",
+            account: r.account,
+            reason: r.reason,
+            revokedBy: r.revoked_by,
+            revokedAt: r.revoked_at,
+            eventId: ev.event_id
+          });
+        }
+        var role = c["org.rednet.role"];
+        if (role) {
+          roleEvents.push({
+            type: "role",
+            account: role.account,
+            role: role.role,
+            scope: role.scope,
+            assignedBy: role.assigned_by,
+            timestamp: role.timestamp,
+            eventId: ev.event_id
+          });
+        }
+        var comp = c["org.rednet.compartment"];
+        if (comp) {
+          compartmentEvents.push({
+            type: "compartment",
+            name: comp.name,
+            rooms: comp.rooms || [],
+            moderators: comp.moderators || [],
+            createdBy: comp.created_by,
+            timestamp: comp.timestamp,
+            eventId: ev.event_id
+          });
+        }
+      });
+    }
+    refreshUI();
+  }
+
+  window.addEventListener("message", function(e) {
+    var msg = e.data;
+    if (!msg || typeof msg !== "object") return;
+
+    if (msg.api === "toWidget") {
+      if (msg.action === "capabilities") {
+        sendResponse(msg.requestId, "capabilities", {
+          capabilities: [
+            "org.matrix.msc2762.timeline:m.room.message",
+            "org.matrix.msc2762.receive.event:m.room.message"
+          ]
+        });
+        capabilitiesGranted = true;
+        setStatus("connected", "Connected — reading vouch events");
+        readEvents();
+        return;
+      }
+
+      if (msg.action === "notify_capabilities_changed") {
+        readEvents();
+        return;
+      }
+
+      if (msg.requestId && pendingRequests[msg.requestId]) {
+        var cb = pendingRequests[msg.requestId];
+        delete pendingRequests[msg.requestId];
+        cb(msg.response || msg.data || {});
+        return;
+      }
+    }
+
+    if (msg.api === "fromWidget" && msg.response !== undefined) {
+      if (msg.requestId && pendingRequests[msg.requestId]) {
+        var cb2 = pendingRequests[msg.requestId];
+        delete pendingRequests[msg.requestId];
+        cb2(msg.response || msg.data || {});
+      }
+    }
+  });
+
+  function readEvents() {
+    var rid = sendToHost("org.matrix.msc2871.read_events", {
+      type: "m.room.message",
+      limit: 1000
+    });
+    pendingRequests[rid] = function(data) {
+      if (data && data.events) {
+        vouchEvents = [];
+        claimEvents = [];
+        revokeEvents = [];
+        roleEvents = [];
+        compartmentEvents = [];
+        data.events.forEach(function(ev) {
+          var c = ev.content;
+          if (!c) return;
+          var mt = c.msgtype || "";
+          if (mt === "org.rednet.vouch" && c["org.rednet.vouch"]) {
+            var v = c["org.rednet.vouch"];
+            vouchEvents.push({
+              type: "vouch",
+              tokenHash: v.token_hash,
+              voucher: v.voucher,
+              label: v.label,
+              compartment: v.compartment || null,
+              timestamp: v.timestamp,
+              eventId: ev.event_id
+            });
+          } else if (mt === "org.rednet.vouch.claimed" && c["org.rednet.vouch.claimed"]) {
+            var cl = c["org.rednet.vouch.claimed"];
+            claimEvents.push({
+              type: "claimed",
+              account: cl.account,
+              voucher: cl.voucher,
+              label: cl.label || null,
+              confirmedAt: cl.confirmed_at,
+              eventId: ev.event_id
+            });
+          } else if (mt === "org.rednet.vouch.revoked" && c["org.rednet.vouch.revoked"]) {
+            var rv = c["org.rednet.vouch.revoked"];
+            revokeEvents.push({
+              type: "revoked",
+              account: rv.account,
+              reason: rv.reason,
+              revokedBy: rv.revoked_by,
+              revokedAt: rv.revoked_at,
+              eventId: ev.event_id
+            });
+          } else if (mt === "org.rednet.role" && c["org.rednet.role"]) {
+            var ro = c["org.rednet.role"];
+            roleEvents.push({
+              type: "role",
+              account: ro.account,
+              role: ro.role,
+              scope: ro.scope,
+              assignedBy: ro.assigned_by,
+              timestamp: ro.timestamp,
+              eventId: ev.event_id
+            });
+          } else if (mt === "org.rednet.compartment" && c["org.rednet.compartment"]) {
+            var co = c["org.rednet.compartment"];
+            compartmentEvents.push({
+              type: "compartment",
+              name: co.name,
+              rooms: co.rooms || [],
+              moderators: co.moderators || [],
+              createdBy: co.created_by,
+              timestamp: co.timestamp,
+              eventId: ev.event_id
+            });
+          }
+        });
+      }
+      setStatus("connected", "Connected — " + totalEvents() + " events loaded");
+      refreshUI();
+    };
+  }
+
+  function totalEvents() {
+    return vouchEvents.length + claimEvents.length + revokeEvents.length
+      + roleEvents.length + compartmentEvents.length;
+  }
+
+  // --- Fallback: if Widget API negotiation doesn't happen, show manual-load mode ---
+  var initTimeout = setTimeout(function() {
+    if (!capabilitiesGranted) {
+      setStatus("disconnected",
+        "Widget API not available — paste vouch.jsonl content or load via CLI");
+      showFallbackUI();
+    }
+  }, 5000);
+
+  function showFallbackUI() {
+    var el = document.getElementById("activity-empty");
+    if (el) {
+      el.innerHTML =
+        '<div class="icon">&#128268;</div>' +
+        '<div class="msg">Widget API negotiation timed out.<br>' +
+        'This widget reads <code>org.rednet.vouch</code> events from #vouch-log via the Matrix Widget API. ' +
+        'If running outside Element, paste vouch.jsonl data below.</div>' +
+        '<textarea id="manual-data" style="width:100%;height:120px;margin-top:12px;' +
+        'background:var(--bg);color:var(--text);border:1px solid var(--border);' +
+        'border-radius:var(--radius);padding:8px;font-family:var(--mono);font-size:11px;' +
+        'resize:vertical" placeholder="Paste vouch.jsonl lines here..."></textarea>' +
+        '<button onclick="window._loadManualData()" style="margin-top:8px;padding:6px 16px;' +
+        'background:var(--red);color:white;border:none;border-radius:var(--radius);' +
+        'cursor:pointer;font-size:12px;font-weight:600">Load</button>';
+    }
+  }
+
+  window._loadManualData = function() {
+    var ta = document.getElementById("manual-data");
+    if (!ta) return;
+    var lines = ta.value.trim().split("\n");
+    vouchEvents = [];
+    claimEvents = [];
+    revokeEvents = [];
+    roleEvents = [];
+    compartmentEvents = [];
+    lines.forEach(function(line) {
+      try {
+        var d = JSON.parse(line);
+        if (d.type === "vouch") {
+          vouchEvents.push({
+            type: "vouch",
+            tokenHash: d.token_hash,
+            voucher: d.voucher,
+            label: d.label,
+            compartment: d.compartment || null,
+            timestamp: d.timestamp
+          });
+        } else if (d.type === "claimed") {
+          claimEvents.push({
+            type: "claimed",
+            account: d.account,
+            voucher: d.voucher,
+            label: d.label || null,
+            confirmedAt: d.confirmed_at
+          });
+        } else if (d.type === "revoked") {
+          revokeEvents.push({
+            type: "revoked",
+            account: d.account,
+            reason: d.reason,
+            revokedBy: d.revoked_by,
+            revokedAt: d.revoked_at
+          });
+        } else if (d.type === "role") {
+          roleEvents.push(d);
+        } else if (d.type === "compartment") {
+          compartmentEvents.push(d);
+        }
+      } catch (e) {
+        // skip malformed lines
+      }
+    });
+    setStatus("connected", "Loaded " + totalEvents() + " events from paste");
+    refreshUI();
+  };
+
+  // --- UI rendering ---
+
+  function setStatus(state, text) {
+    var dot = document.getElementById("status-dot");
+    var span = document.getElementById("status-text");
+    dot.className = "status-dot " + state;
+    span.textContent = text;
+  }
+
+  document.querySelectorAll(".tab").forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function(p) { p.classList.remove("active"); });
+      tab.classList.add("active");
+      document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+    });
+  });
+
+  var searchInput = document.getElementById("provenance-search");
+  if (searchInput) {
+    searchInput.addEventListener("input", function() {
+      renderProvenanceSearch(searchInput.value.trim().toLowerCase());
+    });
+  }
+
+  function refreshUI() {
+    renderDashboard();
+    renderProvenanceTable();
+    renderVouchTree();
+    renderAudit();
+    if (searchInput && searchInput.value.trim()) {
+      renderProvenanceSearch(searchInput.value.trim().toLowerCase());
+    }
+  }
+
+  function renderDashboard() {
+    var confirmed = claimEvents.length;
+    var pending = vouchEvents.length - confirmed;
+    if (pending < 0) pending = 0;
+    var vouchers = {};
+    vouchEvents.forEach(function(v) { vouchers[v.voucher] = true; });
+    var revoked = revokeEvents.length;
+
+    document.getElementById("stat-members").textContent = confirmed;
+    document.getElementById("stat-pending").textContent = pending;
+    document.getElementById("stat-vouchers").textContent = Object.keys(vouchers).length;
+    document.getElementById("stat-revoked").textContent = revoked;
+
+    var all = [];
+    vouchEvents.forEach(function(v) {
+      all.push({ time: v.timestamp, type: "mint", text: mintText(v), icon: "mint" });
+    });
+    claimEvents.forEach(function(c) {
+      all.push({ time: c.confirmedAt, type: "claim", text: claimText(c), icon: "claim" });
+    });
+    revokeEvents.forEach(function(r) {
+      all.push({ time: r.revokedAt, type: "revoke", text: revokeText(r), icon: "revoke" });
+    });
+    roleEvents.forEach(function(r) {
+      all.push({ time: r.timestamp, type: "role", text: roleText(r), icon: "role" });
+    });
+    compartmentEvents.forEach(function(c) {
+      all.push({ time: c.timestamp, type: "compartment", text: compartmentText(c), icon: "compartment" });
+    });
+    all.sort(function(a, b) { return (b.time || "").localeCompare(a.time || ""); });
+
+    var list = document.getElementById("activity-list");
+    if (all.length === 0) return;
+
+    var html = "";
+    var shown = all.slice(0, 30);
+    shown.forEach(function(item) {
+      var iconChar = { mint: "+", claim: "✓", revoke: "✗", role: "★", compartment: "■" }[item.icon] || "?";
+      html += '<li class="activity-item">' +
+        '<div class="activity-icon ' + item.icon + '">' + iconChar + '</div>' +
+        '<div class="activity-body">' +
+          '<div class="activity-text">' + item.text + '</div>' +
+          '<div class="activity-time">' + fmtTime(item.time) + '</div>' +
+        '</div></li>';
+    });
+    if (all.length > 30) {
+      html += '<li class="activity-item" style="justify-content:center;color:var(--text-dim);font-size:12px">' +
+        '...and ' + (all.length - 30) + ' more</li>';
+    }
+    list.innerHTML = html;
+  }
+
+  function mintText(v) {
+    return '<span class="user-tag">' + esc(v.voucher) + '</span> minted invite for ' +
+      '<strong>' + esc(v.label) + '</strong>' +
+      (v.compartment ? ' <span style="color:var(--text-dim)">[' + esc(v.compartment) + ']</span>' : '');
+  }
+  function claimText(c) {
+    return '<span class="user-tag">' + esc(c.account) + '</span> joined, vouched by ' +
+      '<span class="user-tag">' + esc(c.voucher) + '</span>';
+  }
+  function revokeText(r) {
+    return '<span class="user-tag">' + esc(r.account) + '</span> revoked' +
+      (r.revokedBy ? ' by <span class="user-tag">' + esc(r.revokedBy) + '</span>' : '') +
+      (r.reason ? ': ' + esc(r.reason) : '');
+  }
+  function roleText(r) {
+    return '<span class="user-tag">' + esc(r.account) + '</span> assigned ' +
+      '<strong>' + esc(r.role) + '</strong>' +
+      (r.scope ? ' in ' + esc(r.scope) : '') +
+      (r.assignedBy ? ' by <span class="user-tag">' + esc(r.assignedBy) + '</span>' : '');
+  }
+  function compartmentText(c) {
+    return 'Compartment <strong>' + esc(c.name) + '</strong> created' +
+      (c.createdBy ? ' by <span class="user-tag">' + esc(c.createdBy) + '</span>' : '');
+  }
+
+  function renderProvenanceTable() {
+    var vouchers = {};
+    vouchEvents.forEach(function(v) {
+      if (!vouchers[v.voucher]) vouchers[v.voucher] = { minted: 0, confirmed: 0 };
+      vouchers[v.voucher].minted++;
+    });
+    claimEvents.forEach(function(c) {
+      if (!vouchers[c.voucher]) vouchers[c.voucher] = { minted: 0, confirmed: 0 };
+      vouchers[c.voucher].confirmed++;
+    });
+
+    var tbody = document.getElementById("voucher-table-body");
+    var keys = Object.keys(vouchers).sort();
+    if (keys.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-dim);text-align:center">No voucher data yet</td></tr>';
+      return;
+    }
+    var html = "";
+    keys.forEach(function(k) {
+      var v = vouchers[k];
+      var pending = v.minted - v.confirmed;
+      if (pending < 0) pending = 0;
+      html += '<tr>' +
+        '<td><span class="user-tag">' + esc(k) + '</span></td>' +
+        '<td>' + v.minted + '</td>' +
+        '<td>' + v.confirmed + '</td>' +
+        '<td>' + (pending > 0 ? '<span style="color:var(--amber)">' + pending + '</span>' : '0') + '</td>' +
+        '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  function renderProvenanceSearch(query) {
+    var result = document.getElementById("provenance-result");
+    if (!query) { result.innerHTML = ""; return; }
+
+    var matches = [];
+    claimEvents.forEach(function(c) {
+      if (c.account.toLowerCase().indexOf(query) !== -1 ||
+          c.voucher.toLowerCase().indexOf(query) !== -1 ||
+          (c.label && c.label.toLowerCase().indexOf(query) !== -1)) {
+        matches.push(c);
+      }
+    });
+    vouchEvents.forEach(function(v) {
+      if (v.voucher.toLowerCase().indexOf(query) !== -1 ||
+          v.label.toLowerCase().indexOf(query) !== -1) {
+        var alreadyClaimed = matches.some(function(m) { return m.type === "claimed"; });
+        if (!alreadyClaimed) {
+          matches.push({ type: "vouch", voucher: v.voucher, label: v.label,
+            timestamp: v.timestamp, compartment: v.compartment });
+        }
+      }
+    });
+
+    if (matches.length === 0) {
+      result.innerHTML = '<div class="vouch-chain" style="text-align:center;color:var(--text-dim)">' +
+        'No matches for "' + esc(query) + '"</div>';
+      return;
+    }
+
+    var html = '<div class="vouch-chain">';
+    matches.forEach(function(m) {
+      if (m.type === "claimed") {
+        html += '<div class="chain-node">' +
+          '<div class="chain-connector"><div class="chain-dot"></div></div>' +
+          '<div><div class="chain-name">' + esc(m.account) + '</div>' +
+          '<div class="chain-label">vouched by <span class="user-tag">' + esc(m.voucher) + '</span>' +
+          (m.label ? ' — ' + esc(m.label) : '') + '</div>' +
+          '<div class="chain-date">' + fmtTime(m.confirmedAt) + '</div></div></div>';
+      } else {
+        html += '<div class="chain-node">' +
+          '<div class="chain-connector"><div class="chain-dot" style="background:var(--amber)"></div></div>' +
+          '<div><div class="chain-name" style="color:var(--amber)">' + esc(m.label) + ' (pending)</div>' +
+          '<div class="chain-label">minted by <span class="user-tag">' + esc(m.voucher) + '</span></div>' +
+          '<div class="chain-date">' + fmtTime(m.timestamp) + '</div></div></div>';
+      }
+    });
+    html += '</div>';
+    result.innerHTML = html;
+  }
+
+  function renderVouchTree() {
+    var container = document.getElementById("vouch-tree-container");
+    var children = {};
+    claimEvents.forEach(function(c) {
+      if (!children[c.voucher]) children[c.voucher] = [];
+      children[c.voucher].push(c.account);
+    });
+
+    var roots = Object.keys(children).filter(function(v) {
+      var isChild = false;
+      Object.keys(children).forEach(function(k) {
+        if (children[k].indexOf(v) !== -1) isChild = true;
+      });
+      return !isChild;
+    });
+
+    if (roots.length === 0 && vouchEvents.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="msg">No vouch data loaded yet.</div></div>';
+      return;
+    }
+
+    if (roots.length === 0) {
+      roots = Object.keys(children);
+    }
+
+    function buildNode(name, depth) {
+      if (depth > 10) return "";
+      var subs = children[name] || [];
+      var html = '<li class="tree-node">' +
+        '<span class="label"><span class="user-tag">' + esc(name) + '</span>' +
+        (subs.length > 0 ? ' <span style="color:var(--text-dim);font-size:11px">(' + subs.length + ')</span>' : '') +
+        '</span>';
+      if (subs.length > 0) {
+        html += '<ul class="tree-children">';
+        subs.forEach(function(s) { html += buildNode(s, depth + 1); });
+        html += '</ul>';
+      }
+      html += '</li>';
+      return html;
+    }
+
+    var html = '<ul class="tree-root">';
+    roots.forEach(function(r) { html += buildNode(r, 0); });
+    html += '</ul>';
+    container.innerHTML = html;
+  }
+
+  function renderAudit() {
+    var alertsDiv = document.getElementById("canary-alerts");
+    var unclaimedDiv = document.getElementById("unclaimed-list");
+
+    if (vouchEvents.length === 0) return;
+
+    var alerts = [];
+    var now = new Date();
+
+    // Burst detection: >5 mints from one voucher in 24h
+    var byVoucherDay = {};
+    vouchEvents.forEach(function(v) {
+      var day = (v.timestamp || "").substring(0, 10);
+      var key = v.voucher + "|" + day;
+      byVoucherDay[key] = (byVoucherDay[key] || 0) + 1;
+    });
+    Object.keys(byVoucherDay).forEach(function(key) {
+      if (byVoucherDay[key] > 5) {
+        var parts = key.split("|");
+        alerts.push({
+          level: "crit",
+          title: "Burst minting: " + parts[0],
+          detail: parts[1] + " — " + byVoucherDay[key] + " invites minted (threshold: 5)"
+        });
+      }
+    });
+
+    // Unclaimed rate
+    var claimedTokens = {};
+    claimEvents.forEach(function(c) {
+      vouchEvents.forEach(function(v) {
+        if (v.voucher === c.voucher) claimedTokens[v.tokenHash] = true;
+      });
+    });
+    var unclaimed = vouchEvents.filter(function(v) { return !claimedTokens[v.tokenHash]; });
+    var unclaimedRate = vouchEvents.length > 0 ? (unclaimed.length / vouchEvents.length) : 0;
+    if (unclaimedRate > 0.5 && vouchEvents.length > 2) {
+      alerts.push({
+        level: "warn",
+        title: "High unclaimed rate",
+        detail: Math.round(unclaimedRate * 100) + "% of invites unclaimed (" +
+          unclaimed.length + "/" + vouchEvents.length + ")"
+      });
+    }
+
+    // Stale unclaimed (>7 days)
+    var stale = unclaimed.filter(function(v) {
+      if (!v.timestamp) return false;
+      var mintDate = new Date(v.timestamp);
+      return (now - mintDate) > 7 * 24 * 3600 * 1000;
+    });
+    if (stale.length > 0) {
+      alerts.push({
+        level: "warn",
+        title: "Stale unclaimed invites",
+        detail: stale.length + " invite(s) unclaimed for >7 days"
+      });
+    }
+
+    if (alerts.length === 0) {
+      alerts.push({
+        level: "ok",
+        title: "No anomalies detected",
+        detail: vouchEvents.length + " vouch(es), " + claimEvents.length +
+          " confirmed. Unclaimed rate: " + Math.round(unclaimedRate * 100) + "%"
+      });
+    }
+
+    var html = "";
+    alerts.forEach(function(a) {
+      var icon = { ok: "✓", warn: "⚠", crit: "✗" }[a.level] || "?";
+      html += '<div class="alert-card ' + a.level + '">' +
+        '<div class="alert-icon">' + icon + '</div>' +
+        '<div><div class="alert-title">' + esc(a.title) + '</div>' +
+        '<div class="alert-detail">' + esc(a.detail) + '</div></div></div>';
+    });
+    alertsDiv.innerHTML = html;
+
+    // Unclaimed list
+    if (unclaimed.length === 0) {
+      unclaimedDiv.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">All invites claimed.</div>';
+    } else {
+      var uhtml = "";
+      unclaimed.forEach(function(v) {
+        uhtml += '<div class="activity-item">' +
+          '<div class="activity-icon mint" style="background:var(--amber-dim);color:var(--amber)">?</div>' +
+          '<div class="activity-body">' +
+          '<div class="activity-text"><strong>' + esc(v.label) + '</strong> — minted by ' +
+          '<span class="user-tag">' + esc(v.voucher) + '</span></div>' +
+          '<div class="activity-time">' + fmtTime(v.timestamp) +
+          (v.tokenHash ? ' · ' + esc(v.tokenHash.substring(0, 12)) + '...' : '') +
+          '</div></div></div>';
+      });
+      unclaimedDiv.innerHTML = uhtml;
+    }
+  }
+
+  function esc(s) {
+    if (!s) return "";
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return "";
+    try {
+      var d = new Date(ts);
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+        " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    } catch (e) {
+      return ts;
+    }
+  }
+
+  // --- init ---
+  widgetId = getWidgetId();
+  sendToHost("content_loaded", {});
+
+})();
+</script>
+</body>
+</html>

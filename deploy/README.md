@@ -79,7 +79,7 @@ bypasses the token gate).
 - [x] Phase-2 recovery lifecycle (`escrow-lifecycle.ts` + `directory.ts` + `events.ts`, 47/47 crypto+lifecycle tests). _Moderator approval tool + coordination bot not built._
 - [x] Group calls module (`bootstrap-calls.sh`, LiveKit + JWT + Caddy + Element config, `calls` profile). _Scaffold: needs live-stack + production media node._
 - [x] matrix-viewer public preview (`bootstrap-viewer.sh`, `viewer` profile). _Scaffold: OFF by default, conflicts with mandatory E2EE (SPEC §11)._
-- [x] Governance tooling: attributed invite minting (`mint-invite.sh`), vouch provenance (`vouch-tree.sh`, `confirm-vouch.sh`), compartment management (`create-compartment.sh`, `set-role.sh`), coercion canary (`audit-vouches.sh`), member/bulk revocation (`revoke-member.sh`). _Scaffold: needs live-stack validation._
+- [x] Governance tooling: attributed invite minting (`mint-invite.sh`), vouch provenance (`vouch-tree.sh`, `confirm-vouch.sh`), compartment management (`create-compartment.sh`, `set-role.sh`), coercion canary (`audit-vouches.sh`), member/bulk revocation (`revoke-member.sh`), in-client governance widget (Matrix Widget API, `element-web/governance-widget/`). _Scaffold: needs live-stack validation._
 
 ## ⚠️ Before production
 
@@ -103,12 +103,16 @@ Attributed invite minting, vouch provenance, compartmented sub-spaces, and coerc
 canary. All actions logged to `#vouch-log` (append-only, E2EE, retention-exempt).
 
 ```bash
-# Mint an attributed invite (replaces generate-invite.sh):
-./mint-invite.sh --voucher @organizer --label "Maria, Tuesday group"
-./mint-invite.sh --voucher @organizer --label "workshop batch" --batch 5
+# Set your operator identity (or add to rednet.env):
+export REDNET_OPERATOR=@yourname:example.org
+
+# Mint an attributed invite (voucher = you, automatically):
+./mint-invite.sh --label "Maria, Tuesday group"
+./mint-invite.sh --label "workshop batch" --batch 5
+./mint-invite.sh --label "for Bob's contact" --voucher @bob   # override: Bob is vouching
 
 # Confirm a new member's vouch (posts join announcement to #welcome):
-./confirm-vouch.sh @maria --voucher @organizer
+./confirm-vouch.sh @maria
 
 # Query the provenance graph:
 ./vouch-tree.sh @maria                  # who vouched for this person?
@@ -133,6 +137,15 @@ canary. All actions logged to `#vouch-log` (append-only, E2EE, retention-exempt)
 ./revoke-member.sh --minted-by @organizer --reason "organizer compromised"
 ./revoke-member.sh --minted-by @organizer --after 2026-06-01 --reason "post-compromise"
 ```
+
+### Governance widget (in-client UI)
+
+`bootstrap-governance.sh` registers a Matrix widget in the #governance room. Organizers see
+a tabbed UI inside Element with a live dashboard, provenance search, vouch tree, and
+coercion canary alerts. The widget reads `org.rednet.vouch` / `.claimed` / `.revoked`
+events from #vouch-log via the Matrix Widget API (iframe postMessage). No server-side
+component — the widget is a static HTML file served at `/governance/` by the Element Web
+container. Falls back to a manual paste mode (vouch.jsonl) if the Widget API is unavailable.
 
 ### Group calls module (DESIGN §8)
 
