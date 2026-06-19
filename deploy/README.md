@@ -79,6 +79,7 @@ bypasses the token gate).
 - [x] Phase-2 recovery lifecycle (`escrow-lifecycle.ts` + `directory.ts` + `events.ts`, 47/47 crypto+lifecycle tests). _Moderator approval tool + coordination bot not built._
 - [x] Group calls module (`bootstrap-calls.sh`, LiveKit + JWT + Caddy + Element config, `calls` profile). _Scaffold: needs live-stack + production media node._
 - [x] matrix-viewer public preview (`bootstrap-viewer.sh`, `viewer` profile). _Scaffold: OFF by default, conflicts with mandatory E2EE (SPEC §11)._
+- [x] Governance tooling: attributed invite minting (`mint-invite.sh`), vouch provenance (`vouch-tree.sh`, `confirm-vouch.sh`), compartment management (`create-compartment.sh`, `set-role.sh`), coercion canary (`audit-vouches.sh`), member/bulk revocation (`revoke-member.sh`). _Scaffold: needs live-stack validation._
 
 ## ⚠️ Before production
 
@@ -88,10 +89,49 @@ Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. 
 
 ```bash
 ./setup.sh                                   # core+front (default)
+./bootstrap-rooms.sh                          # community space + starter channels
+./bootstrap-governance.sh                     # #vouch-log + #governance (organizer audit trail)
 ./bootstrap-draupnir.sh                       # + moderation (compose --profile moderation)
 ./bootstrap-calls.sh                          # + group calls (compose --profile calls; DESIGN §8)
 docker compose --profile monitoring up -d     # + Prometheus/Grafana/Pushgateway/Alertmanager (localhost-bound)
 RESTIC_REPOSITORY=s3:... RESTIC_PASSWORD=... ./backup.sh   # encrypted off-box backup + heartbeat
+```
+
+### Governance tooling (DESIGN §11)
+
+Attributed invite minting, vouch provenance, compartmented sub-spaces, and coercion
+canary. All actions logged to `#vouch-log` (append-only, E2EE, retention-exempt).
+
+```bash
+# Mint an attributed invite (replaces generate-invite.sh):
+./mint-invite.sh --voucher @organizer --label "Maria, Tuesday group"
+./mint-invite.sh --voucher @organizer --label "workshop batch" --batch 5
+
+# Confirm a new member's vouch (posts join announcement to #welcome):
+./confirm-vouch.sh @maria --voucher @organizer
+
+# Query the provenance graph:
+./vouch-tree.sh @maria                  # who vouched for this person?
+./vouch-tree.sh --voucher @organizer    # everyone they vouched for
+./vouch-tree.sh --tree                  # full graph
+./vouch-tree.sh --stats                 # per-voucher summary
+
+# Create a compartmented sub-space (DESIGN §11 compartmentalization):
+./create-compartment.sh "Ops Team" --rooms "ops-general,ops-planning" --moderators "@alice,@bob"
+./create-compartment.sh "Regional NW" --rooms "nw-general" --join-rule restricted
+
+# Assign scoped moderation roles:
+./set-role.sh @alice moderator --space "#ops-team"     # PL50 in all space rooms
+./set-role.sh @alice moderator --rooms "#general"      # PL50 in specific rooms
+
+# Coercion canary (burst minting, stale tokens, high unclaimed rate):
+./audit-vouches.sh                      # full report
+./audit-vouches.sh --canary             # anomaly check only (for cron)
+
+# Revocation:
+./revoke-member.sh @compromised --reason "..."
+./revoke-member.sh --minted-by @organizer --reason "organizer compromised"
+./revoke-member.sh --minted-by @organizer --after 2026-06-01 --reason "post-compromise"
 ```
 
 ### Group calls module (DESIGN §8)

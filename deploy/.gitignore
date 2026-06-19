@@ -42,6 +42,9 @@ element-web/rednet-module/package-lock.json
 # Generated invite cards (contain single-use tokens). NEVER commit.
 invites/
 
+# Vouch index (operational data: token hashes, voucher identities, timestamps). NEVER commit.
+vouch.jsonl
+
 # LiveKit secrets (API key + secret). NEVER commit.
 livekit/livekit.secrets.yaml
 livekit/.env
