@@ -1,74 +1,74 @@
-# REDnet
+<p align="center">
+  <img src="deploy/element-web/branding/rednet-logo.svg" alt="REDnet" width="220">
+</p>
 
-Hardened, self-hosted Matrix infrastructure for at-risk communities. Protects message content with end-to-end encryption. Non-technical users install from a public app store, scan a QR code, and join.
+<p align="center">
+  Hardened, self-hosted communications for at-risk communities
+</p>
 
-> **Status: pre-production.** All in-house verification complete (crypto, E2E, CI, operational drills). Pending an independent external security review before deployment with real users. See [Project status](#project-status).
+<p align="center">
+  <a href="https://github.com/wlcarden/REDnet/actions/workflows/ci.yml"><img src="https://github.com/wlcarden/REDnet/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-blue" alt="License: AGPL-3.0-only"></a>&nbsp;
+  <img src="https://img.shields.io/badge/status-pre--production-E5A536" alt="Status: pre-production">
+</p>
+
+<br>
+
+REDnet packages a hardened [Matrix](https://matrix.org) homeserver with silent end-to-end encryption, invite-only registration, and operational tooling for communities facing state-level adversaries. Users install [Element](https://element.io) from a public app store, scan a QR code, and start talking. No key ceremonies, no setup wizards.
+
+> **Pre-production.** All in-house verification complete (47/47 crypto tests, browser E2E, CI, operational drills). An [independent security review](PRODUCTION.md) is required before deployment with real users.
 
 ---
 
-## What REDnet is
+## How it works
 
-REDnet is a whitelabel, forkable deployment of a hardened Matrix homeserver for communities facing state-level adversaries. It is the **Tier-1 tool** in a two-tier communications strategy:
+REDnet is **Tier 1** in a two-tier communications strategy:
 
-| Tier                  | Protects                  | Tool             | Access                     |
+|                       | Protects                  | Tool             | Access                     |
 | --------------------- | ------------------------- | ---------------- | -------------------------- |
 | **Tier 1 (REDnet)**   | Message _contents_ (E2EE) | Matrix / Element | App store or browser       |
-| **Tier 2 (separate)** | Contents _+ who_          | SimpleX / Cairn  | High-friction, out-of-band |
+| **Tier 2 (separate)** | Contents _+ metadata_     | SimpleX / Cairn  | High-friction, out-of-band |
 
-REDnet protects **what is said**. It cannot hide **who said it to whom and when**; that metadata lives on the server. Group coordination lives here, protected by E2EE. Sensitive exchanges belong on a separate, metadata-minimal tool that REDnet complements but never replaces.
-
-### What REDnet is not
-
-- **Individual-target protection.** It does not defend against Pegasus-class spyware or forensic extraction of an unlocked device. No chat system does.
-- **Metadata-minimal messaging.** A hosted Matrix server is a metadata honeypot. REDnet bounds that exposure.
-- **A mesh or decentralized network.** REDnet is a centralized, hardened server. The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix-not-a-leave-behind-mesh) decentralized alternatives.
+REDnet protects **what you say**. It cannot hide **who you talk to or when**; that metadata lives on the server. Group coordination belongs here. Sensitive one-to-one exchanges belong on a separate, metadata-minimal channel that REDnet complements but does not replace.
 
 ## Architecture
 
 ```
-             ┌──────────────── CLIENTS ────────────────┐
-             │  Element Web (browser) · Element X (mobile) │
-             └──────────────────┬──────────────────────┘
-                                │ HTTPS :443
-                   ┌────────────▼────────────┐
-                   │  FRONT (disposable VPS)   │
-                   │  Caddy · Element Web      │
-                   │  .well-known · TLS        │
-                   └────────────┬────────────┘
-                                │ WireGuard
-         ┌──────────────────────▼──────────────────────┐
-         │  CORE (no public IP)                          │
-         │  Synapse · MAS · PostgreSQL · Draupnir        │
-         │  Prometheus/Grafana · synapse-admin (WG-only)  │
-         └───────────────────────────────────────────────┘
+                      ┌─────────── CLIENTS ───────────┐
+                      │  Element Web  ·  Element X     │
+                      └──────────────┬────────────────┘
+                                     │ HTTPS
+                        ┌────────────▼────────────┐
+                        │    FRONT  (disposable)    │
+                        │    Caddy · Element Web    │
+                        └────────────┬────────────┘
+                                     │ WireGuard
+              ┌──────────────────────▼──────────────────────┐
+              │    CORE  (no public IP)                      │
+              │    Synapse · MAS · PostgreSQL · Draupnir     │
+              └─────────────────────────────────────────────┘
 ```
 
-The front proxy is a cheap, rotatable VPS that terminates TLS and reverse-proxies to the core over WireGuard. The core has no public IP. Seizing the front yields the tunnel path. Seizing the core yields the metadata honeypot. Message content stays encrypted in both cases.
+The front is a cheap, rotatable VPS that terminates TLS and proxies to the core over WireGuard. The core has no public IP. Seizing the front yields the tunnel endpoint. Seizing the core yields encrypted data at rest. Message content stays protected in both cases.
 
-For the full component table, runtime wiring, and the optional media node (deferred), see [ARCHITECTURE.md](ARCHITECTURE.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full component table, runtime wiring, and optional media node.
 
 ## Quick start
 
 Prerequisites: a Linux host with Docker and Docker Compose.
 
 ```bash
-# Clone and configure
 cd deploy/
 cp rednet.env.example rednet.env
 # Edit rednet.env — set REDNET_DOMAIN (immutable after first deploy)
 
-# Deploy
 ./setup.sh
 # Generates secrets, renders hardened configs, starts the stack, runs self-checks
 ```
 
-`setup.sh` is a **fresh-deploy script** that always starts clean (`docker compose down -v`). It generates all secrets (signing key, MAS secrets, Synapse↔MAS shared secret, DB password) into gitignored files, renders hardened configs, starts the stack, and verifies:
+`setup.sh` is a **fresh-deploy script** that starts clean (`docker compose down -v`). It generates all secrets into gitignored files, renders hardened configs, starts the stack, and verifies health: MAS serving OIDC, Synapse delegating auth, a bearer token accepted through the front.
 
-- MAS healthy and serving OIDC discovery
-- Synapse up and delegating auth to MAS
-- A MAS-issued bearer token accepted through the front
-
-To admit users, mint a registration token:
+To admit users:
 
 ```bash
 docker compose exec mas mas-cli manage issue-user-registration-token --config /config.yaml
@@ -79,104 +79,92 @@ For production two-host deployment, see [deploy/ansible/](deploy/ansible/).
 
 ## Hardening
 
-The deployment enforces these controls by default. They are not optional or configurable.
+These controls are enforced by default. They are not optional or configurable.
 
-- **Mandatory E2EE.** No plaintext rooms.
-- **Closed federation.** No federation listener, whitelist `[]`, no `.well-known/matrix/server`.
-- **No-PII accounts.** No email, no phone number, registration by invite token only.
-- **MAS-delegated auth.** Synapse runs no auth of its own; `password_config.enabled: false`.
-- **Short retention.** 7-day default (configurable per-room), media ≤ text.
-- **Metadata scrubbing.** `scrub-metadata.sh` purges client IPs from Synapse + MAS tables.
-- **Admin denied at the front.** `/_synapse/admin` blocked at the reverse proxy.
-- **No third-party telemetry.** Element Web analytics off, self-hosted fonts/assets, strict CSP.
-- **No standing admin access.** All changes via the GitOps repo, not live credentials.
-- **Digest-pinned images.** All 8+ container images pinned to `@sha256:` digests.
-- **Encrypted off-box backups.** Restic with the repo key held off-core.
+| Control                   | Detail                                                                 |
+| ------------------------- | ---------------------------------------------------------------------- |
+| **Mandatory E2EE**        | No plaintext rooms                                                     |
+| **Closed federation**     | No federation listener, whitelist `[]`, no `.well-known/matrix/server` |
+| **No-PII accounts**       | No email, no phone, registration by invite token only                  |
+| **MAS-delegated auth**    | Synapse runs no auth of its own (`password_config.enabled: false`)     |
+| **Short retention**       | 7-day default (configurable per-room), media ≤ text                    |
+| **Metadata scrubbing**    | `scrub-metadata.sh` purges client IPs from Synapse + MAS tables        |
+| **Admin denied at front** | `/_synapse/admin` blocked at the reverse proxy                         |
+| **No telemetry**          | Analytics off, self-hosted fonts/assets, strict CSP                    |
+| **Digest-pinned images**  | All container images pinned to `@sha256:` digests                      |
+| **Encrypted backups**     | Restic with the repo key held off-core                                 |
 
-See [SPEC.md §4](SPEC.md) for the full hardened `homeserver.yaml` reference.
+See [SPEC.md](SPEC.md) for the full hardened `homeserver.yaml` reference.
 
 ## Silent onboarding
 
 REDnet ships a custom Element Web build with a [CryptoSetupExtensions module](deploy/element-web/rednet-module/) that replaces Element's standard setup ceremony. On first login:
 
-1. Cross-signing, secret storage, and key backup all bootstrap on login
-2. A 7-word diceware recovery passphrase surfaces once ("save this, it's the only way back in")
+1. Cross-signing, secret storage, and key backup bootstrap automatically
+2. A 7-word diceware passphrase surfaces once ("save this, it's the only way back in")
 3. The user auto-joins the community space
 
-Element's standard "verify this device" and "set up Secure Backup" dialogs are gone. Two visible steps from QR scan to room list.
+Two visible steps from QR scan to the room list. On a returning device, the module prompts for the passphrase and recovers identity + key backup. Both paths confirmed end-to-end (Playwright, 2/2 PASS).
 
-On a returning device, the module prompts for the passphrase and recovers identity + key backup. Browser E2E tests confirm both paths work end-to-end (2/2 PASS).
+## Threat model
+
+REDnet assumes the server **will** be seized. The design bounds what a seizure yields:
+
+| Scenario               | Adversary learns                                      | Stays protected                                    |
+| ---------------------- | ----------------------------------------------------- | -------------------------------------------------- |
+| **Core seized**        | Social graph, message timestamps, device records      | Message **content**, history past retention window |
+| **Front seized**       | Client IPs, WireGuard path to core                    | Content, core data at rest                         |
+| **Device unlocked**    | Local messages within retention, pseudonym, room list | Expired content, rooms the device wasn't in        |
+| **Device compromised** | **Everything, real-time**                             | Nothing                                            |
+
+REDnet does not protect against device-level compromise (Pegasus-class spyware, forensic extraction of an unlocked device). No chat application does. It also cannot eliminate metadata exposure from a hosted server; it bounds that exposure through short retention, IP scrubbing, and closed federation. Metadata-minimal communication is what Tier 2 is for.
+
+The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix-not-a-leave-behind-mesh) decentralized mesh alternatives. The full 9-scenario compromise map is in [DESIGN.md §9](DESIGN.md).
 
 ## Project status
 
-### Verified (in-house, no external review)
+### Verified (in-house)
 
-| Track                  | Status                                           | Evidence                                             |
-| ---------------------- | ------------------------------------------------ | ---------------------------------------------------- |
-| **CI harness**         | 3 tiers: static lint, integration, Docker build  | `deploy/ci-check.sh`, all tiers GREEN                |
-| **Silent onboarding**  | Module typechecks, builds, wires into Element    | Browser E2E 2/2 PASS (Playwright)                    |
-| **Operational drills** | Metadata scrub, backup/restore, restic           | All 3 drills PASS on live stack                      |
-| **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM         | 37/37 checks PASS (14 ECIES + 10 Shamir + 13 escrow) |
-| **Escrow lifecycle**   | Directory auth, event protocol, deposit/recovery | 10/10 checks PASS (Ed25519 + round-trip + handshake) |
-| **Two-host isolation** | Docker firewall bypass, WG aperture              | In-sandbox + KVM validation PASS                     |
-| **Supply chain**       | All images digest-pinned                         | Smoke-tested, boots + self-checks PASS               |
-| **Security review**    | AI-assisted, 9-dimension swarm (71 agents)       | 53 findings; all critical/high remediated            |
+| Track                  | Status                                             | Evidence                             |
+| ---------------------- | -------------------------------------------------- | ------------------------------------ |
+| **CI**                 | Static lint, integration, Docker build (3 tiers)   | All GREEN                            |
+| **Silent onboarding**  | Module builds, wires into Element                  | Browser E2E 2/2 PASS                 |
+| **Operational drills** | Metadata scrub, backup/restore, restic             | All 3 PASS on live stack             |
+| **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM           | 37/37 PASS                           |
+| **Escrow lifecycle**   | Directory auth, event protocol, recovery handshake | 10/10 PASS                           |
+| **Network isolation**  | Docker firewall bypass, WireGuard aperture         | In-sandbox + KVM PASS                |
+| **Supply chain**       | All images digest-pinned                           | Boots + self-checks PASS             |
+| **Security review**    | AI-assisted, 9-dimension, 71 agents                | 53 findings; all critical/high fixed |
 
-### Remaining (external, not skippable)
+### Remaining (external)
 
-- **Independent security review** by a specialist with Matrix-E2EE + applied-crypto expertise ([PRODUCTION.md §1](PRODUCTION.md)). The in-house review is strong at concrete, checkable flaws; weak at novel-attack creativity and live-protocol behavior under attack.
-- **Real two-host dry-run** on throwaway infrastructure (the topology is validated in KVM, not on real hosts).
-- **Element X mobile E2E**: stock Element X from a public app store against the live server.
-- **Load test** at ~250 users on the target hardware sizing.
+- **Independent security review** by a Matrix-E2EE + applied-crypto specialist ([PRODUCTION.md](PRODUCTION.md))
+- **Two-host dry-run** on throwaway infrastructure
+- **Element X mobile E2E** from a public app store against the live server
+- **Load test** at ~250 concurrent users
 
 ### Not yet built
 
-- QR-card printing and batch invite workflow (generate-invite.sh + /join landing page built; needs live-stack validation)
-- Phase-2 recovery: crypto + lifecycle built (47/47 tests); moderator approval tool + coordination bot not built ([RECOVERY.md §12](RECOVERY.md))
-- Group calls: scaffolded (LiveKit SFU + JWT service + Caddy routing + Element config); needs live-stack validation + production media-node deployment ([DESIGN.md §8](DESIGN.md))
-- matrix-viewer: scaffolded (compose profile + Caddy routing + bootstrap script); OFF by default — conflicts with mandatory E2EE ([SPEC.md §11](SPEC.md))
-
-## Threat model summary
-
-REDnet assumes the server **will** be seized. These controls bound what a seizure yields:
-
-| Scenario                     | Adversary learns                                                        | Stays protected                                           |
-| ---------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------- |
-| Core seized                  | Social graph, message envelopes (who/when/room), device records         | Message **content** (E2EE), history older than retention  |
-| Front seized                 | That it's a REDnet front, connecting client IPs, WireGuard path to core | Content, core data-at-rest                                |
-| Device unlocked (AFU)        | Local message history within retention, pseudonym, room list            | Expired content, rooms the device wasn't in               |
-| Device compromised (spyware) | **Everything, real-time**                                               | Nothing. REDnet does not defend against device compromise |
-
-The full 9-scenario compromise map is in [DESIGN.md §9](DESIGN.md).
+- **QR onboarding flow** — built (`generate-invite.sh` + `/join` landing page); needs live-stack validation
+- **Phase-2 recovery** — crypto + lifecycle built (47/47 tests); moderator approval tool + coordination bot remain ([RECOVERY.md](RECOVERY.md))
+- **Group calls** — scaffolded (LiveKit SFU + JWT service + Caddy routing); needs production media node ([DESIGN.md §8](DESIGN.md))
+- **Public preview** — scaffolded (matrix-viewer, OFF by default); conflicts with mandatory E2EE ([SPEC.md §11](SPEC.md))
 
 ## Documentation
 
-| Document                                 | Purpose                                                              |
-| ---------------------------------------- | -------------------------------------------------------------------- |
-| [DESIGN.md](DESIGN.md)                   | Why: threat model, tier doctrine, design decisions                   |
-| [ARCHITECTURE.md](ARCHITECTURE.md)       | How: runtime wiring, E2EE mechanics, traced lifecycles               |
-| [SPEC.md](SPEC.md)                       | What to build: components, versions, hardened config                 |
-| [RECOVERY.md](RECOVERY.md)               | Phase-2 escrow design: Shamir + ECIES construction                   |
-| [PRODUCTION.md](PRODUCTION.md)           | Gap list between verified-in-sandbox and real deployment             |
-| [SAFETY.md](SAFETY.md)                   | Plain-language guide for end users (no technical background needed)  |
-| [SECURITY-REVIEW.md](SECURITY-REVIEW.md) | AI-assisted security review findings + remediation status            |
-| [BRAND.md](BRAND.md)                     | Visual identity: color palette, typography, voice, design principles |
-| [deploy/](deploy/)                       | The runnable deployment stack                                        |
+| Document                                 | Purpose                                               |
+| ---------------------------------------- | ----------------------------------------------------- |
+| [DESIGN.md](DESIGN.md)                   | Threat model, tier doctrine, design decisions         |
+| [ARCHITECTURE.md](ARCHITECTURE.md)       | Runtime wiring, E2EE mechanics, traced lifecycles     |
+| [SPEC.md](SPEC.md)                       | Components, versions, hardened config reference       |
+| [RECOVERY.md](RECOVERY.md)               | Phase-2 escrow: Shamir + ECIES construction           |
+| [PRODUCTION.md](PRODUCTION.md)           | Gap list between sandbox-verified and real deployment |
+| [SAFETY.md](SAFETY.md)                   | Plain-language guide for end users                    |
+| [SECURITY-REVIEW.md](SECURITY-REVIEW.md) | Security review findings + remediation status         |
+| [BRAND.md](BRAND.md)                     | Visual identity, color palette, voice                 |
+| [deploy/](deploy/)                       | The runnable deployment stack                         |
 
-### Spike validation
-
-Empirical verification spikes, each with a self-contained README:
-
-| Spike                                             | Proves                                                  |
-| ------------------------------------------------- | ------------------------------------------------------- |
-| [01, retention purge](spikes/01-retention-purge/) | Synapse retention purges encrypted events               |
-| [03, two-tier proxy](spikes/03-two-tier/)         | Front→core WireGuard proxy + MAS auth delegation        |
-| [04, backup/restore](spikes/04-backup-restore/)   | Encrypted backup round-trip, hardening survives restore |
-| [05, recovery escrow](spikes/05-recovery-escrow/) | Shamir + ECIES escrow construction                      |
-| [06, moderator keys](spikes/06-moderator-keys/)   | Per-moderator ECIES key management                      |
-| [07, escrow store](spikes/07-escrow-store/)       | Escrow blob storage + retrieval                         |
-| [08, quorum growth](spikes/08-quorum-growth/)     | Re-sharing when moderator roster changes                |
-| [09, escrow auth](spikes/09-escrow-auth/)         | AAD binding + cross-context rejection                   |
+Empirical validation spikes (retention purge, two-tier proxy, backup/restore, escrow construction) live in [spikes/](spikes/), each with a self-contained README.
 
 ## Security
 
