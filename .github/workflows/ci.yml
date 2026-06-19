@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Tier 1 — static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lint tools
+        run: |
+          pip install --quiet yamllint ansible-lint
+          curl -sL https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 \
+            -o /usr/local/bin/hadolint && chmod +x /usr/local/bin/hadolint
+
+      - name: shellcheck (deploy + validate scripts)
+        run: |
+          shellcheck -S warning \
+            deploy/*.sh \
+            deploy/ansible/validate/*.sh \
+            deploy/element-web/build.sh
+
+      - name: yamllint (ansible + compose)
+        working-directory: deploy
+        run: yamllint ansible/site.yml docker-compose.yml
+
+      - name: ansible-lint (site.yml)
+        working-directory: deploy
+        run: ansible-lint -q ansible/site.yml
+
+      - name: hadolint (Dockerfile)
+        run: hadolint --failure-threshold warning deploy/element-web/Dockerfile
+
+      - name: docker compose config (syntax)
+        working-directory: deploy
+        env:
+          POSTGRES_PASSWORD: ci-dummy
+          REDNET_DOMAIN: ci.example.com
+        run: docker compose -f docker-compose.yml config -q
+
+  module:
+    name: Module — typecheck + crypto tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/element-web/rednet-module
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Behavioral tests (Shamir + escrow)
+        run: npm test
+
+      - name: Cross-language test vectors
+        run: node test-vectors.mjs
