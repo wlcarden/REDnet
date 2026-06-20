@@ -35,6 +35,9 @@ postgres_data/
 mas_data/
 grafana_data/
 
+# Claude Code
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
