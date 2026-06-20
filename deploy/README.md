@@ -59,10 +59,12 @@ The script produces a branded HTML card in `invites/` (one per token), records t
 `#vouch-log` + `vouch.jsonl`, and attributes the invite to you (`REDNET_OPERATOR`). Open the card
 in a browser and print. The QR encodes `https://DOMAIN/join#TOKEN`, which loads a security-aware
 onboarding flow: handle OPSEC guidance, the token, registration steps, and post-setup instructions.
-The landing page is served by the Element container at `/join`.
+The landing page is served by the Element container at `/join`. After setup, new members are
+linked to `/member-guide` for day-to-day usage: messaging, encryption, privacy practices,
+device management, and how to report problems.
 
-Admin/system accounts are created out-of-band with `mas-cli manage register-user` (admin path,
-bypasses the token gate).
+Operators are bootstrapped with `bootstrap-operator.sh` (creates MAS account, invites to all
+rooms, sets power levels, adds to Draupnir management — one command).
 
 ## Build checklist
 
@@ -76,27 +78,51 @@ bypasses the token gate).
 - [x] restic transport wrapper + backup heartbeat (`backup.sh`, verified: restic snapshot created, heartbeat reaches Prometheus and clears `BackupHeartbeat*` alerts)
 - [x] Element Web **soft fork** build context (`element-web/`: config locks to our server + CryptoSetupExtensions module + integration.patch + Dockerfile + `web` profile, front proxies to it). _Build context only: the webpack build runs at deploy time (`element-web/build.sh`). Phase-1 passphrase recovery: browser E2E proven (2/2 PASS, 2026-06-19), silent onboarding + passphrase recovery work end-to-end._
 - [x] Ansible two-host wrapper (`ansible/`: CORE+FRONT split, WireGuard overlay, front Caddyfile, **front-tripwire** seizure alert + heartbeat). _Scaffold: YAML/compose validated; not run against real hosts._
-- [x] QR-card onboarding (`mint-invite.sh` + `/join` landing page + security-aware onboarding flow). _Scaffold: needs live-stack validation._
+- [x] QR-card onboarding (`mint-invite.sh` + `/join` landing page + security-aware onboarding flow + `/member-guide`, `/moderator-guide`, `/operator-guide` role-level guides). _Scaffold: needs live-stack validation._
 - [x] Phase-2 recovery lifecycle (`escrow-lifecycle.ts` + `directory.ts` + `events.ts`, 47/47 crypto+lifecycle tests). _Moderator approval tool + coordination bot not built._
 - [x] Group calls module (`bootstrap-calls.sh`, LiveKit + JWT + Caddy + Element config, `calls` profile). _Scaffold: needs live-stack + production media node._
 - [x] matrix-viewer public preview (`bootstrap-viewer.sh`, `viewer` profile). _Scaffold: OFF by default, conflicts with mandatory E2EE (SPEC §11)._
-- [x] Governance tooling: attributed invite minting (`mint-invite.sh`), vouch provenance (`vouch-tree.sh`, `confirm-vouch.sh`), compartment management (`create-compartment.sh`, `set-role.sh`), coercion canary (`audit-vouches.sh`), member/bulk revocation (`revoke-member.sh`), in-client governance widget (Matrix Widget API, `element-web/governance-widget/`). _Scaffold: needs live-stack validation._
+- [x] Governance tooling: attributed invite minting (`mint-invite.sh`), vouch provenance (`vouch-tree.sh`, `confirm-vouch.sh`), compartment management (`create-compartment.sh`, `set-role.sh`), coercion canary (`audit-vouches.sh`), member/bulk revocation (`revoke-member.sh`), in-client governance widget (Matrix Widget API, `element-web/governance-widget/`), governance bot (`bootstrap-gov-bot.sh`, `gov-bot/`, `governance` profile — `!gov` commands for report/confirm/revoke/role/audit). 4-tier role model: Member (PL0), Moderator (PL50), Organizer (PL75), Admin (PL100). _Scaffold: needs live-stack validation._
 
 ## ⚠️ Before production
 
-Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. Run backups (`backup.sh` with `RESTIC_REPOSITORY`/`RESTIC_PASSWORD` set, repo password held off-core) + monitoring (`--profile monitoring`) + the WireGuard tunnel. Run the Spike 04 restore drill. Add operators to the Draupnir management room and `!draupnir rooms add` the community rooms. Run `invite-to-community.sh` for any CLI-provisioned users.
+Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. Run backups (`backup.sh` with `RESTIC_REPOSITORY`/`RESTIC_PASSWORD` set, repo password held off-core) + monitoring (`--profile monitoring`) + the WireGuard tunnel. Run the Spike 04 restore drill. Bootstrap operators with `bootstrap-operator.sh` (creates account, invites to all rooms, sets power levels, adds to Draupnir management room). Then `!draupnir rooms add` the community rooms. Run `invite-to-community.sh` for any CLI-provisioned users.
 
 ## Operational profiles
 
 ```bash
 ./setup.sh                                   # core+front (default)
 ./bootstrap-rooms.sh                          # community space + starter channels
+./bootstrap-operator.sh alice                 # create first operator (admin, all rooms, Draupnir)
 ./bootstrap-governance.sh                     # #vouch-log + #governance (organizer audit trail)
 ./bootstrap-draupnir.sh                       # + moderation (compose --profile moderation)
 ./bootstrap-calls.sh                          # + group calls (compose --profile calls; DESIGN §8)
 docker compose --profile monitoring up -d     # + Prometheus/Grafana/Pushgateway/Alertmanager (localhost-bound)
 RESTIC_REPOSITORY=s3:... RESTIC_PASSWORD=... ./backup.sh   # encrypted off-box backup + heartbeat
 ```
+
+### Operator bootstrap
+
+Create and provision operator accounts in one pass. Run after `setup.sh` + `bootstrap-rooms.sh`.
+The system account handles all invites and power-level assignments.
+
+```bash
+# First operator (full admin):
+./bootstrap-operator.sh alice
+
+# Scoped moderator (PL50 instead of PL100):
+./bootstrap-operator.sh bob --role moderator
+
+# Existing account (skip MAS registration):
+./bootstrap-operator.sh carol --existing
+
+# Skip Draupnir management room:
+./bootstrap-operator.sh dave --role moderator --no-draupnir
+```
+
+The script creates the MAS account, invites the user to all community + governance rooms,
+sets power levels, and optionally adds them to `#rednet-mod` (Draupnir management). The
+operator's temporary password is printed once — they should change it on first login.
 
 ### Governance tooling (DESIGN §11)
 
@@ -147,6 +173,52 @@ coercion canary alerts. The widget reads `org.rednet.vouch` / `.claimed` / `.rev
 events from #vouch-log via the Matrix Widget API (iframe postMessage). No server-side
 component — the widget is a static HTML file served at `/governance/` by the Element Web
 container. Falls back to a manual paste mode (vouch.jsonl) if the Widget API is unavailable.
+
+### Governance bot (in-client moderation)
+
+`bootstrap-gov-bot.sh` creates a `@rednet-gov` bot account, a non-E2EE `#gov-bot` command
+room (same pattern as Draupnir's `#rednet-mod` — Widget API can't send events in E2EE rooms),
+and starts the `governance` profile. Organizers and admins issue `!gov` commands in `#gov-bot`
+instead of SSHing into the server.
+
+```bash
+# Stand up the gov bot (after bootstrap-governance.sh):
+./bootstrap-gov-bot.sh
+
+# Bootstrap an organizer (PL75 — can mint invites, confirm vouches, assign moderators):
+./bootstrap-operator.sh carol --role organizer
+```
+
+**Commands** (issued in `#gov-bot`):
+
+| Command                                     | Min PL | Action                                           |
+| ------------------------------------------- | ------ | ------------------------------------------------ |
+| `!gov help`                                 | 0      | List commands                                    |
+| `!gov status`                               | 0      | Network summary (members, vouches, alerts)       |
+| `!gov audit`                                | 50     | Run canary checks (burst minting, stale tokens)  |
+| `!gov report @user --detail "evidence"`     | 0      | Flag account as compromised                      |
+| `!gov confirm @user`                        | 75     | Confirm a pending vouch claim                    |
+| `!gov role @user moderator\|organizer`      | 75     | Assign moderation role across all rooms          |
+| `!gov revoke @user --reason "..."`          | 100    | Revoke member: PL -1 in all rooms + kick         |
+| `!gov revoke-chain @voucher --reason "..."` | 100    | Revoke a voucher and all members they introduced |
+
+The bot uses two tokens: its own (`GOV_BOT_TOKEN`) for replies, and a system token
+(`SYS_TOKEN`) for admin operations (PL changes, kicks). Both are in `gov-bot/.env` (gitignored).
+
+The governance widget in `#gov-bot` provides clipboard-based command composition: buttons copy
+the appropriate `!gov` command to the clipboard, the organizer pastes it in the message box and
+sends. The graph tab's node tooltips also expose Report/Revoke/Role buttons.
+
+### Role model (DESIGN §11)
+
+| Role      | PL  | Capabilities                                                              |
+| --------- | --- | ------------------------------------------------------------------------- |
+| Member    | 0   | Send messages, view rooms                                                 |
+| Moderator | 50  | Kick, ban, redact, set topic, run audits                                  |
+| Organizer | 75  | Mint invites, confirm vouches, assign moderators, all moderator actions   |
+| Admin     | 100 | Change power levels, revoke members, revoke chains, all organizer actions |
+
+Assign roles with `set-role.sh` or via the gov bot (`!gov role`).
 
 ### Group calls module (DESIGN §8)
 

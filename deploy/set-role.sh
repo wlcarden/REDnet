@@ -9,8 +9,9 @@
 #   ./set-role.sh @alice member --rooms "#general"    # demote back to PL0
 #
 # Roles:
-#   member    → PL 0  (default, can send messages)
-#   moderator → PL 50 (kick, ban, redact, set topic)
+#   member    → PL 0   (default, can send messages)
+#   moderator → PL 50  (kick, ban, redact, set topic)
+#   organizer → PL 75  (mint invites, confirm vouches, assign moderators)
 #   admin     → PL 100 (change power levels, all room operations)
 #
 # Requires: jq, stack running, target rooms exist.
@@ -39,9 +40,10 @@ esac
 
 case "${1:-}" in
   moderator) ROLE="moderator"; PL=50; shift ;;
+  organizer) ROLE="organizer"; PL=75; shift ;;
   admin)     ROLE="admin"; PL=100; shift ;;
   member)    ROLE="member"; PL=0; shift ;;
-  *)         echo "ERR: role must be moderator, admin, or member" >&2; exit 1 ;;
+  *)         echo "ERR: role must be member, moderator, organizer, or admin" >&2; exit 1 ;;
 esac
 
 while [ $# -gt 0 ]; do

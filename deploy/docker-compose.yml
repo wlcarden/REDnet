@@ -88,6 +88,19 @@ services:
       - rednet_draupnir:/data
       - ./draupnir/config/production.yaml:/data/config/production.yaml:ro
 
+  gov-bot: # CORE — governance bot. Listens in #gov-bot for !gov commands (revoke, confirm,
+           # role, report, audit). bootstrap-gov-bot.sh creates the account + renders config.
+    build:
+      context: ./gov-bot
+    profiles: ["governance"]
+    restart: unless-stopped
+    depends_on:
+      synapse:
+        condition: service_started
+    env_file: gov-bot/.env
+    volumes:
+      - ./vouch.jsonl:/data/vouch.jsonl
+
   # --- Group calls (profile "calls"). LiveKit SFU + JWT auth service. DESIGN §8: this module
   # runs on a SEPARATE public-IP box in production (WebRTC needs direct UDP). Single-host dev
   # runs it here. bootstrap-calls.sh generates secrets and starts this profile. ---

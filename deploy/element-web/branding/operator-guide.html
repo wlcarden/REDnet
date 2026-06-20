@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operator Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111316; color: #ECEDEE; min-height: 100vh;
+    display: flex; justify-content: center;
+    padding: 32px 24px 64px;
+  }
+  .guide {
+    max-width: 560px; width: 100%;
+  }
+  .logo { text-align: center; margin-bottom: 24px; }
+  .logo svg { width: 160px; height: auto; }
+
+  h1 {
+    font-size: 20px; font-weight: 600; letter-spacing: -0.3px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px; color: #8B8D98; text-align: center;
+    line-height: 1.5; margin-bottom: 24px;
+  }
+
+  /* --- Nav --- */
+  .nav {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 28px; justify-content: center;
+  }
+  .nav a {
+    font-size: 11px; font-weight: 600; color: #8B8D98;
+    text-decoration: none; padding: 5px 10px; border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 120ms, color 120ms;
+  }
+  .nav a:hover { background: rgba(229,72,77,0.1); color: #E5484D; }
+
+  /* --- Sections --- */
+  .section {
+    background: #16181B; border-radius: 12px; padding: 24px 22px;
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px; font-weight: 600; letter-spacing: -0.2px;
+    margin-bottom: 12px; padding-top: 4px;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #62646C; margin-bottom: 10px;
+    margin-top: 16px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  p, .text {
+    font-size: 13px; color: #8B8D98; line-height: 1.6; margin-bottom: 12px;
+  }
+  p:last-child { margin-bottom: 0; }
+
+  /* --- Callouts --- */
+  .callout {
+    padding: 12px 14px; border-radius: 0 8px 8px 0;
+    font-size: 12px; line-height: 1.6; margin-bottom: 14px;
+  }
+  .callout:last-child { margin-bottom: 0; }
+  .callout strong { color: #ECEDEE; font-weight: 600; }
+  .callout-red {
+    background: rgba(229,72,77,0.08); border-left: 3px solid #E5484D; color: #C4C7C9;
+  }
+  .callout-amber {
+    background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; color: #C4C7C9;
+  }
+  .callout-blue {
+    background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; color: #C4C7C9;
+  }
+  .callout-green {
+    background: rgba(48,164,108,0.08); border-left: 3px solid #30A46C; color: #C4C7C9;
+  }
+
+  /* --- Command blocks --- */
+  .cmd {
+    background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px 14px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12px; line-height: 1.7; color: #ECEDEE;
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow-x: auto; margin-bottom: 12px;
+    white-space: pre; word-break: break-all;
+  }
+  .cmd:last-child { margin-bottom: 0; }
+  .cmd .comment { color: #62646C; }
+  .cmd .flag { color: #3E93DE; }
+  .cmd .string { color: #E5A536; }
+
+  /* --- Room list --- */
+  .room-list { list-style: none; margin-bottom: 12px; }
+  .room-list li {
+    font-size: 13px; color: #C4C7C9; line-height: 1.5;
+    padding: 6px 0 6px 20px; position: relative;
+  }
+  .room-list li::before {
+    content: '#'; position: absolute; left: 0; top: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; color: #E5484D; font-weight: 600;
+  }
+  .room-name { font-weight: 600; color: #ECEDEE; }
+
+  /* --- Inline code --- */
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px; background: rgba(0,0,0,0.3); padding: 2px 6px;
+    border-radius: 4px; color: #ECEDEE;
+  }
+
+  /* --- Steps list --- */
+  .steps { list-style: none; counter-reset: step; margin-bottom: 12px; }
+  .steps li {
+    counter-increment: step; font-size: 13px; color: #8B8D98;
+    line-height: 1.5; padding: 6px 0 6px 32px; position: relative;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(229,72,77,0.15); color: #E5484D;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* --- Power level badge --- */
+  .pl-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px;
+    vertical-align: middle;
+  }
+  .pl-100 { background: rgba(229,72,77,0.15); color: #E5484D; }
+  .pl-50 { background: rgba(229,165,54,0.15); color: #E5A536; }
+  .pl-0 { background: rgba(255,255,255,0.08); color: #8B8D98; }
+</style>
+</head>
+<body>
+<div class="guide">
+  <div class="logo">
+    <svg viewBox="0 0 252 64" role="img" aria-label="REDnet">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z"
+        fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/>
+        <circle cx="48" cy="23" r="3.2"/><circle cx="48" cy="41" r="3.2"/>
+        <circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/>
+        <circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, sans-serif" font-size="30"
+        font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <h1>Operator guide</h1>
+  <p class="subtitle">
+    You have admin access to this community. This guide covers your tools,
+    your responsibilities, and how to stay safe while running them.
+  </p>
+
+  <div class="nav">
+    <a href="#rooms">Rooms</a>
+    <a href="#invites">Invites</a>
+    <a href="#vouches">Vouches</a>
+    <a href="#governance">Governance</a>
+    <a href="#moderation">Moderation</a>
+    <a href="#gov-bot">Gov bot</a>
+    <a href="#compartments">Compartments</a>
+    <a href="#revocation">Revocation</a>
+    <a href="#security">Your security</a>
+  </div>
+
+  <div class="callout callout-blue" style="margin-bottom: 28px;">
+    <strong>New to the platform?</strong>
+    Read the <a href="/member-guide" style="color:#3E93DE;">member guide</a> first
+    for messaging basics, encryption, privacy practices, and device management.
+    This guide covers operator-level administration.
+  </div>
+
+  <!-- ==================== YOUR ROOMS ==================== -->
+  <div class="section" id="rooms">
+    <div class="section-title">Your rooms</div>
+    <p>As an operator you have access to rooms that regular members cannot see.</p>
+
+    <div class="section-label">Community rooms (everyone)</div>
+    <ul class="room-list">
+      <li><span class="room-name">welcome</span> — first thing members see after joining</li>
+      <li><span class="room-name">announcements</span> — organizer broadcasts</li>
+      <li><span class="room-name">general</span> — open discussion</li>
+      <li><span class="room-name">reference</span> — pinned info, does not auto-delete</li>
+    </ul>
+
+    <div class="section-label">Governance rooms (operators only)</div>
+    <ul class="room-list">
+      <li><span class="room-name">vouch-log</span> — every invite minted, every vouch confirmed, every revocation. Append-only. Do not delete messages here</li>
+      <li><span class="room-name">governance</span> — operator coordination. The governance widget lives here</li>
+    </ul>
+
+    <div class="section-label">Moderation room</div>
+    <ul class="room-list">
+      <li><span class="room-name">rednet-mod</span> — Draupnir bot commands. Unencrypted by design (the bot needs to read it)</li>
+    </ul>
+
+    <div class="section-label">Power levels</div>
+    <p>
+      Operators are <span class="pl-badge pl-100">PL 100</span> (admin) in all rooms.
+      Moderators are <span class="pl-badge pl-50">PL 50</span> — they can kick, ban, and redact,
+      but cannot change room settings or add other moderators.
+      Members are <span class="pl-badge pl-0">PL 0</span>.
+    </p>
+  </div>
+
+  <!-- ==================== MINTING INVITES ==================== -->
+  <div class="section" id="invites">
+    <div class="section-title">Minting invites</div>
+    <p>
+      Every new member joins through an invite you mint. Each invite is attributed to you —
+      if something goes wrong, the vouch graph shows who brought them in.
+    </p>
+
+    <div class="section-label">Mint a single invite</div>
+    <div class="cmd"><span class="comment"># The label says who the invite is for. Be specific.</span>
+./mint-invite.sh <span class="flag">--label</span> <span class="string">"Maria, Tuesday group"</span></div>
+    <p>
+      This creates a single-use registration token, records the vouch in
+      <code>#vouch-log</code>, and produces a printable QR card in <code>invites/</code>.
+    </p>
+
+    <div class="section-label">Mint a batch</div>
+    <div class="cmd">./mint-invite.sh <span class="flag">--label</span> <span class="string">"workshop June 20"</span> <span class="flag">--batch</span> 5</div>
+
+    <div class="section-label">Delegate to another organizer</div>
+    <div class="cmd"><span class="comment"># Bob is vouching for someone, not you.</span>
+./mint-invite.sh <span class="flag">--label</span> <span class="string">"Bob's contact"</span> <span class="flag">--voucher</span> @bob</div>
+
+    <div class="section-label">What the invitee gets</div>
+    <ol class="steps">
+      <li>A QR card or link pointing to <code>/join</code></li>
+      <li>The join page walks them through handle safety, token entry, and app setup</li>
+      <li>They register with the token and land in the community rooms</li>
+    </ol>
+
+    <div class="callout callout-amber">
+      <strong>Print the card or hand it to them directly.</strong>
+      Do not send invite tokens over email, SMS, or social media. Those channels are
+      logged and searchable. A printed card or in-person handoff leaves no digital trail.
+    </div>
+  </div>
+
+  <!-- ==================== CONFIRMING VOUCHES ==================== -->
+  <div class="section" id="vouches">
+    <div class="section-title">Confirming vouches</div>
+    <p>
+      After someone registers, confirm their vouch. This posts a join announcement
+      to <code>#welcome</code> and marks the invite as claimed in the vouch log.
+    </p>
+
+    <div class="cmd">./confirm-vouch.sh @maria</div>
+
+    <div class="section-label">Querying the vouch graph</div>
+    <div class="cmd"><span class="comment"># Who vouched for this person?</span>
+./vouch-tree.sh @maria
+
+<span class="comment"># Everyone a specific organizer vouched for:</span>
+./vouch-tree.sh <span class="flag">--voucher</span> @yourname
+
+<span class="comment"># Full graph (all vouch chains):</span>
+./vouch-tree.sh <span class="flag">--tree</span>
+
+<span class="comment"># Stats by voucher (invite counts, claim rates):</span>
+./vouch-tree.sh <span class="flag">--stats</span></div>
+  </div>
+
+  <!-- ==================== GOVERNANCE ==================== -->
+  <div class="section" id="governance">
+    <div class="section-title">Governance widget</div>
+    <p>
+      Open <code>#governance</code> in Element. The widget shows a tabbed dashboard
+      inside the room — no terminal needed.
+    </p>
+
+    <div class="section-label">Dashboard tab</div>
+    <p>
+      Live stats: total vouches, claimed invites, active vouchers, and a
+      scrolling activity feed. Check this regularly to spot unusual patterns.
+    </p>
+
+    <div class="section-label">Provenance tab</div>
+    <p>
+      Search by member or voucher. Shows the full chain of who-vouched-for-whom.
+      Use this when you need to trace how someone got in.
+    </p>
+
+    <div class="section-label">Audit tab</div>
+    <p>
+      Coercion canary alerts. If one organizer suddenly mints a burst of invites,
+      or if the unclaimed rate spikes, alerts appear here with action buttons
+      (Revoke chain, Report, Run audit). The same checks run from
+      <code>#gov-bot</code> or the command line:
+    </p>
+    <div class="cmd"><span class="comment"># In #gov-bot (no SSH needed):</span>
+!gov audit
+
+<span class="comment"># From the server:</span>
+./audit-vouches.sh
+./audit-vouches.sh <span class="flag">--canary</span></div>
+
+    <div class="section-label">Graph tab</div>
+    <p>
+      Force-directed trust graph. Hover any node to see member details and
+      action buttons (Report, Revoke, set Moderator). Drag to rearrange, use
+      Pause/Reset to control the simulation.
+    </p>
+
+    <div class="callout callout-red">
+      <strong>A burst of mints by one person is a red flag.</strong>
+      The coercion canary exists because an organizer under duress might be forced
+      to mint invites for an adversary. If you see a sudden spike from any voucher,
+      investigate before confirming those invites.
+    </div>
+  </div>
+
+  <!-- ==================== MODERATION ==================== -->
+  <div class="section" id="moderation">
+    <div class="section-title">Moderation</div>
+    <p>
+      Draupnir is the moderation bot. It monitors all community rooms and responds
+      to commands in <code>#rednet-mod</code>.
+    </p>
+
+    <div class="section-label">Common commands</div>
+    <div class="cmd"><span class="comment"># Check that Draupnir is running:</span>
+!draupnir status
+
+<span class="comment"># Ban a user from all monitored rooms:</span>
+!draupnir ban @spammer <span class="string">"reason"</span>
+
+<span class="comment"># Unban:</span>
+!draupnir unban @someone
+
+<span class="comment"># Redact (delete) a user's recent messages:</span>
+!draupnir redact @someone
+
+<span class="comment"># Add a room to Draupnir's watch list:</span>
+!draupnir rooms add <span class="string">"!roomid:domain"</span></div>
+
+    <div class="callout callout-blue">
+      <strong>#rednet-mod is unencrypted.</strong>
+      This is intentional — Draupnir cannot operate inside encrypted rooms.
+      Do not discuss sensitive information in this room.
+      Use <code>#governance</code> (encrypted) for operator coordination.
+    </div>
+
+    <div class="section-label">Element's built-in tools</div>
+    <p>
+      You can also moderate directly in Element without Draupnir.
+      Click a user's avatar in any room to kick, ban, or mute them.
+      Right-click a message to redact (delete) it. These actions are
+      per-room. Draupnir applies actions across all rooms at once.
+    </p>
+  </div>
+
+  <!-- ==================== GOV BOT ==================== -->
+  <div class="section" id="gov-bot">
+    <div class="section-title">Governance bot</div>
+    <p>
+      The governance bot (<code>@rednet-gov</code>) listens in
+      <code>#gov-bot</code> for <code>!gov</code> commands. This replaces
+      SSH access for most moderation and governance operations.
+    </p>
+
+    <div class="section-label">Commands</div>
+    <div class="cmd"><span class="comment"># Check network status:</span>
+!gov status
+
+<span class="comment"># Run coercion canary audit:</span>
+!gov audit
+
+<span class="comment"># Report a compromised account:</span>
+!gov report @user <span class="flag">--detail</span> <span class="string">"evidence here"</span>
+
+<span class="comment"># Confirm a pending vouch:</span>
+!gov confirm @user
+
+<span class="comment"># Assign a role (moderator or organizer):</span>
+!gov role @user moderator
+!gov role @user organizer
+
+<span class="comment"># Revoke a member (admin only):</span>
+!gov revoke @user <span class="flag">--reason</span> <span class="string">"reason"</span>
+
+<span class="comment"># Revoke a voucher and everyone they introduced (admin only):</span>
+!gov revoke-chain @voucher <span class="flag">--reason</span> <span class="string">"reason"</span></div>
+
+    <div class="callout callout-blue">
+      <strong>#gov-bot is unencrypted.</strong>
+      Same pattern as <code>#rednet-mod</code> — the Widget API cannot send
+      events in encrypted rooms. Do not discuss sensitive information here.
+      Use <code>#governance</code> (encrypted) for operator coordination.
+    </div>
+
+    <div class="section-label">Widget integration</div>
+    <p>
+      The governance widget in <code>#gov-bot</code> provides quick-action
+      buttons that copy the appropriate <code>!gov</code> command to your
+      clipboard. Paste into the message box and send. The graph tab's node
+      tooltips also show Report/Revoke/Role buttons on hover.
+    </p>
+  </div>
+
+  <!-- ==================== COMPARTMENTS ==================== -->
+  <div class="section" id="compartments">
+    <div class="section-title">Compartments</div>
+    <p>
+      Compartments are sub-spaces with their own rooms and membership.
+      A member in one compartment cannot see rooms in another.
+      If one compartment is compromised, the rest are unaffected.
+    </p>
+
+    <div class="section-label">Create a compartment</div>
+    <div class="cmd">./create-compartment.sh <span class="string">"Ops Team"</span> \
+  <span class="flag">--rooms</span> <span class="string">"ops-general,ops-planning"</span> \
+  <span class="flag">--moderators</span> <span class="string">"@alice,@bob"</span></div>
+
+    <div class="section-label">Assign roles within a compartment</div>
+    <div class="cmd"><span class="comment"># Make someone a moderator in a specific space:</span>
+./set-role.sh @alice moderator <span class="flag">--space</span> <span class="string">"#ops-team"</span>
+
+<span class="comment"># Or in specific rooms only:</span>
+./set-role.sh @alice moderator <span class="flag">--rooms</span> <span class="string">"#ops-general"</span></div>
+
+    <div class="callout callout-amber">
+      <strong>Compartments protect against compromise, not convenience.</strong>
+      Do not merge compartments because communication between them is slow.
+      The isolation is the point. If two groups need to share information,
+      designate a liaison rather than giving both groups access to the same rooms.
+    </div>
+  </div>
+
+  <!-- ==================== REVOCATION ==================== -->
+  <div class="section" id="revocation">
+    <div class="section-title">Revoking access</div>
+    <p>
+      When a member is compromised, leaves the community, or was admitted under duress,
+      revoke their access. This removes them from all rooms and records the
+      revocation in <code>#vouch-log</code>.
+    </p>
+
+    <div class="section-label">Revoke one person</div>
+    <div class="cmd">./revoke-member.sh @compromised <span class="flag">--reason</span> <span class="string">"device seized"</span></div>
+
+    <div class="section-label">Revoke everyone an organizer vouched for</div>
+    <div class="cmd"><span class="comment"># If an organizer is compromised, revoke all their invitees:</span>
+./revoke-member.sh <span class="flag">--minted-by</span> @organizer <span class="flag">--reason</span> <span class="string">"organizer compromised"</span>
+
+<span class="comment"># Only revoke invites minted after a specific date:</span>
+./revoke-member.sh <span class="flag">--minted-by</span> @organizer <span class="flag">--after</span> 2026-06-01 \
+  <span class="flag">--reason</span> <span class="string">"post-compromise invites"</span></div>
+
+    <div class="callout callout-red">
+      <strong>Revocation is permanent and visible.</strong>
+      The person will see they have been removed. Everyone in <code>#vouch-log</code>
+      will see the revocation event. Make sure you mean it.
+    </div>
+  </div>
+
+  <!-- ==================== OPERATOR SECURITY ==================== -->
+  <div class="section" id="security">
+    <div class="section-title">Your security</div>
+    <p>
+      You have more access than anyone else in this community.
+      That makes you a higher-value target.
+    </p>
+
+    <div class="callout callout-red">
+      <strong>Run scripts on a machine you control.</strong>
+      <code>mint-invite.sh</code>, <code>revoke-member.sh</code>, and the other
+      operator tools connect to the server with an admin token. Do not run them
+      on a shared computer, a work laptop with monitoring software, or a machine
+      you do not trust. A compromised operator machine compromises the entire
+      community.
+    </div>
+
+    <div class="section-label">REDNET_OPERATOR</div>
+    <p>
+      Set <code>REDNET_OPERATOR</code> in your <code>rednet.env</code> to your
+      Matrix user ID (e.g., <code>@yourname:domain</code>). This is the identity
+      attached to every invite you mint. If you need to rotate it — because your
+      account or device is compromised — create a new operator account with
+      <code>bootstrap-operator.sh</code>, revoke the old one, and update the env var.
+    </p>
+
+    <div class="section-label">Practices</div>
+    <ul class="room-list" style="list-style: none;">
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Lock screen notifications</span> —
+        turn off previews on every device you use. The same advice you give members applies
+        doubly to you.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Second device</span> —
+        keep a second logged-in session. If your primary device is seized, you can
+        still access the community and begin revocation from the backup.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Recovery passphrase</span> —
+        store it offline. Paper in a secure location, or an offline password manager.
+        Not in a cloud-synced notes app.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Audit regularly</span> —
+        run <code>./audit-vouches.sh</code> at least weekly. Check the governance
+        widget daily if the community is active.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Rotate after any incident</span> —
+        if you suspect your device, account, or machine was accessed by someone else,
+        treat it as compromised. Create a new operator account, revoke the old one,
+        revoke any invites minted after the suspected compromise date.
+      </li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

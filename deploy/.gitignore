@@ -45,6 +45,9 @@ invites/
 # Vouch index (operational data: token hashes, voucher identities, timestamps). NEVER commit.
 vouch.jsonl
 
+# Gov bot rendered config holds the bot access token. NEVER commit.
+gov-bot/.env
+
 # LiveKit secrets (API key + secret). NEVER commit.
 livekit/livekit.secrets.yaml
 livekit/.env

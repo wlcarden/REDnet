@@ -199,6 +199,10 @@ Governance is the most _social_ layer — the real threats are informants and co
 - **Infrastructure (GitOps):** the only way to change a deployment is a signed, reviewed commit requiring M-of-N to merge; the stack deploys from it via Ansible. No standing admin access = no live god-credential to coerce.
 - **Compartmentalization — the master defense:** most members see only broad rooms; sensitive work happens in small, separately-vouched, need-to-know rooms. Bounds what any one informant or coerced admin can expose.
 
+**Role model (Matrix power levels):** Member (PL 0) sends messages. Moderator (PL 50) kicks, bans, redacts, runs audits. Organizer (PL 75) mints invites, confirms vouches, assigns moderators. Admin (PL 100) changes power levels, revokes members and chains, all infrastructure operations. The four authorities map onto these tiers: Admission = Organizer, Moderation = Moderator, Infrastructure/Crisis = Admin.
+
+**In-client governance (gov bot):** a non-E2EE command room (`#gov-bot`) hosts `!gov` commands for report/confirm/revoke/role/audit, eliminating SSH for routine governance. The governance widget provides clipboard-based command composition. The bot writes to `vouch.jsonl` (canonical audit trail) but does not post to E2EE rooms it cannot encrypt for.
+
 Honest limit: coercion-_resilient_, not coercion-_proof_. Detecting a compromised insider before damage is a social/operational problem, not a cryptographic one.
 
 ## 12. Whitelabel & deployment model

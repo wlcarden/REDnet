@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Member Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111316; color: #ECEDEE; min-height: 100vh;
+    display: flex; justify-content: center;
+    padding: 32px 24px 64px;
+  }
+  .guide {
+    max-width: 560px; width: 100%;
+  }
+  .logo { text-align: center; margin-bottom: 24px; }
+  .logo svg { width: 160px; height: auto; }
+
+  h1 {
+    font-size: 20px; font-weight: 600; letter-spacing: -0.3px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px; color: #8B8D98; text-align: center;
+    line-height: 1.5; margin-bottom: 24px;
+  }
+
+  /* --- Nav --- */
+  .nav {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 28px; justify-content: center;
+  }
+  .nav a {
+    font-size: 11px; font-weight: 600; color: #8B8D98;
+    text-decoration: none; padding: 5px 10px; border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 120ms, color 120ms;
+  }
+  .nav a:hover { background: rgba(229,72,77,0.1); color: #E5484D; }
+
+  /* --- Sections --- */
+  .section {
+    background: #16181B; border-radius: 12px; padding: 24px 22px;
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px; font-weight: 600; letter-spacing: -0.2px;
+    margin-bottom: 12px; padding-top: 4px;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #62646C; margin-bottom: 10px;
+    margin-top: 16px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  p {
+    font-size: 13px; color: #8B8D98; line-height: 1.6; margin-bottom: 12px;
+  }
+  p:last-child { margin-bottom: 0; }
+
+  /* --- Callouts --- */
+  .callout {
+    padding: 12px 14px; border-radius: 0 8px 8px 0;
+    font-size: 12px; line-height: 1.6; margin-bottom: 14px;
+  }
+  .callout:last-child { margin-bottom: 0; }
+  .callout strong { color: #ECEDEE; font-weight: 600; }
+  .callout-red {
+    background: rgba(229,72,77,0.08); border-left: 3px solid #E5484D; color: #C4C7C9;
+  }
+  .callout-amber {
+    background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; color: #C4C7C9;
+  }
+  .callout-blue {
+    background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; color: #C4C7C9;
+  }
+  .callout-green {
+    background: rgba(48,164,108,0.08); border-left: 3px solid #30A46C; color: #C4C7C9;
+  }
+
+  /* --- Inline code --- */
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px; background: rgba(0,0,0,0.3); padding: 2px 6px;
+    border-radius: 4px; color: #ECEDEE;
+  }
+
+  /* --- Steps list --- */
+  .steps { list-style: none; counter-reset: step; margin-bottom: 12px; }
+  .steps li {
+    counter-increment: step; font-size: 13px; color: #8B8D98;
+    line-height: 1.5; padding: 6px 0 6px 32px; position: relative;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(229,72,77,0.15); color: #E5484D;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* --- Room list --- */
+  .room-list { list-style: none; margin-bottom: 12px; }
+  .room-list li {
+    font-size: 13px; color: #C4C7C9; line-height: 1.5;
+    padding: 6px 0 6px 20px; position: relative;
+  }
+  .room-list li::before {
+    content: '#'; position: absolute; left: 0; top: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; color: #E5484D; font-weight: 600;
+  }
+  .room-name { font-weight: 600; color: #ECEDEE; }
+
+  /* --- Key/value list --- */
+  .kv-list { list-style: none; margin-bottom: 12px; }
+  .kv-list li {
+    font-size: 13px; color: #C4C7C9; line-height: 1.5;
+    padding: 6px 0 6px 20px; position: relative;
+  }
+  .kv-list li::before {
+    content: ''; position: absolute; left: 0; top: 12px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(229,72,77,0.4);
+  }
+  .kv-label { font-weight: 600; color: #ECEDEE; }
+</style>
+</head>
+<body>
+<div class="guide">
+  <div class="logo">
+    <svg viewBox="0 0 252 64" role="img" aria-label="REDnet">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z"
+        fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/>
+        <circle cx="48" cy="23" r="3.2"/><circle cx="48" cy="41" r="3.2"/>
+        <circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/>
+        <circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, sans-serif" font-size="30"
+        font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <h1>Member guide</h1>
+  <p class="subtitle">
+    How to use this community day-to-day. Covers messaging, rooms,
+    encryption, privacy, and what to do when something goes wrong.
+  </p>
+
+  <div class="nav">
+    <a href="#rooms">Rooms</a>
+    <a href="#messaging">Messaging</a>
+    <a href="#encryption">Encryption</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#devices">Devices</a>
+    <a href="#reporting">Reporting</a>
+    <a href="#roles">Roles</a>
+    <a href="#help">Troubleshooting</a>
+  </div>
+
+  <!-- ==================== ROOMS ==================== -->
+  <div class="section" id="rooms">
+    <div class="section-title">Your rooms</div>
+    <p>
+      The community is organized into a Matrix <strong style="color:#ECEDEE;">Space</strong>,
+      which groups rooms together. You were automatically added to the starter rooms
+      when you joined.
+    </p>
+
+    <div class="section-label">Starter rooms</div>
+    <ul class="room-list">
+      <li><span class="room-name">welcome</span> — introductions and community announcements for new members</li>
+      <li><span class="room-name">announcements</span> — organizer broadcasts (you can read but not post)</li>
+      <li><span class="room-name">general</span> — open discussion for the whole community</li>
+      <li><span class="room-name">reference</span> — pinned information and resources (does not auto-delete)</li>
+    </ul>
+
+    <p>
+      Organizers may invite you to additional rooms or sub-spaces for specific working
+      groups. You can see all rooms you belong to in the left sidebar.
+    </p>
+
+    <div class="section-label">Navigating rooms</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Switch rooms</span> — click a room name in the left sidebar</li>
+      <li><span class="kv-label">Find rooms</span> — click the Space name at the top to browse all rooms in the community</li>
+      <li><span class="kv-label">Unread indicators</span> — bold room names have unread messages; a red badge means you were mentioned</li>
+      <li><span class="kv-label">Room info</span> — click the room name at the top of the chat to see the topic, members, and pinned messages</li>
+    </ul>
+
+    <div class="callout callout-blue">
+      <strong>All community rooms use end-to-end encryption.</strong>
+      Messages can only be read by verified members of that room. The server
+      operator, hosting provider, and anyone who seizes the hardware cannot
+      read encrypted messages.
+    </div>
+  </div>
+
+  <!-- ==================== MESSAGING ==================== -->
+  <div class="section" id="messaging">
+    <div class="section-title">Messaging</div>
+
+    <div class="section-label">Sending messages</div>
+    <p>
+      Type in the box at the bottom of a room and press Enter. Your message is
+      encrypted before it leaves your device.
+    </p>
+
+    <div class="section-label">Formatting</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Bold</span> — wrap text in <code>**double asterisks**</code></li>
+      <li><span class="kv-label">Italic</span> — wrap text in <code>*single asterisks*</code></li>
+      <li><span class="kv-label">Code</span> — wrap text in <code>`backticks`</code></li>
+      <li><span class="kv-label">Quote</span> — start a line with <code>&gt;</code></li>
+      <li><span class="kv-label">Mention someone</span> — type <code>@</code> then their display name</li>
+    </ul>
+
+    <div class="section-label">Editing and deleting</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Edit</span> — hover over your message (or long-press on mobile), click the pencil icon, change the text, press Enter</li>
+      <li><span class="kv-label">Delete</span> — hover over your message, click the three-dot menu, select "Remove." The message is replaced with "Message deleted" for everyone</li>
+    </ul>
+
+    <div class="callout callout-amber">
+      <strong>Deleting removes from view, not from memory.</strong>
+      Deleted messages are redacted on the server and removed from the timeline,
+      but any member who saw the message before you deleted it may have already read it.
+      Think before you send.
+    </div>
+
+    <div class="section-label">Replies and threads</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Reply</span> — hover over a message and click the reply arrow. Your response appears linked to the original</li>
+      <li><span class="kv-label">Threads</span> — if available, click the thread icon to start a side conversation that keeps the main room uncluttered</li>
+    </ul>
+
+    <div class="section-label">Files and images</div>
+    <p>
+      Click the attachment icon (paperclip or +) to send files, images, or documents.
+      Files are encrypted in transit and at rest. Media is subject to the community's
+      retention policy and may be automatically deleted after a set period.
+    </p>
+  </div>
+
+  <!-- ==================== ENCRYPTION ==================== -->
+  <div class="section" id="encryption">
+    <div class="section-title">Encryption</div>
+    <p>
+      Every community room uses end-to-end encryption (E2EE). Your messages are
+      encrypted on your device before they are sent, and only devices belonging to
+      room members can decrypt them.
+    </p>
+
+    <div class="section-label">The shield icon</div>
+    <p>
+      You may see a small shield icon next to messages or in room headers. This
+      indicates the encryption status:
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">Green shield</span> — message was sent from a verified device. This is the normal state</li>
+      <li><span class="kv-label">Red warning</span> — message was sent unencrypted or from an unverified device. Report this to a moderator if you see it on another member's message</li>
+      <li><span class="kv-label">Grey shield</span> — verification has not been completed for that device yet</li>
+    </ul>
+
+    <div class="section-label">Verifying sessions</div>
+    <p>
+      When you log in on a new device, Element asks you to verify it against an
+      existing session. This proves the new device belongs to you.
+    </p>
+    <ol class="steps">
+      <li>Open Element on both devices</li>
+      <li>On the new device, you will see a "Verify this session" prompt</li>
+      <li>On your existing device, approve the verification request</li>
+      <li>Compare the emoji or numbers shown on both screens</li>
+      <li>If they match, confirm on both devices</li>
+    </ol>
+
+    <div class="callout callout-red">
+      <strong>If you cannot verify, use your recovery passphrase.</strong>
+      If you no longer have access to another session, enter the recovery
+      passphrase you saved during setup. It unlocks your message history
+      and cross-signing keys. Without either method, you lose access to
+      past encrypted messages.
+    </div>
+
+    <div class="section-label">"Unable to decrypt" messages</div>
+    <p>
+      If you see "Unable to decrypt this message," it means your current device
+      does not have the key for that message. Common causes:
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">New device not verified</span> — verify your session to restore key access</li>
+      <li><span class="kv-label">Message sent before you joined</span> — encryption keys are per-session; you cannot decrypt messages from before your first session in a room</li>
+      <li><span class="kv-label">Key backup not restored</span> — check Settings &gt; Security &gt; Secure Backup and make sure it says "connected"</li>
+    </ul>
+  </div>
+
+  <!-- ==================== PRIVACY ==================== -->
+  <div class="section" id="privacy">
+    <div class="section-title">Privacy practices</div>
+    <p>
+      Encryption protects message content. The practices below protect
+      everything else: who you are, where you are, and what your device reveals.
+    </p>
+
+    <div class="section-label">Identity</div>
+    <div class="callout callout-red">
+      <strong>Do not share your real name, location, or photo.</strong>
+      Your username, display name, and avatar are visible to everyone in the
+      community. Keep them disconnected from your real identity. Do not reuse
+      a handle from any other platform. Do not upload a photo of yourself as
+      your avatar.
+    </div>
+
+    <div class="section-label">Lock screen notifications</div>
+    <div class="callout callout-amber">
+      <strong>Turn off message previews on your lock screen.</strong>
+      Anyone holding your phone can read notification content without unlocking it.<br><br>
+      <strong>iPhone:</strong> Settings &gt; Notifications &gt; Element X &gt; Show Previews &gt; Never<br>
+      <strong>Android:</strong> Settings &gt; Apps &gt; Element X &gt; Notifications &gt; Sensitive notifications off
+    </div>
+
+    <div class="section-label">Network hygiene</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Link previews</span> — the server has URL previews disabled. If you paste a link, only the raw URL appears (no embedded images or page titles)</li>
+      <li><span class="kv-label">Files you receive</span> — do not open files from people you do not trust. Files sent in encrypted rooms are safe in transit, but the file itself could still be harmful</li>
+      <li><span class="kv-label">External links</span> — clicking a link leaves the encrypted environment. The destination site can see your IP address and browser fingerprint</li>
+    </ul>
+
+    <div class="section-label">Message retention</div>
+    <p>
+      Most rooms have automatic message retention enabled. Messages older than
+      the retention period are automatically deleted from the server. The
+      <code>#reference</code> room is exempt so that pinned resources persist.
+      Do not treat retention as a guarantee that messages disappear from every
+      device; members who were online may have cached copies locally.
+    </p>
+  </div>
+
+  <!-- ==================== DEVICES ==================== -->
+  <div class="section" id="devices">
+    <div class="section-title">Devices and recovery</div>
+
+    <div class="section-label">Managing sessions</div>
+    <p>
+      Open Settings &gt; Security to see all devices where you are logged in.
+      Each session is listed with its name, last active time, and verification
+      status.
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">Sign out old devices</span> — if you see a session you no longer use (a lost phone, an old laptop), sign it out from this list. This revokes its decryption keys</li>
+      <li><span class="kv-label">Rename sessions</span> — give each session a name you recognize (e.g., "work laptop," "phone") so you can tell them apart</li>
+    </ul>
+
+    <div class="section-label">Second device</div>
+    <div class="callout callout-blue">
+      <strong>Log in on a second device.</strong>
+      If you lose your phone, a second active session (laptop, tablet) lets you
+      keep access without needing your recovery passphrase. Log in on the second
+      device and verify it from your existing session.
+    </div>
+
+    <div class="section-label">Recovery passphrase</div>
+    <p>
+      During setup you were given a recovery passphrase. It is your last-resort
+      way to restore message history and cross-signing keys if you lose all
+      your devices.
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">Store it offline</span> — write it on paper or put it in a password manager. Not in a notes app, not in a screenshot, not in a text message</li>
+      <li><span class="kv-label">Never share it</span> — no organizer, moderator, or admin will ever ask for your recovery passphrase. Anyone who asks is not who they claim to be</li>
+      <li><span class="kv-label">Test it</span> — periodically confirm you still have access to it. If you lost it, contact an organizer to discuss recovery options</li>
+    </ul>
+
+    <div class="callout callout-red">
+      <strong>If you lose all devices AND your recovery passphrase, your
+      encrypted message history is gone.</strong> There is no reset, no admin
+      override, no recovery backdoor. This is by design.
+    </div>
+  </div>
+
+  <!-- ==================== REPORTING ==================== -->
+  <div class="section" id="reporting">
+    <div class="section-title">Reporting problems</div>
+    <p>
+      If something goes wrong, you have tools to act. You do not need to wait
+      for a moderator to notice.
+    </p>
+
+    <div class="section-label">Report a compromised account</div>
+    <p>
+      If you notice a member behaving strangely (messages they deny sending,
+      unfamiliar activity, unknown devices), report it in the
+      <code>#gov-bot</code> room:
+    </p>
+    <ol class="steps">
+      <li>Open <code>#gov-bot</code> from the room list</li>
+      <li>Type: <code>!gov report @username --detail "what you observed"</code></li>
+      <li>The bot posts an alert that organizers and admins can act on</li>
+    </ol>
+
+    <div class="callout callout-blue">
+      <strong>Anyone can report, regardless of role.</strong>
+      The <code>!gov report</code> command does not require moderator or organizer
+      permissions. Reporting does not kick or ban anyone; it flags the account
+      for review.
+    </div>
+
+    <div class="section-label">Check community status</div>
+    <p>
+      You can see a summary of the community (member count, active alerts) at
+      any time:
+    </p>
+    <ol class="steps">
+      <li>Open <code>#gov-bot</code></li>
+      <li>Type: <code>!gov status</code></li>
+    </ol>
+
+    <div class="section-label">If your own account is compromised</div>
+    <div class="callout callout-red">
+      <strong>Act fast.</strong>
+      <br><br>
+      1. Change your password immediately (Settings &gt; Account &gt; Password).<br>
+      2. Sign out all other sessions (Settings &gt; Security &gt; sign out each one you don't recognize).<br>
+      3. Tell an organizer or moderator by DM so they can check for damage.<br>
+      4. If you cannot log in, contact an organizer through whatever channel
+      the person who invited you used (text, in person, phone call).
+    </div>
+
+    <div class="section-label">Content concerns</div>
+    <p>
+      If someone posts personal information (real names, locations, photos of
+      faces), alert a moderator by DM or mention them in the room. Moderators
+      can delete messages. If the content is urgent and no moderator is online,
+      use <code>!gov report</code> in <code>#gov-bot</code> to create a
+      permanent record.
+    </p>
+  </div>
+
+  <!-- ==================== ROLES ==================== -->
+  <div class="section" id="roles">
+    <div class="section-title">Community roles</div>
+    <p>
+      The community uses four roles. Your role determines what actions you can
+      take. Most people are members.
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">Member</span> — send messages, view rooms, report problems. This is you</li>
+      <li><span class="kv-label">Moderator</span> — everything a member can do, plus kick, ban, delete messages, and run audits</li>
+      <li><span class="kv-label">Organizer</span> — everything a moderator can do, plus mint invites, confirm vouches, and assign moderators</li>
+      <li><span class="kv-label">Admin</span> — full control including revoking members and managing power levels</li>
+    </ul>
+    <p>
+      If you are asked to take on a moderator role, an organizer or admin will
+      assign it. You will see your elevated permissions reflected in the room
+      settings under "Roles &amp; Permissions."
+    </p>
+  </div>
+
+  <!-- ==================== TROUBLESHOOTING ==================== -->
+  <div class="section" id="help">
+    <div class="section-title">Troubleshooting</div>
+
+    <div class="section-label">"Unable to decrypt" on old messages</div>
+    <p>
+      Verify your session (see Encryption above). If you already verified, check
+      Settings &gt; Security &gt; Secure Backup. If it says "not connected,"
+      enter your recovery passphrase to reconnect.
+    </p>
+
+    <div class="section-label">Not receiving notifications</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Check in-app settings</span> — Settings &gt; Notifications. Make sure notifications are enabled for the rooms you care about</li>
+      <li><span class="kv-label">Check device settings</span> — your phone's notification settings for the Element app may be blocking alerts</li>
+      <li><span class="kv-label">Background restrictions</span> — some Android phones aggressively kill background apps. Check your battery optimization settings</li>
+    </ul>
+
+    <div class="section-label">Logged out unexpectedly</div>
+    <p>
+      If the app logs you out (after an update, a device restart, or a server
+      maintenance window), log back in with your username and password. If prompted
+      to verify, use another active session or your recovery passphrase.
+    </p>
+
+    <div class="section-label">Cannot find a room</div>
+    <p>
+      All rooms are inside the community Space. Click the Space name in the
+      sidebar to browse rooms. If you still cannot find it, you may not have
+      been invited to that room. Ask an organizer.
+    </p>
+
+    <div class="section-label">Need more help</div>
+    <p>
+      Ask in <code>#general</code> or send a DM to the person who invited you.
+      Moderators and organizers monitor the community rooms.
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
