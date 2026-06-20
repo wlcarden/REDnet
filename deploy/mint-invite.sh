@@ -148,8 +148,9 @@ generate_card(){
       <span class="brand-red">RED</span><span class="brand-gray">net</span>
     </div>
     <div class="instruction">
-      Scan the QR code or visit the URL below to join.
-      Your invite is single-use.
+      Scan the QR code or visit the URL below.
+      Read the setup guide before creating your account.
+      Single-use invite — do not share.
     </div>
     <div class="token-label">Token</div>
     <div class="token-value">${TOKEN}</div>

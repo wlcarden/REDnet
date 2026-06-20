@@ -145,7 +145,7 @@ The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix
 
 ### Not yet built
 
-- **QR onboarding flow** — built (`generate-invite.sh` + `/join` landing page); needs live-stack validation
+- **QR onboarding flow** — built (`mint-invite.sh` + `/join` landing page); needs live-stack validation
 - **Governance tooling** — built (attributed invites, vouch provenance, compartments, canary, revocation, in-client widget); needs live-stack validation
 - **Phase-2 recovery** — crypto + lifecycle built (47/47 tests); moderator approval tool + coordination bot remain ([RECOVERY.md](RECOVERY.md))
 - **Group calls** — scaffolded (LiveKit SFU + JWT service + Caddy routing); needs production media node ([DESIGN.md §8](DESIGN.md))

@@ -47,18 +47,19 @@ docker compose exec mas mas-cli manage issue-user-registration-token --config /c
 ```
 
 Give that token to the invitee. They can register via the MAS registration page at the front, or use
-the **QR invite flow**:
+the **attributed QR invite flow** (preferred — see Governance tooling below):
 
 ```bash
-./generate-invite.sh                  # mint a token + generate a printable QR card
-./generate-invite.sh --batch 5        # mint 5 tokens + 5 cards
-./generate-invite.sh --token TOKEN    # card for an already-minted token
+./mint-invite.sh --label "Maria, Tuesday group"       # mint + QR card + vouch record
+./mint-invite.sh --label "workshop batch" --batch 5    # mint 5 attributed invites
+./mint-invite.sh --label "existing" --token TOKEN      # card for an already-minted token
 ```
 
-The script produces a branded HTML card in `invites/` (one per token). Open it in a browser and print.
-The QR encodes `https://DOMAIN/join#TOKEN`, which loads a branded landing page with platform detection
-(desktop vs. mobile), the token for copy-paste, and step-by-step instructions. The landing page is
-served by the Element container at `/join`.
+The script produces a branded HTML card in `invites/` (one per token), records the vouch in
+`#vouch-log` + `vouch.jsonl`, and attributes the invite to you (`REDNET_OPERATOR`). Open the card
+in a browser and print. The QR encodes `https://DOMAIN/join#TOKEN`, which loads a security-aware
+onboarding flow: handle OPSEC guidance, the token, registration steps, and post-setup instructions.
+The landing page is served by the Element container at `/join`.
 
 Admin/system accounts are created out-of-band with `mas-cli manage register-user` (admin path,
 bypasses the token gate).
@@ -75,7 +76,7 @@ bypasses the token gate).
 - [x] restic transport wrapper + backup heartbeat (`backup.sh`, verified: restic snapshot created, heartbeat reaches Prometheus and clears `BackupHeartbeat*` alerts)
 - [x] Element Web **soft fork** build context (`element-web/`: config locks to our server + CryptoSetupExtensions module + integration.patch + Dockerfile + `web` profile, front proxies to it). _Build context only: the webpack build runs at deploy time (`element-web/build.sh`). Phase-1 passphrase recovery: browser E2E proven (2/2 PASS, 2026-06-19), silent onboarding + passphrase recovery work end-to-end._
 - [x] Ansible two-host wrapper (`ansible/`: CORE+FRONT split, WireGuard overlay, front Caddyfile, **front-tripwire** seizure alert + heartbeat). _Scaffold: YAML/compose validated; not run against real hosts._
-- [x] QR-card onboarding (`generate-invite.sh` + `/join` landing page + platform detection). _Scaffold: needs live-stack validation._
+- [x] QR-card onboarding (`mint-invite.sh` + `/join` landing page + security-aware onboarding flow). _Scaffold: needs live-stack validation._
 - [x] Phase-2 recovery lifecycle (`escrow-lifecycle.ts` + `directory.ts` + `events.ts`, 47/47 crypto+lifecycle tests). _Moderator approval tool + coordination bot not built._
 - [x] Group calls module (`bootstrap-calls.sh`, LiveKit + JWT + Caddy + Element config, `calls` profile). _Scaffold: needs live-stack + production media node._
 - [x] matrix-viewer public preview (`bootstrap-viewer.sh`, `viewer` profile). _Scaffold: OFF by default, conflicts with mandatory E2EE (SPEC §11)._
