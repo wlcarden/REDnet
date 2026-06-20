@@ -329,9 +329,139 @@
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* --- Graph tab --- */
+  .graph-container {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .graph-container canvas {
+    display: block;
+    width: 100%;
+    cursor: grab;
+  }
+  .graph-container canvas:active { cursor: grabbing; }
+  .graph-legend {
+    display: flex;
+    gap: 14px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+  .graph-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .graph-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .graph-tooltip {
+    display: none;
+    position: absolute;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    pointer-events: auto;
+    z-index: 10;
+    max-width: 240px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .graph-tooltip .tt-actions {
+    margin-top: 6px;
+  }
+  .graph-tooltip .tt-actions .action-btn {
+    font-size: 10px;
+    padding: 3px 7px;
+  }
+  .graph-tooltip .tt-name {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .graph-tooltip .tt-detail {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .graph-controls {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .graph-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 120ms;
+  }
+  .graph-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+  /* --- Action buttons --- */
+  .action-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 120ms;
+  }
+  .action-btn:hover { background: var(--surface-hover); border-color: var(--red); }
+  .action-btn.danger { border-color: var(--red); color: var(--red); }
+  .action-btn.danger:hover { background: var(--red-dim); }
+  .action-btn.confirm { border-color: var(--green); color: var(--green); }
+  .action-btn.confirm:hover { background: var(--green-dim); }
+  .action-btn.warn { border-color: var(--amber); color: var(--amber); }
+  .action-btn.warn:hover { background: var(--amber-dim); }
+
+  .cmd-toast {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--green);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 200ms;
+    pointer-events: none;
+  }
+  .cmd-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
+<div class="cmd-toast" id="cmd-toast">Copied to clipboard</div>
 <div class="widget-root">
   <div class="header">
     <div class="header-brand"><span class="r">RED</span><span class="g">net</span></div>
@@ -347,6 +477,7 @@
     <button class="tab active" data-tab="dashboard" role="tab">Dashboard</button>
     <button class="tab" data-tab="provenance" role="tab">Provenance</button>
     <button class="tab" data-tab="audit" role="tab">Audit</button>
+    <button class="tab" data-tab="graph" role="tab">Graph</button>
   </div>
 
   <!-- Dashboard -->
@@ -406,6 +537,40 @@
     </div>
   </div>
 
+  <!-- Graph -->
+  <div class="panel" id="panel-graph">
+    <div class="graph-container" id="graph-container">
+      <div class="graph-controls">
+        <button class="graph-btn" id="graph-reset" title="Reset view">Reset</button>
+        <button class="graph-btn" id="graph-freeze" title="Pause/resume simulation">Pause</button>
+      </div>
+      <canvas id="graph-canvas" height="400"></canvas>
+      <div class="graph-tooltip" id="graph-tooltip">
+        <div class="tt-name"></div>
+        <div class="tt-detail"></div>
+        <div class="tt-actions"></div>
+      </div>
+      <div class="graph-legend">
+        <div class="graph-legend-item">
+          <div class="graph-legend-dot" style="background:#46A758"></div> Voucher
+        </div>
+        <div class="graph-legend-item">
+          <div class="graph-legend-dot" style="background:#3E93DE"></div> Member
+        </div>
+        <div class="graph-legend-item">
+          <div class="graph-legend-dot" style="background:#E5484D"></div> Revoked
+        </div>
+        <div class="graph-legend-item">
+          <div class="graph-legend-dot" style="background:#E5A536"></div> Pending
+        </div>
+      </div>
+    </div>
+    <div class="empty-state" id="graph-empty" style="display:none">
+      <div class="icon">&#128302;</div>
+      <div class="msg">No vouch data to graph. Mint some invites and confirm vouches first.</div>
+    </div>
+  </div>
+
   <!-- Audit -->
   <div class="panel" id="panel-audit">
     <div class="section-title">Canary checks</div>
@@ -420,12 +585,61 @@
     <div id="unclaimed-list">
       <div class="empty-state"><div class="msg">Loading...</div></div>
     </div>
+
+    <div class="section-title" style="margin-top:20px">Quick actions</div>
+    <div class="action-bar">
+      <button class="action-btn" onclick="copyCmd('!gov audit')">Run full audit</button>
+      <button class="action-btn warn" onclick="copyCmd('!gov report @USER --detail &quot;REASON&quot;')">Report compromised</button>
+      <button class="action-btn confirm" onclick="copyCmd('!gov confirm @USER')">Confirm vouch</button>
+    </div>
+    <div style="font-size:10px;color:var(--text-dim);margin-top:6px">
+      Copies command to clipboard — paste in <strong>#gov-bot</strong> to execute.
+      Replace @USER with the actual username.
+    </div>
   </div>
 </div>
 
 <script>
 (function() {
   "use strict";
+
+  // --- Clipboard action helper ---
+  window.copyCmd = function(cmd) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(cmd).then(function() { showToast("Copied: " + cmd); });
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = cmd;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast("Copied: " + cmd);
+    }
+  };
+
+  function showToast(msg) {
+    var el = document.getElementById("cmd-toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(function() { el.classList.remove("show"); }, 2000);
+  }
+
+  window.copyCmdForUser = function(user, action) {
+    var cmd = "";
+    switch (action) {
+      case "revoke":  cmd = '!gov revoke ' + user + ' --reason "REASON"'; break;
+      case "confirm": cmd = '!gov confirm ' + user; break;
+      case "report":  cmd = '!gov report ' + user + ' --detail "EVIDENCE"'; break;
+      case "role-mod": cmd = '!gov role ' + user + ' moderator'; break;
+      case "role-org": cmd = '!gov role ' + user + ' organizer'; break;
+      case "revoke-chain": cmd = '!gov revoke-chain ' + user + ' --reason "REASON"'; break;
+      case "audit": cmd = '!gov audit'; break;
+      case "status": cmd = '!gov status'; break;
+    }
+    window.copyCmd(cmd);
+  };
 
   var vouchEvents = [];
   var claimEvents = [];
@@ -756,7 +970,14 @@
             revokedAt: d.revoked_at
           });
         } else if (d.type === "role") {
-          roleEvents.push(d);
+          roleEvents.push({
+            type: "role",
+            account: d.user || d.account,
+            role: d.role,
+            scope: d.scope,
+            assignedBy: d.assigned_by || d.assignedBy,
+            timestamp: d.timestamp
+          });
         } else if (d.type === "compartment") {
           compartmentEvents.push(d);
         }
@@ -783,6 +1004,7 @@
       document.querySelectorAll(".panel").forEach(function(p) { p.classList.remove("active"); });
       tab.classList.add("active");
       document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+      if (tab.dataset.tab === "graph") renderGraph();
     });
   });
 
@@ -798,6 +1020,7 @@
     renderProvenanceTable();
     renderVouchTree();
     renderAudit();
+    renderGraph();
     if (searchInput && searchInput.value.trim()) {
       renderProvenanceSearch(searchInput.value.trim().toLowerCase());
     }
@@ -946,14 +1169,19 @@
       if (m.type === "claimed") {
         html += '<div class="chain-node">' +
           '<div class="chain-connector"><div class="chain-dot"></div></div>' +
-          '<div><div class="chain-name">' + esc(m.account) + '</div>' +
+          '<div style="flex:1"><div class="chain-name">' + esc(m.account) + '</div>' +
           '<div class="chain-label">vouched by <span class="user-tag">' + esc(m.voucher) + '</span>' +
           (m.label ? ' — ' + esc(m.label) : '') + '</div>' +
-          '<div class="chain-date">' + fmtTime(m.confirmedAt) + '</div></div></div>';
+          '<div class="chain-date">' + fmtTime(m.confirmedAt) + '</div>' +
+          '<div class="action-bar">' +
+          '<button class="action-btn warn" onclick="copyCmdForUser(\'' + esc(m.account).replace(/'/g, "\\'") + '\',\'report\')">Report</button>' +
+          '<button class="action-btn danger" onclick="copyCmdForUser(\'' + esc(m.account).replace(/'/g, "\\'") + '\',\'revoke\')">Revoke</button>' +
+          '<button class="action-btn" onclick="copyCmdForUser(\'' + esc(m.account).replace(/'/g, "\\'") + '\',\'role-mod\')">Set moderator</button>' +
+          '</div></div></div>';
       } else {
         html += '<div class="chain-node">' +
           '<div class="chain-connector"><div class="chain-dot" style="background:var(--amber)"></div></div>' +
-          '<div><div class="chain-name" style="color:var(--amber)">' + esc(m.label) + ' (pending)</div>' +
+          '<div style="flex:1"><div class="chain-name" style="color:var(--amber)">' + esc(m.label) + ' (pending)</div>' +
           '<div class="chain-label">minted by <span class="user-tag">' + esc(m.voucher) + '</span></div>' +
           '<div class="chain-date">' + fmtTime(m.timestamp) + '</div></div></div>';
       }
@@ -1031,19 +1259,20 @@
         alerts.push({
           level: "crit",
           title: "Burst minting: " + parts[0],
-          detail: parts[1] + " — " + byVoucherDay[key] + " invites minted (threshold: 5)"
+          detail: parts[1] + " — " + byVoucherDay[key] + " invites minted (threshold: 5)",
+          voucher: parts[0]
         });
       }
     });
 
-    // Unclaimed rate
-    var claimedTokens = {};
+    // Unclaimed rate — match by voucher+label (same key as the graph builder)
+    var claimedKeys = {};
     claimEvents.forEach(function(c) {
-      vouchEvents.forEach(function(v) {
-        if (v.voucher === c.voucher) claimedTokens[v.tokenHash] = true;
-      });
+      claimedKeys[c.voucher + "|" + (c.label || "")] = true;
     });
-    var unclaimed = vouchEvents.filter(function(v) { return !claimedTokens[v.tokenHash]; });
+    var unclaimed = vouchEvents.filter(function(v) {
+      return !claimedKeys[v.voucher + "|" + (v.label || "")];
+    });
     var unclaimedRate = vouchEvents.length > 0 ? (unclaimed.length / vouchEvents.length) : 0;
     if (unclaimedRate > 0.5 && vouchEvents.length > 2) {
       alerts.push({
@@ -1080,10 +1309,24 @@
     var html = "";
     alerts.forEach(function(a) {
       var icon = { ok: "✓", warn: "⚠", crit: "✗" }[a.level] || "?";
+      var actions = "";
+      if (a.level === "crit" && a.voucher) {
+        var safeUser = esc(a.voucher).replace(/'/g, "\\'");
+        actions = '<div class="action-bar">' +
+          '<button class="action-btn danger" onclick="copyCmdForUser(\'' + safeUser + '\',\'revoke-chain\')" title="Lists all members introduced by this voucher for individual revocation">List chain</button>' +
+          '<button class="action-btn warn" onclick="copyCmdForUser(\'' + safeUser + '\',\'report\')">Report</button>' +
+          '<button class="action-btn" onclick="copyCmdForUser(\'' + safeUser + '\',\'revoke\')">Revoke user</button>' +
+          '</div>';
+      } else if (a.level === "warn") {
+        actions = '<div class="action-bar">' +
+          '<button class="action-btn" onclick="copyCmd(\'!gov audit\')">Run audit</button>' +
+          '</div>';
+      }
       html += '<div class="alert-card ' + a.level + '">' +
         '<div class="alert-icon">' + icon + '</div>' +
         '<div><div class="alert-title">' + esc(a.title) + '</div>' +
-        '<div class="alert-detail">' + esc(a.detail) + '</div></div></div>';
+        '<div class="alert-detail">' + esc(a.detail) + '</div>' +
+        actions + '</div></div>';
     });
     alertsDiv.innerHTML = html;
 
@@ -1093,6 +1336,7 @@
     } else {
       var uhtml = "";
       unclaimed.forEach(function(v) {
+        var safeVoucher = esc(v.voucher).replace(/'/g, "\\'");
         uhtml += '<div class="activity-item">' +
           '<div class="activity-icon mint" style="background:var(--amber-dim);color:var(--amber)">?</div>' +
           '<div class="activity-body">' +
@@ -1100,7 +1344,11 @@
           '<span class="user-tag">' + esc(v.voucher) + '</span></div>' +
           '<div class="activity-time">' + fmtTime(v.timestamp) +
           (v.tokenHash ? ' · ' + esc(v.tokenHash.substring(0, 12)) + '...' : '') +
-          '</div></div></div>';
+          '</div>' +
+          '<div class="action-bar">' +
+          '<button class="action-btn" onclick="copyCmdForUser(\'' + safeVoucher + '\',\'audit\')">Audit voucher</button>' +
+          '</div>' +
+          '</div></div>';
       });
       unclaimedDiv.innerHTML = uhtml;
     }
@@ -1123,6 +1371,466 @@
       return ts;
     }
   }
+
+  // --- Force-directed graph ---
+
+  var graphState = {
+    nodes: [],
+    edges: [],
+    running: false,
+    frozen: false,
+    drag: null,
+    pan: { x: 0, y: 0 },
+    hover: null,
+    animFrame: null
+  };
+
+  function buildGraph() {
+    var nodeMap = {};
+    var edges = [];
+    var revokedSet = {};
+    var voucherSet = {};
+    var claimedSet = {};
+
+    revokeEvents.forEach(function(r) { revokedSet[r.account] = true; });
+    vouchEvents.forEach(function(v) { voucherSet[v.voucher] = true; });
+    claimEvents.forEach(function(c) { claimedSet[c.account] = true; });
+
+    function ensureNode(id) {
+      if (!nodeMap[id]) {
+        nodeMap[id] = {
+          id: id,
+          x: 0, y: 0,
+          vx: 0, vy: 0,
+          degree: 0,
+          role: "member"
+        };
+      }
+      return nodeMap[id];
+    }
+
+    vouchEvents.forEach(function(v) {
+      ensureNode(v.voucher);
+    });
+
+    claimEvents.forEach(function(c) {
+      var from = ensureNode(c.voucher);
+      var to = ensureNode(c.account);
+      from.degree++;
+      to.degree++;
+      edges.push({ source: c.voucher, target: c.account });
+    });
+
+    // unclaimed: show as pending nodes connected to voucher
+    var claimedVouchers = {};
+    claimEvents.forEach(function(c) {
+      claimedVouchers[c.voucher + "|" + (c.label || "")] = true;
+    });
+    vouchEvents.forEach(function(v) {
+      var key = v.voucher + "|" + (v.label || "");
+      if (!claimedVouchers[key]) {
+        var pendingId = "(pending) " + v.label;
+        var pn = ensureNode(pendingId);
+        pn.role = "pending";
+        pn.label = v.label;
+        var from = ensureNode(v.voucher);
+        from.degree++;
+        pn.degree++;
+        edges.push({ source: v.voucher, target: pendingId });
+      }
+    });
+
+    Object.keys(nodeMap).forEach(function(id) {
+      var n = nodeMap[id];
+      if (revokedSet[id]) n.role = "revoked";
+      else if (voucherSet[id]) n.role = "voucher";
+      else if (n.role !== "pending") n.role = "member";
+    });
+
+    var nodes = Object.keys(nodeMap).map(function(k) { return nodeMap[k]; });
+
+    var canvas = document.getElementById("graph-canvas");
+    var cw = canvas ? (canvas.parentElement.getBoundingClientRect().width || 600) : 600;
+    var ch = 400;
+    var cx = cw / 2, cy = ch / 2;
+    nodes.forEach(function(n, i) {
+      var angle = (2 * Math.PI * i) / nodes.length;
+      var r = Math.min(cx, cy) * 0.6 + (i % 3) * 15;
+      n.x = cx + Math.cos(angle) * r;
+      n.y = cy + Math.sin(angle) * r;
+    });
+
+    return { nodes: nodes, edges: edges, nodeMap: nodeMap };
+  }
+
+  function nodeRadius(n) {
+    return Math.max(4, Math.min(14, 4 + n.degree * 2));
+  }
+
+  function nodeColor(n) {
+    switch (n.role) {
+      case "voucher": return "#46A758";
+      case "revoked": return "#E5484D";
+      case "pending": return "#E5A536";
+      default: return "#3E93DE";
+    }
+  }
+
+  function simulate() {
+    var nodes = graphState.nodes;
+    var edges = graphState.edges;
+    var nodeMap = {};
+    nodes.forEach(function(n) { nodeMap[n.id] = n; });
+
+    var damping = 0.85;
+    var repulsion = 800;
+    var attraction = 0.008;
+    var gravity = 0.02;
+    var canvas = document.getElementById("graph-canvas");
+    var cw = canvas ? (canvas.parentElement.getBoundingClientRect().width || 600) : 600;
+    var cx = cw / 2, cy = 200;
+
+    // repulsion between all pairs
+    for (var i = 0; i < nodes.length; i++) {
+      for (var j = i + 1; j < nodes.length; j++) {
+        var a = nodes[i], b = nodes[j];
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        var force = repulsion / (dist * dist);
+        var fx = (dx / dist) * force;
+        var fy = (dy / dist) * force;
+        a.vx -= fx; a.vy -= fy;
+        b.vx += fx; b.vy += fy;
+      }
+    }
+
+    // attraction along edges
+    edges.forEach(function(e) {
+      var a = nodeMap[e.source];
+      var b = nodeMap[e.target];
+      if (!a || !b) return;
+      var dx = b.x - a.x;
+      var dy = b.y - a.y;
+      var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      var force = dist * attraction;
+      var fx = (dx / dist) * force;
+      var fy = (dy / dist) * force;
+      a.vx += fx; a.vy += fy;
+      b.vx -= fx; b.vy -= fy;
+    });
+
+    // gravity toward center
+    var maxEnergy = 0;
+    nodes.forEach(function(n) {
+      if (graphState.drag && graphState.drag.node === n) return;
+      n.vx += (cx - n.x) * gravity;
+      n.vy += (cy - n.y) * gravity;
+      n.vx *= damping;
+      n.vy *= damping;
+      n.x += n.vx;
+      n.y += n.vy;
+      maxEnergy = Math.max(maxEnergy, Math.abs(n.vx) + Math.abs(n.vy));
+    });
+
+    return maxEnergy;
+  }
+
+  function drawGraph() {
+    var canvas = document.getElementById("graph-canvas");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.parentElement.getBoundingClientRect();
+    var w = rect.width;
+    var h = 400;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.height = h + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    ctx.clearRect(0, 0, w, h);
+
+    var nodes = graphState.nodes;
+    var edges = graphState.edges;
+    var nodeMap = {};
+    nodes.forEach(function(n) { nodeMap[n.id] = n; });
+    var hoverNode = graphState.hover;
+
+    // edges
+    edges.forEach(function(e) {
+      var a = nodeMap[e.source];
+      var b = nodeMap[e.target];
+      if (!a || !b) return;
+      var highlighted = hoverNode && (hoverNode === a || hoverNode === b);
+      ctx.beginPath();
+      ctx.moveTo(a.x + graphState.pan.x, a.y + graphState.pan.y);
+      ctx.lineTo(b.x + graphState.pan.x, b.y + graphState.pan.y);
+      ctx.strokeStyle = highlighted ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.12)";
+      ctx.lineWidth = highlighted ? 2 : 1;
+      ctx.stroke();
+    });
+
+    // nodes
+    nodes.forEach(function(n) {
+      var r = nodeRadius(n);
+      var px = n.x + graphState.pan.x;
+      var py = n.y + graphState.pan.y;
+      var isHover = hoverNode === n;
+      var isConnected = false;
+      if (hoverNode && !isHover) {
+        edges.forEach(function(e) {
+          if ((e.source === hoverNode.id && e.target === n.id) ||
+              (e.target === hoverNode.id && e.source === n.id)) {
+            isConnected = true;
+          }
+        });
+      }
+
+      var alpha = (hoverNode && !isHover && !isConnected) ? 0.25 : 1;
+      var color = nodeColor(n);
+
+      // glow for hovered node
+      if (isHover) {
+        ctx.beginPath();
+        ctx.arc(px, py, r + 4, 0, Math.PI * 2);
+        ctx.fillStyle = color.replace(")", ",0.2)").replace("rgb", "rgba");
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // label for hovered or high-degree nodes
+      if (isHover || n.degree >= 3) {
+        var label = n.id.replace(/^@/, "").split(":")[0];
+        if (n.role === "pending") label = n.label || "pending";
+        ctx.font = (isHover ? "600 " : "") + "10px Inter, system-ui, sans-serif";
+        ctx.fillStyle = isHover ? "#ECEDEE" : "rgba(236,237,238,0.6)";
+        ctx.textAlign = "center";
+        ctx.fillText(label, px, py - r - 4);
+      }
+    });
+  }
+
+  function graphLoop() {
+    if (!graphState.running || graphState.frozen) return;
+    var energy = simulate();
+    drawGraph();
+    if (energy > 0.1) {
+      graphState.animFrame = requestAnimationFrame(graphLoop);
+    } else {
+      graphState.running = false;
+      drawGraph();
+    }
+  }
+
+  function renderGraph() {
+    var canvas = document.getElementById("graph-canvas");
+    var emptyEl = document.getElementById("graph-empty");
+    var containerEl = document.getElementById("graph-container");
+    if (!canvas) return;
+
+    var parentWidth = canvas.parentElement.getBoundingClientRect().width;
+    if (parentWidth < 10) return;
+
+    if (vouchEvents.length === 0 && claimEvents.length === 0) {
+      containerEl.style.display = "none";
+      emptyEl.style.display = "block";
+      return;
+    }
+    containerEl.style.display = "block";
+    emptyEl.style.display = "none";
+
+    var graph = buildGraph();
+    graphState.nodes = graph.nodes;
+    graphState.edges = graph.edges;
+    graphState.pan = { x: 0, y: 0 };
+    graphState.hover = null;
+    graphState.frozen = false;
+    graphState.running = true;
+
+    var freezeBtn = document.getElementById("graph-freeze");
+    if (freezeBtn) freezeBtn.textContent = "Pause";
+
+    if (graphState.animFrame) cancelAnimationFrame(graphState.animFrame);
+    graphState.animFrame = requestAnimationFrame(graphLoop);
+  }
+
+  // graph interaction
+  (function() {
+    var canvas = document.getElementById("graph-canvas");
+    if (!canvas) return;
+
+    function getMousePos(e) {
+      var rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left - graphState.pan.x,
+        y: e.clientY - rect.top - graphState.pan.y
+      };
+    }
+
+    function findNode(pos) {
+      var best = null;
+      var bestDist = Infinity;
+      graphState.nodes.forEach(function(n) {
+        var dx = n.x - pos.x;
+        var dy = n.y - pos.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        var r = nodeRadius(n) + 4;
+        if (d < r && d < bestDist) {
+          best = n;
+          bestDist = d;
+        }
+      });
+      return best;
+    }
+
+    canvas.addEventListener("mousedown", function(e) {
+      var pos = getMousePos(e);
+      var node = findNode(pos);
+      if (node) {
+        graphState.drag = { node: node, startX: e.clientX, startY: e.clientY };
+        node.vx = 0;
+        node.vy = 0;
+      } else {
+        graphState.drag = { pan: true, startX: e.clientX, startY: e.clientY,
+          panStartX: graphState.pan.x, panStartY: graphState.pan.y };
+      }
+    });
+
+    var tooltipHideTimer = null;
+    var tooltipLocked = false;
+
+    function showTooltip(node, e) {
+      var tooltip = document.getElementById("graph-tooltip");
+      var name = node.id;
+      var detail = "";
+      var actionsHtml = "";
+
+      if (node.role === "pending") {
+        detail = "Unclaimed invite: " + (node.label || "?");
+      } else {
+        var vouched = 0;
+        graphState.edges.forEach(function(edge) {
+          if (edge.source === node.id) vouched++;
+        });
+        detail = node.role.charAt(0).toUpperCase() + node.role.slice(1);
+        if (vouched > 0) detail += " · vouched for " + vouched;
+
+        var safeUser = esc(node.id).replace(/'/g, "\\'");
+        if (node.role === "revoked") {
+          actionsHtml = '<div class="action-bar">' +
+            '<button class="action-btn danger" onclick="copyCmdForUser(\'' + safeUser + '\',\'revoke-chain\')" title="Lists all members this user introduced">List chain</button>' +
+            '</div>';
+        } else if (node.role !== "pending") {
+          actionsHtml = '<div class="action-bar">' +
+            '<button class="action-btn warn" onclick="copyCmdForUser(\'' + safeUser + '\',\'report\')">Report</button>' +
+            '<button class="action-btn danger" onclick="copyCmdForUser(\'' + safeUser + '\',\'revoke\')">Revoke</button>' +
+            '<button class="action-btn" onclick="copyCmdForUser(\'' + safeUser + '\',\'role-mod\')">Moderator</button>' +
+            '</div>';
+        }
+      }
+      tooltip.querySelector(".tt-name").textContent = name;
+      tooltip.querySelector(".tt-detail").textContent = detail;
+      tooltip.querySelector(".tt-actions").innerHTML = actionsHtml;
+      tooltip.style.display = "block";
+      var parentRect = canvas.parentElement.getBoundingClientRect();
+      tooltip.style.left = (e.clientX - parentRect.left + 12) + "px";
+      tooltip.style.top = (e.clientY - parentRect.top - 10) + "px";
+    }
+
+    function hideTooltip() {
+      tooltipHideTimer = setTimeout(function() {
+        if (tooltipLocked) return;
+        graphState.hover = null;
+        var tooltip = document.getElementById("graph-tooltip");
+        tooltip.style.display = "none";
+        drawGraph();
+      }, 200);
+    }
+
+    var tooltip = document.getElementById("graph-tooltip");
+    tooltip.addEventListener("mouseenter", function() {
+      tooltipLocked = true;
+      if (tooltipHideTimer) { clearTimeout(tooltipHideTimer); tooltipHideTimer = null; }
+    });
+    tooltip.addEventListener("mouseleave", function() {
+      tooltipLocked = false;
+      hideTooltip();
+    });
+
+    canvas.addEventListener("mousemove", function(e) {
+      if (graphState.drag) {
+        if (graphState.drag.pan) {
+          graphState.pan.x = graphState.drag.panStartX + (e.clientX - graphState.drag.startX);
+          graphState.pan.y = graphState.drag.panStartY + (e.clientY - graphState.drag.startY);
+        } else {
+          var rect = canvas.getBoundingClientRect();
+          graphState.drag.node.x = e.clientX - rect.left - graphState.pan.x;
+          graphState.drag.node.y = e.clientY - rect.top - graphState.pan.y;
+          graphState.drag.node.vx = 0;
+          graphState.drag.node.vy = 0;
+        }
+        drawGraph();
+        return;
+      }
+
+      var pos = getMousePos(e);
+      var node = findNode(pos);
+
+      if (node !== graphState.hover) {
+        if (tooltipHideTimer) { clearTimeout(tooltipHideTimer); tooltipHideTimer = null; }
+        graphState.hover = node;
+        if (node) {
+          tooltipLocked = false;
+          showTooltip(node, e);
+        } else if (!tooltipLocked) {
+          hideTooltip();
+        }
+        drawGraph();
+      } else if (node) {
+        var parentRect = canvas.parentElement.getBoundingClientRect();
+        var tt = document.getElementById("graph-tooltip");
+        tt.style.left = (e.clientX - parentRect.left + 12) + "px";
+        tt.style.top = (e.clientY - parentRect.top - 10) + "px";
+      }
+    });
+
+    canvas.addEventListener("mouseup", function() {
+      if (graphState.drag && graphState.drag.node) {
+        if (!graphState.frozen && !graphState.running) {
+          graphState.running = true;
+          graphState.animFrame = requestAnimationFrame(graphLoop);
+        }
+      }
+      graphState.drag = null;
+    });
+
+    canvas.addEventListener("mouseleave", function() {
+      graphState.drag = null;
+      if (!tooltipLocked) {
+        hideTooltip();
+      }
+    });
+
+    document.getElementById("graph-reset").addEventListener("click", function() {
+      renderGraph();
+    });
+
+    document.getElementById("graph-freeze").addEventListener("click", function() {
+      graphState.frozen = !graphState.frozen;
+      this.textContent = graphState.frozen ? "Resume" : "Pause";
+      if (!graphState.frozen && !graphState.running) {
+        graphState.running = true;
+        graphState.animFrame = requestAnimationFrame(graphLoop);
+      }
+    });
+  })();
 
   // --- init ---
   widgetId = getWidgetId();

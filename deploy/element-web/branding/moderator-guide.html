@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moderator Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111316; color: #ECEDEE; min-height: 100vh;
+    display: flex; justify-content: center;
+    padding: 32px 24px 64px;
+  }
+  .guide {
+    max-width: 560px; width: 100%;
+  }
+  .logo { text-align: center; margin-bottom: 24px; }
+  .logo svg { width: 160px; height: auto; }
+
+  h1 {
+    font-size: 20px; font-weight: 600; letter-spacing: -0.3px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px; color: #8B8D98; text-align: center;
+    line-height: 1.5; margin-bottom: 24px;
+  }
+
+  /* --- Nav --- */
+  .nav {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 28px; justify-content: center;
+  }
+  .nav a {
+    font-size: 11px; font-weight: 600; color: #8B8D98;
+    text-decoration: none; padding: 5px 10px; border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 120ms, color 120ms;
+  }
+  .nav a:hover { background: rgba(229,72,77,0.1); color: #E5484D; }
+
+  /* --- Sections --- */
+  .section {
+    background: #16181B; border-radius: 12px; padding: 24px 22px;
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px; font-weight: 600; letter-spacing: -0.2px;
+    margin-bottom: 12px; padding-top: 4px;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #62646C; margin-bottom: 10px;
+    margin-top: 16px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  p {
+    font-size: 13px; color: #8B8D98; line-height: 1.6; margin-bottom: 12px;
+  }
+  p:last-child { margin-bottom: 0; }
+
+  /* --- Callouts --- */
+  .callout {
+    padding: 12px 14px; border-radius: 0 8px 8px 0;
+    font-size: 12px; line-height: 1.6; margin-bottom: 14px;
+  }
+  .callout:last-child { margin-bottom: 0; }
+  .callout strong { color: #ECEDEE; font-weight: 600; }
+  .callout-red {
+    background: rgba(229,72,77,0.08); border-left: 3px solid #E5484D; color: #C4C7C9;
+  }
+  .callout-amber {
+    background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; color: #C4C7C9;
+  }
+  .callout-blue {
+    background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; color: #C4C7C9;
+  }
+  .callout-green {
+    background: rgba(48,164,108,0.08); border-left: 3px solid #30A46C; color: #C4C7C9;
+  }
+
+  /* --- Inline code --- */
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px; background: rgba(0,0,0,0.3); padding: 2px 6px;
+    border-radius: 4px; color: #ECEDEE;
+  }
+
+  /* --- Steps list --- */
+  .steps { list-style: none; counter-reset: step; margin-bottom: 12px; }
+  .steps li {
+    counter-increment: step; font-size: 13px; color: #8B8D98;
+    line-height: 1.5; padding: 6px 0 6px 32px; position: relative;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(229,72,77,0.15); color: #E5484D;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* --- Room list --- */
+  .room-list { list-style: none; margin-bottom: 12px; }
+  .room-list li {
+    font-size: 13px; color: #C4C7C9; line-height: 1.5;
+    padding: 6px 0 6px 20px; position: relative;
+  }
+  .room-list li::before {
+    content: '#'; position: absolute; left: 0; top: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; color: #E5484D; font-weight: 600;
+  }
+  .room-name { font-weight: 600; color: #ECEDEE; }
+
+  /* --- Power level badge --- */
+  .pl-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px;
+    vertical-align: middle;
+  }
+  .pl-100 { background: rgba(229,72,77,0.15); color: #E5484D; }
+  .pl-50 { background: rgba(229,165,54,0.15); color: #E5A536; }
+  .pl-0 { background: rgba(255,255,255,0.08); color: #8B8D98; }
+
+  /* --- Comparison grid --- */
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 12px 0 14px;
+  }
+  .compare-col { font-size: 12px; line-height: 1.7; }
+  .compare-header {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .compare-yes .compare-header { color: #46A758; }
+  .compare-no .compare-header { color: #E5484D; }
+  .compare-item { color: #C4C7C9; padding: 2px 0; }
+  .compare-yes .compare-item::before { content: ''; color: #46A758; margin-right: 4px; }
+  .compare-no .compare-item::before { content: ''; color: #E5484D; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div class="guide">
+  <div class="logo">
+    <svg viewBox="0 0 252 64" role="img" aria-label="REDnet">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z"
+        fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/>
+        <circle cx="48" cy="23" r="3.2"/><circle cx="48" cy="41" r="3.2"/>
+        <circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/>
+        <circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, sans-serif" font-size="30"
+        font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <h1>Moderator guide</h1>
+  <p class="subtitle">
+    You help keep this community safe. This guide covers what you can do,
+    how to do it, and when to ask an operator for help.
+  </p>
+
+  <div class="nav">
+    <a href="#role">Your role</a>
+    <a href="#rooms">Rooms</a>
+    <a href="#actions">Actions</a>
+    <a href="#situations">Situations</a>
+    <a href="#reporting">Reporting</a>
+    <a href="#escalation">Escalation</a>
+    <a href="#security">Your security</a>
+  </div>
+
+  <div class="callout callout-blue" style="margin-bottom: 28px;">
+    <strong>New to the platform?</strong>
+    Read the <a href="/member-guide" style="color:#3E93DE;">member guide</a> first
+    for messaging basics, encryption, privacy practices, and device management.
+    This guide covers moderation-specific tools.
+  </div>
+
+  <!-- ==================== YOUR ROLE ==================== -->
+  <div class="section" id="role">
+    <div class="section-title">Your role</div>
+    <p>
+      You are <span class="pl-badge pl-50">PL 50</span> (moderator) in the rooms
+      you've been assigned to. Operators are <span class="pl-badge pl-100">PL 100</span>
+      and handle community-wide actions. Regular members are
+      <span class="pl-badge pl-0">PL 0</span>.
+    </p>
+
+    <div class="compare">
+      <div class="compare-col compare-yes">
+        <div class="compare-header">You can</div>
+        <div class="compare-item">Kick members from your rooms</div>
+        <div class="compare-item">Ban members from your rooms</div>
+        <div class="compare-item">Delete (redact) messages</div>
+        <div class="compare-item">Invite people to your rooms</div>
+        <div class="compare-item">Set room topics</div>
+      </div>
+      <div class="compare-col compare-no">
+        <div class="compare-header">You cannot</div>
+        <div class="compare-item">Mint registration invites</div>
+        <div class="compare-item">Add or remove moderators</div>
+        <div class="compare-item">Change room settings</div>
+        <div class="compare-item">Access governance rooms</div>
+        <div class="compare-item">Use Draupnir bot commands</div>
+      </div>
+    </div>
+
+    <div class="callout callout-blue">
+      <strong>Your scope is your rooms.</strong>
+      Moderation actions you take only affect the rooms where you have
+      <span class="pl-badge pl-50">PL 50</span>. You cannot kick or ban
+      someone from a room you do not moderate. If someone is causing problems
+      across multiple rooms, escalate to an operator.
+    </div>
+  </div>
+
+  <!-- ==================== YOUR ROOMS ==================== -->
+  <div class="section" id="rooms">
+    <div class="section-title">Your rooms</div>
+    <p>
+      Your operator assigned you to specific rooms. You can see which rooms you
+      moderate by checking your power level — open any room's settings
+      and look under "Roles &amp; Permissions." If your name appears at the
+      "Moderator" level, you can act there.
+    </p>
+
+    <div class="section-label">Community rooms you can see</div>
+    <ul class="room-list">
+      <li><span class="room-name">welcome</span> — first thing members see</li>
+      <li><span class="room-name">announcements</span> — organizer broadcasts</li>
+      <li><span class="room-name">general</span> — open discussion</li>
+      <li><span class="room-name">reference</span> — pinned info, does not auto-delete</li>
+    </ul>
+    <p>
+      You may also be in compartment rooms (sub-spaces for specific groups).
+      If so, you moderate those rooms the same way.
+    </p>
+
+    <div class="callout callout-amber">
+      <strong>You do not have access to #vouch-log, #governance, or #rednet-mod.</strong>
+      These are operator-only rooms for invite tracking, governance, and bot
+      commands. If you need information from them, ask an operator.
+    </div>
+  </div>
+
+  <!-- ==================== MODERATION ACTIONS ==================== -->
+  <div class="section" id="actions">
+    <div class="section-title">Moderation actions</div>
+    <p>
+      All moderation happens inside Element. No command-line tools are needed.
+    </p>
+
+    <div class="section-label">Delete a message</div>
+    <ol class="steps">
+      <li>Hover over (or long-press on mobile) the message</li>
+      <li>Click the three-dot menu</li>
+      <li>Select "Remove" (Element Web) or "Delete" (Element X)</li>
+      <li>Confirm when prompted — the message is replaced with "Message deleted"</li>
+    </ol>
+
+    <div class="section-label">Kick a member</div>
+    <ol class="steps">
+      <li>Click the member's avatar or name to open their profile</li>
+      <li>Click "Kick" and provide a reason</li>
+      <li>The member is removed from that room but can rejoin if invited again</li>
+    </ol>
+
+    <div class="section-label">Ban a member</div>
+    <ol class="steps">
+      <li>Click the member's avatar or name to open their profile</li>
+      <li>Click "Ban" and provide a reason</li>
+      <li>The member is removed and cannot rejoin that room unless unbanned</li>
+    </ol>
+
+    <div class="callout callout-amber">
+      <strong>Bans are per-room, not community-wide.</strong>
+      Banning someone from <code>#general</code> does not remove them from
+      <code>#announcements</code> or any other room. If someone needs to be
+      removed from everything, escalate to an operator — they can use
+      Draupnir to ban across all rooms at once.
+    </div>
+
+    <div class="section-label">Mute a member</div>
+    <ol class="steps">
+      <li>Click the member's avatar or name</li>
+      <li>Click "Mute" — they can still read messages but cannot send new ones</li>
+      <li>Unmute the same way when appropriate</li>
+    </ol>
+  </div>
+
+  <!-- ==================== COMMON SITUATIONS ==================== -->
+  <div class="section" id="situations">
+    <div class="section-title">Common situations</div>
+
+    <div class="section-label">Someone posts personal information</div>
+    <div class="callout callout-red">
+      <strong>Delete it immediately.</strong>
+      Real names, locations, phone numbers, photos of faces, addresses — anything
+      that could identify a community member. Delete the message, then DM the person
+      to explain why. If it was a photo or file, it may persist in the media store
+      until the retention period expires. Notify an operator if the information was
+      highly sensitive.
+    </div>
+
+    <div class="section-label">Someone is disruptive</div>
+    <p>
+      Delete the offending messages. If it continues, mute them. If muting does not
+      resolve it, kick them from the room. Ban only if kicking fails to stop the behavior.
+      Escalate: delete &rarr; mute &rarr; kick &rarr; ban &rarr; operator.
+    </p>
+
+    <div class="section-label">Someone you don't recognize appears</div>
+    <p>
+      Every member joined through an attributed invite. If you see an unfamiliar
+      username, that is normal — you may not know everyone. Do not kick someone
+      just because you have not met them. If their behavior is suspicious, notify
+      an operator. They can check the vouch graph to see who invited them.
+    </p>
+
+    <div class="section-label">You suspect a compromised account</div>
+    <div class="callout callout-red">
+      <strong>Mute them in your rooms and escalate immediately.</strong>
+      Do not ban — the operator needs to investigate and may need to revoke
+      everyone that account vouched for. Send a DM to an operator with the
+      username and what you observed.
+    </div>
+  </div>
+
+  <!-- ==================== ESCALATION ==================== -->
+  <!-- ==================== REPORTING ==================== -->
+  <div class="section" id="reporting">
+    <div class="section-title">Reporting via gov bot</div>
+    <p>
+      The governance bot listens in <code>#gov-bot</code> for
+      <code>!gov</code> commands. As a moderator you can run audits
+      and report compromised accounts without needing server access.
+    </p>
+
+    <div class="section-label">Commands you can use</div>
+    <div class="cmd"><span class="comment"># Check network status:</span>
+!gov status
+
+<span class="comment"># Run coercion canary audit (PL 50+):</span>
+!gov audit
+
+<span class="comment"># Report a compromised account (any member can do this):</span>
+!gov report @user <span class="flag">--detail</span> <span class="string">"what you observed"</span></div>
+
+    <div class="section-label">Reporting a compromised account</div>
+    <p>
+      If you suspect a member's account has been compromised (unfamiliar
+      activity, messages they deny, unknown devices), report it immediately.
+      The <code>!gov report</code> command posts an alert to both
+      <code>#gov-bot</code> and the vouch log. An organizer or admin
+      will review and take action.
+    </p>
+
+    <div class="callout callout-blue">
+      <strong>You can also use the governance widget.</strong>
+      Open the widget in <code>#gov-bot</code> — the Provenance tab shows
+      quick-action buttons that copy the right command to your clipboard.
+    </div>
+  </div>
+
+  <!-- ==================== ESCALATION ==================== -->
+  <div class="section" id="escalation">
+    <div class="section-title">When to escalate</div>
+    <p>
+      Some situations need an operator. Do not try to handle these yourself.
+    </p>
+
+    <div class="section-label">Always escalate</div>
+    <ul class="room-list" style="list-style: none;">
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Suspected compromise</span> —
+        a member's account behaving abnormally (sudden activity changes, messages
+        they deny sending, unfamiliar devices in their session list)
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Cross-room problems</span> —
+        someone causing issues in multiple rooms needs a community-wide response
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Threats or safety concerns</span> —
+        anything suggesting physical danger to a community member
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Leaked sensitive content</span> —
+        real identities, locations, or operational details posted in a room
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Someone asking for access</span> —
+        members wanting to join rooms they're not in, or wanting moderator privileges
+      </li>
+    </ul>
+
+    <div class="section-label">How to escalate</div>
+    <p>
+      For suspected compromise, use <code>!gov report @user --detail "..."</code>
+      in <code>#gov-bot</code> first — this creates an immediate alert.
+      Then send a direct message to an operator with the username, the room, and
+      a brief description. If you cannot reach an operator by DM,
+      post in <code>#general</code> asking them to check their messages.
+    </p>
+  </div>
+
+  <!-- ==================== YOUR SECURITY ==================== -->
+  <div class="section" id="security">
+    <div class="section-title">Your security</div>
+    <p>
+      You have more access than a regular member. The same advice that applies
+      to everyone applies more to you.
+    </p>
+
+    <div class="callout callout-red">
+      <strong>Turn off lock screen notification previews.</strong>
+      Moderation messages — ban reasons, reports, DMs from operators — can show
+      on your lock screen if previews are on. Anyone holding your phone can read them.<br><br>
+      <strong>iPhone:</strong> Settings &gt; Notifications &gt; Element X &gt; Show Previews &gt; Never<br>
+      <strong>Android:</strong> Settings &gt; Apps &gt; Element X &gt; Notifications &gt; Sensitive notifications off
+    </div>
+
+    <div class="section-label">Practices</div>
+    <ul class="room-list" style="list-style: none;">
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Second device</span> —
+        log in on a second device (laptop or tablet). If you lose your phone, you
+        can still access the community.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Recovery passphrase</span> —
+        store it offline. Paper or a password manager that does not sync to the cloud.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Handle and display name</span> —
+        do not use your real name. Do not reuse a handle from another platform.
+        The same rules that apply to members apply to you.
+      </li>
+      <li style="padding-left: 0;">
+        <span class="room-name" style="color: #ECEDEE;">Report if compromised</span> —
+        if you suspect your device or account was accessed by someone else, tell
+        an operator immediately. They can adjust your permissions and investigate.
+      </li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
