@@ -68,7 +68,7 @@
   "_comment_user_notice": "Tier-1 EXPOSURE BANNER (DESIGN §4: the in-UI label IS the exposure control). Element's built-in user_notice — zero fork. show_once:true = shown once per device (dismissed state stored in local storage). The exposure info is ALSO in #welcome's topic (persistent, always visible in that room) and #reference's topic — so the user can revisit it without the banner. Set show_once:false if a deployment needs the banner on every load.",
   "user_notice": {
     "title": "How private is this?",
-    "description": "Your messages are end-to-end encrypted — the __REDNET_BRAND__ server can't read them. But it can still see WHO you message and WHEN. Keep real names, locations, and plans out of here — use your secure (Tier-2) channel for those. Chat messages auto-delete after a few days; durable info lives in #reference.",
+    "description": "Your messages are end-to-end encrypted — the __REDNET_BRAND__ server can't read them. But it can still see WHO you message and WHEN. Keep real names and locations out of chat. Turn off lock screen notification previews (they bypass encryption). Your username and display name are visible to anyone with server access — do not use your real name or a handle from another platform. Chat auto-deletes after a few days; durable info lives in #reference.",
     "show_once": true
   }
 }

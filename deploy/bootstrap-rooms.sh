@@ -70,7 +70,7 @@ set_topic(){  # ROOM_ID TEXT : python builds the JSON so emoji/quotes/newlines a
     | curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.room.topic/" -H "$AUTH" -d @- >/dev/null
 }
 
-PRIMER="🔒 End-to-end encrypted — the server cannot read your messages. 👁 But it CAN see WHO you talk to and WHEN. Keep real names, locations, and plans out of here — use your secure (Tier-2) channel for those. 🔑 Save your recovery passphrase somewhere safe and offline; it is the only way back in on a new device. 🧹 Chat messages auto-delete after a few days. Durable info (hotlines, safety plans) lives in #reference — that channel does not auto-delete."
+PRIMER="🔒 End-to-end encrypted — the server cannot read your messages. 👁 But it CAN see WHO you talk to and WHEN. Keep real names, locations, and plans out of chat. 🔑 Save your recovery passphrase somewhere safe and offline — it is the only way back in on a new device. 📵 Turn off lock screen notification previews (Settings > Notifications). 🧹 Chat auto-deletes after a few days; durable info lives in #reference."
 
 say "space: $REDNET_BRAND"
 SPACE_ID=$(create_space community "$REDNET_BRAND" "$REDNET_BRAND — organizing space. Channels live here.")
@@ -95,11 +95,18 @@ if [ -n "$WELCOME" ]; then
 🔒 Your messages are end-to-end encrypted — the server cannot read them.
 👁 The server CAN see who you talk to and when — keep real names and locations out of chat.
 🔑 Your recovery passphrase is the only way to get back in on a new device. Keep it safe and offline.
+🧹 Chat messages auto-delete after a few days. Durable info lives in #reference.
 
-Channels:
+PROTECT YOURSELF
+• Your username and display name are visible to everyone here — and to anyone who gains access to this server. Do not use your real name or a handle you use on other platforms.
+• Turn off lock screen notification previews. On iPhone: Settings > Notifications > Element X > Show Previews > Never. On Android: Settings > Apps > Element X > Notifications > turn off Sensitive notifications.
+• Log in on a second device (laptop or tablet) as a backup. If you lose your phone, a second session lets you back in without the recovery passphrase.
+• Your display name (Settings > Profile) follows the same rules as your username: no real names, no handles from other platforms.
+
+CHANNELS
   #general — open discussion
   #announcements — organizer posts (read-only)
-  #reference — durable info: hotlines, safety plans, meeting points
+  #reference — durable info: hotlines, safety plans, meeting points (does not auto-delete)
 
 Head to #general to start chatting."
   send_notice "$WELCOME" "$WELCOME_MSG" && echo "  #welcome notice sent (plaintext, pre-E2EE)"

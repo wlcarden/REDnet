@@ -13,24 +13,45 @@
     padding: 24px;
   }
   .card {
-    max-width: 400px; width: 100%; background: #16181B;
+    max-width: 440px; width: 100%; background: #16181B;
     border-radius: 16px; padding: 32px 28px;
     border: 1px solid rgba(255,255,255,0.06);
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
-  .logo { text-align: center; margin-bottom: 24px; }
+  .logo { text-align: center; margin-bottom: 20px; }
   .logo svg { width: 160px; height: auto; }
   h1 {
     font-size: 20px; font-weight: 600; letter-spacing: -0.3px;
-    text-align: center; margin-bottom: 8px;
+    text-align: center; margin-bottom: 6px;
   }
   .subtitle {
     font-size: 13px; color: #8B8D98; text-align: center;
-    line-height: 1.5; margin-bottom: 24px;
+    line-height: 1.5; margin-bottom: 20px;
+  }
+
+  /* --- Steps nav --- */
+  .step-nav {
+    display: flex; gap: 4px; margin-bottom: 20px;
+  }
+  .step-pip {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    transition: background 0.3s;
+  }
+  .step-pip.done { background: #E5484D; }
+  .step-pip.current { background: rgba(229,72,77,0.5); }
+
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* --- Shared elements --- */
+  .section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #62646C; margin-bottom: 10px;
   }
   .token-box {
     background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px 16px;
-    border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;
   }
   .token-label {
     font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
@@ -48,9 +69,69 @@
     border-radius: 6px; cursor: pointer; transition: background 120ms;
   }
   .copy-btn:hover { background: rgba(229,72,77,0.2); }
-  .steps {
-    list-style: none; counter-reset: step; margin-bottom: 24px;
+
+  .btn {
+    display: block; text-align: center; text-decoration: none;
+    padding: 12px 16px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; letter-spacing: 0.2px; transition: background 120ms;
+    cursor: pointer; border: none; width: 100%;
   }
+  .btn-primary { background: #E5484D; color: #fff; }
+  .btn-primary:hover { background: #DC3D43; }
+  .btn-secondary {
+    background: #23262B; color: #ECEDEE;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .btn-secondary:hover { background: #2A2D33; }
+  .btn-row { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+  /* --- Callout boxes --- */
+  .callout {
+    padding: 12px 14px; border-radius: 0 8px 8px 0;
+    font-size: 12px; line-height: 1.6; margin-bottom: 14px;
+  }
+  .callout strong { color: #ECEDEE; font-weight: 600; }
+  .callout-red {
+    background: rgba(229,72,77,0.08); border-left: 3px solid #E5484D; color: #C4C7C9;
+  }
+  .callout-amber {
+    background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; color: #C4C7C9;
+  }
+  .callout-blue {
+    background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; color: #C4C7C9;
+  }
+
+  /* --- Handle guidance --- */
+  .handle-examples {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin: 12px 0 14px;
+  }
+  .handle-col { font-size: 12px; line-height: 1.7; }
+  .handle-col-header {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .handle-bad .handle-col-header { color: #E5484D; }
+  .handle-good .handle-col-header { color: #46A758; }
+  .handle-item { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+  .handle-bad .handle-item { color: #E5484D; text-decoration: line-through; text-decoration-color: rgba(229,72,77,0.4); }
+  .handle-good .handle-item { color: #46A758; }
+
+  /* --- Checklist --- */
+  .checklist { list-style: none; margin: 10px 0 16px; }
+  .checklist li {
+    font-size: 12px; color: #C4C7C9; line-height: 1.5;
+    padding: 5px 0 5px 24px; position: relative;
+  }
+  .checklist li::before {
+    content: '';
+    position: absolute; left: 0; top: 8px;
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1.5px solid rgba(255,255,255,0.15);
+  }
+
+  /* --- Steps list (registration steps) --- */
+  .steps { list-style: none; counter-reset: step; margin-bottom: 20px; }
   .steps li {
     counter-increment: step; font-size: 13px; color: #8B8D98;
     line-height: 1.5; padding: 6px 0 6px 32px; position: relative;
@@ -63,35 +144,16 @@
     font-size: 11px; font-weight: 600;
     display: flex; align-items: center; justify-content: center;
   }
-  .platform-buttons { display: flex; flex-direction: column; gap: 8px; }
-  .btn {
-    display: block; text-align: center; text-decoration: none;
-    padding: 12px 16px; border-radius: 8px; font-size: 14px;
-    font-weight: 600; letter-spacing: 0.2px; transition: background 120ms;
-  }
-  .btn-primary { background: #E5484D; color: #fff; }
-  .btn-primary:hover { background: #DC3D43; }
-  .btn-secondary {
-    background: #23262B; color: #ECEDEE;
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .btn-secondary:hover { background: #2A2D33; }
-  .btn-icon {
-    display: inline-block; width: 18px; height: 18px;
-    vertical-align: middle; margin-right: 6px;
-  }
-  .exposure {
-    margin-top: 20px; padding: 12px 14px;
-    background: #1C1F23; border-radius: 0 8px 8px 0;
-    border-left: 3px solid #E5484D; font-size: 11px;
-    color: #8B8D98; line-height: 1.5;
-  }
-  .exposure strong { color: #ECEDEE; font-weight: 600; }
+
   .no-token {
     text-align: center; padding: 40px 20px;
     font-size: 14px; color: #8B8D98;
   }
-  #web-section, #mobile-section { display: none; }
+
+  .tip {
+    font-size: 11px; color: #62646C; line-height: 1.5;
+    margin-top: 12px;
+  }
 </style>
 </head>
 <body>
@@ -123,62 +185,165 @@
   </div>
 
   <div id="has-token" style="display:none;">
-    <h1 id="heading">Join the community</h1>
-    <p class="subtitle">You've been invited. Set up takes about two minutes.</p>
 
-    <div class="token-box">
-      <div class="token-label">Your invite token</div>
-      <div class="token-value" id="token-display"></div>
-      <span class="copy-btn" id="copy-btn" role="button" tabindex="0">Copy</span>
+    <div class="step-nav" id="step-nav">
+      <div class="step-pip current" data-step="0"></div>
+      <div class="step-pip" data-step="1"></div>
+      <div class="step-pip" data-step="2"></div>
     </div>
 
-    <div id="web-section">
-      <ol class="steps">
-        <li>Click "Open REDnet" below</li>
-        <li>Click "Create Account," paste your token when asked</li>
-        <li>Pick a username (no real name needed) and a password</li>
-        <li>Save the recovery passphrase you're shown. Write it down</li>
-      </ol>
-      <div class="platform-buttons">
-        <a id="web-link" class="btn btn-primary" href="/">Open REDnet</a>
-        <span class="btn btn-secondary" id="show-mobile" role="button" tabindex="0"
-          style="cursor:pointer;">I'm on a phone</span>
+    <!-- ==================== STEP 1: Before you begin ==================== -->
+    <div class="step-panel active" id="step-0">
+      <h1>You've been invited</h1>
+      <p class="subtitle">Read this before you create your account. It takes one minute and protects you.</p>
+
+      <div class="callout callout-red">
+        <strong>Your username is permanent.</strong>
+        Once you pick it, it cannot be changed. If your username reveals who you are,
+        anyone with access to this server (including law enforcement with a warrant)
+        can connect that name to your account and message history.
+      </div>
+
+      <div class="section-label">Choosing a handle</div>
+
+      <div class="handle-examples">
+        <div class="handle-col handle-bad">
+          <div class="handle-col-header">Avoid</div>
+          <div class="handle-item">maria_garcia</div>
+          <div class="handle-item">j.martinez.97</div>
+          <div class="handle-item">your Twitter/Insta</div>
+          <div class="handle-item">your email prefix</div>
+        </div>
+        <div class="handle-col handle-good">
+          <div class="handle-col-header">Better</div>
+          <div class="handle-item">sparrow42</div>
+          <div class="handle-item">quietpine</div>
+          <div class="handle-item">rn-7k</div>
+          <div class="handle-item">cloudwalker</div>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <strong>Do not reuse a handle you use anywhere else.</strong>
+        If your username here matches your handle on social media, gaming, forums,
+        or any other service, those accounts can be linked back to you.
+        Pick something new that only people in this community will know.
+      </div>
+
+      <div class="section-label">Before you start</div>
+      <ul class="checklist">
+        <li>I have a username in mind that is not my real name</li>
+        <li>That username is not one I use on any other service</li>
+        <li>I have a pen and paper (or password manager) ready to save my recovery passphrase</li>
+      </ul>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-to-step-1">I'm ready</button>
       </div>
     </div>
 
-    <div id="mobile-section">
-      <ol class="steps">
-        <li>Install Element X from your app store</li>
-        <li>Open it, tap "Create Account," enter the server URL shown below</li>
-        <li>Paste your invite token when asked</li>
-        <li>Pick a username (no real name needed) and save the recovery passphrase</li>
-      </ol>
+    <!-- ==================== STEP 2: Your invite ==================== -->
+    <div class="step-panel" id="step-1">
+      <h1>Your invite</h1>
+      <p class="subtitle">This token is single-use. Once someone registers with it, it's gone.</p>
+
       <div class="token-box">
-        <div class="token-label">Server address</div>
-        <div class="token-value" id="server-display"></div>
-        <span class="copy-btn" id="copy-server-btn" role="button" tabindex="0">Copy</span>
+        <div class="token-label">Invite token</div>
+        <div class="token-value" id="token-display"></div>
+        <span class="copy-btn" id="copy-btn" role="button" tabindex="0">Copy</span>
       </div>
-      <div class="platform-buttons">
-        <a class="btn btn-primary"
-          href="https://apps.apple.com/app/element-x-secure-messenger/id6448614740"
-          target="_blank" rel="noopener">
-          App Store (iPhone)
-        </a>
-        <a class="btn btn-secondary"
-          href="https://play.google.com/store/apps/details?id=io.element.android.x"
-          target="_blank" rel="noopener">
-          Play Store (Android)
-        </a>
-        <span class="btn btn-secondary" id="show-web" role="button" tabindex="0"
-          style="cursor:pointer;">I'm on a computer</span>
+
+      <div class="callout callout-blue">
+        <strong>What happens next.</strong>
+        You'll create an account using this token. During setup, the app will show you a
+        <strong>recovery passphrase</strong>. Write it down on paper or store it in a password
+        manager. Not in a notes app. Not in a screenshot. It is the only way to recover
+        your messages if you lose your device.
+      </div>
+
+      <div id="web-section" style="display:none;">
+        <div class="section-label">Steps</div>
+        <ol class="steps">
+          <li>Click "Create account" below to open the app</li>
+          <li>Click "Create Account," paste your token when asked</li>
+          <li>Pick your username and a strong password</li>
+          <li>Write down the recovery passphrase you're shown</li>
+        </ol>
+        <div class="btn-row">
+          <a id="web-link" class="btn btn-primary" href="/">Create account</a>
+          <button class="btn btn-secondary" id="show-mobile">I'm on a phone</button>
+        </div>
+      </div>
+
+      <div id="mobile-section" style="display:none;">
+        <div class="section-label">Steps</div>
+        <ol class="steps">
+          <li>Install the app from your app store (links below)</li>
+          <li>Open it, tap "Create Account," enter the server address shown below</li>
+          <li>Paste your invite token when asked</li>
+          <li>Pick your username, set a password, write down your recovery passphrase</li>
+        </ol>
+        <div class="token-box">
+          <div class="token-label">Server address</div>
+          <div class="token-value" id="server-display"></div>
+          <span class="copy-btn" id="copy-server-btn" role="button" tabindex="0">Copy</span>
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-primary"
+            href="https://apps.apple.com/app/element-x-secure-messenger/id6448614740"
+            target="_blank" rel="noopener">
+            App Store (iPhone)
+          </a>
+          <a class="btn btn-secondary"
+            href="https://play.google.com/store/apps/details?id=io.element.android.x"
+            target="_blank" rel="noopener">
+            Play Store (Android)
+          </a>
+          <button class="btn btn-secondary" id="show-web">I'm on a computer</button>
+        </div>
+      </div>
+
+      <div class="tip">
+        Having trouble? Ask the person who gave you this invite for help.
+        Do not post your token anywhere public.
       </div>
     </div>
 
-    <div class="exposure">
-      <strong>How private is this?</strong> Your messages are end-to-end encrypted.
-      The server can see who you message and when, but not what you say.
-      Keep real names and locations out of here.
+    <!-- ==================== STEP 3: After you're in ==================== -->
+    <div class="step-panel" id="step-2">
+      <h1>Once you're in</h1>
+      <p class="subtitle">A few things to set up on your device.</p>
+
+      <div class="section-label">Lock down notifications</div>
+      <div class="callout callout-red">
+        <strong>Turn off message previews on your lock screen.</strong>
+        By default, your phone may show message content in notifications, which anyone
+        holding your phone can read without unlocking it.<br><br>
+        <strong>iPhone:</strong> Settings > Notifications > Element X > Show Previews > Never<br>
+        <strong>Android:</strong> Settings > Apps > Element X > Notifications > Sensitive notifications off
+      </div>
+
+      <div class="section-label">Display name</div>
+      <div class="callout callout-amber">
+        <strong>Your display name is visible to everyone in the community.</strong>
+        You can change it in Settings > Profile. The same rules apply:
+        do not use your real name, and do not reuse a name from another platform.
+        Your display name and your username do not need to match.
+      </div>
+
+      <div class="section-label">Second device</div>
+      <div class="callout callout-blue">
+        <strong>Log in on a second device if you can.</strong>
+        If you lose your phone, a second session (laptop, tablet) lets you get back in
+        without needing the recovery passphrase. Open the same app on another device,
+        log in with your username and password, and verify the new session from your phone.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-back-to-1">Back to invite</button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -193,7 +358,26 @@
   document.getElementById('server-display').textContent = location.hostname;
 
   var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  document.getElementById(isMobile ? 'mobile-section' : 'web-section').style.display = 'block';
+  var currentStep = 0;
+
+  function showStep(n) {
+    currentStep = n;
+    document.querySelectorAll('.step-panel').forEach(function(p, i) {
+      p.classList.toggle('active', i === n);
+    });
+    document.querySelectorAll('.step-pip').forEach(function(p, i) {
+      p.className = 'step-pip';
+      if (i < n) p.classList.add('done');
+      if (i === n) p.classList.add('current');
+    });
+    if (n === 1) {
+      document.getElementById(isMobile ? 'mobile-section' : 'web-section').style.display = 'block';
+      document.getElementById(isMobile ? 'web-section' : 'mobile-section').style.display = 'none';
+    }
+  }
+
+  document.getElementById('btn-to-step-1').addEventListener('click', function() { showStep(1); });
+  document.getElementById('btn-back-to-1').addEventListener('click', function() { showStep(1); });
 
   document.getElementById('show-mobile').addEventListener('click', function() {
     document.getElementById('web-section').style.display = 'none';
@@ -202,6 +386,15 @@
   document.getElementById('show-web').addEventListener('click', function() {
     document.getElementById('mobile-section').style.display = 'none';
     document.getElementById('web-section').style.display = 'block';
+  });
+
+  var stepLinks = document.querySelectorAll('.step-pip');
+  stepLinks.forEach(function(pip) {
+    pip.style.cursor = 'pointer';
+    pip.addEventListener('click', function() {
+      var target = parseInt(pip.getAttribute('data-step'), 10);
+      showStep(target);
+    });
   });
 
   function copyText(text, btn) {
