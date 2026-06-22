@@ -55,27 +55,30 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full component table, runtime wir
 
 ## Quick start
 
-Prerequisites: a Linux host with Docker and Docker Compose.
+Prerequisites: a Linux host with Docker, Docker Compose, Python 3 + PyYAML, and jq.
 
 ```bash
 cd deploy/
 cp rednet.env.example rednet.env
 # Edit rednet.env — set REDNET_DOMAIN (immutable after first deploy)
 
-./setup.sh
-# Generates secrets, renders hardened configs, starts the stack, runs self-checks
+./deploy.sh
 ```
 
-`setup.sh` is a **fresh-deploy script** that starts clean (`docker compose down -v`). It generates all secrets into gitignored files, renders hardened configs, starts the stack, and verifies health: MAS serving OIDC, Synapse delegating auth, a bearer token accepted through the front.
+`deploy.sh` is the single entry point for first-time deployment. It checks prerequisites, starts the stack, chains the full bootstrap sequence (rooms → governance → moderation → gov-bot → Element Web), creates your admin account, posts setup instructions to the rooms, and prints credentials and next steps. Pass `--operator <name>` for non-interactive use; `--skip-element` if you only need Element X mobile.
+
+Under the hood, `deploy.sh` calls `setup.sh` (which generates secrets, renders hardened configs, starts services, and runs health checks) followed by each bootstrap script in dependency order. You can run those individually for debugging, but `deploy.sh` is the intended path.
 
 To admit users:
 
 ```bash
-docker compose exec mas mas-cli manage issue-user-registration-token --config /config.yaml
-# → Created user registration token: <token>  (single-use by default)
+./mint-invite.sh --label "description of invitee"
+# Mints a single-use token, records vouch provenance, generates a printable QR card
 ```
 
-For production two-host deployment, see [deploy/ansible/](deploy/ansible/).
+The invite links to `/join` — a guided onboarding page that walks the invitee through handle safety, token entry, and device hardening before they create an account.
+
+For production two-host deployment, set `REDNET_ROLE=core` in `rednet.env` (deploy.sh adjusts automatically) or see [deploy/ansible/](deploy/ansible/).
 
 ## Hardening
 

@@ -58,6 +58,17 @@
     letter-spacing: 1px;
     font-weight: 600;
   }
+  .header-spacer { flex: 1; }
+  .header-help {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .header-help:hover { color: var(--text); border-color: rgba(255,255,255,0.12); }
 
   .tabs {
     display: flex;
@@ -466,6 +477,8 @@
   <div class="header">
     <div class="header-brand"><span class="r">RED</span><span class="g">net</span></div>
     <div class="header-sub">Governance</div>
+    <div class="header-spacer"></div>
+    <a class="header-help" href="/operator-guide#governance" title="Bot commands go in #gov-bot. Full reference in the operator guide.">Guide ↗</a>
   </div>
 
   <div class="status-bar" id="status-bar">

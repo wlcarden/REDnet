@@ -73,17 +73,17 @@ set_topic(){  # ROOM_ID TEXT : python builds the JSON so emoji/quotes/newlines a
 PRIMER="🔒 End-to-end encrypted — the server cannot read your messages. 👁 But it CAN see WHO you talk to and WHEN. Keep real names, locations, and plans out of chat. 🔑 Save your recovery passphrase somewhere safe and offline — it is the only way back in on a new device. 📵 Turn off lock screen notification previews (Settings > Notifications). 🧹 Chat auto-deletes after a few days; durable info lives in #reference."
 
 say "space: $REDNET_BRAND"
-SPACE_ID=$(create_space community "$REDNET_BRAND" "$REDNET_BRAND — organizing space. Channels live here.")
+SPACE_ID=$(create_space community "$REDNET_BRAND" "Encrypted organizing space.")
 echo "  space -> ${SPACE_ID:-ERR}"
 
 say "channels"
 # Welcome is created plain so the system account can send a plaintext notice BEFORE enabling E2EE.
 # The notice stays readable forever (no key management); all subsequent messages are encrypted.
-WELCOME=$(create_room_plain welcome  "Welcome"       "Start here."                                              "")
-ANNOUNCE=$(create_room announcements "Announcements" "Organizer announcements (read-only for members)."        '{"events_default":50}' "")
+WELCOME=$(create_room_plain welcome  "Welcome"       "Start here — read the pinned message, save your recovery passphrase."  "")
+ANNOUNCE=$(create_room announcements "Announcements" "Organizer updates. Read-only for members — moderators and above can post."  '{"events_default":50}' "")
 # Reference: write-locked, NO retention (genuinely durable — hotlines/safety-plans/meeting-points stay until redacted)
-REFERENCE=$(create_room reference   "Reference"     "Durable info: hotlines, safety plans, meeting points. This channel does not auto-delete."    '{"events_default":50}' "")
-GENERAL=$(create_room general       "General"       "Open discussion."                                         ""                    "")
+REFERENCE=$(create_room reference   "Reference"     "Durable info that outlasts chat retention: hotlines, safety plans, meeting points, contacts. Pin anything worth keeping."  '{"events_default":50}' "")
+GENERAL=$(create_room general       "General"       "Open discussion. Auto-deletes after retention window — move anything durable to #reference."  ""  "")
 for r in WELCOME ANNOUNCE REFERENCE GENERAL; do printf '  #%s -> %s\n' "$(echo "$r" | tr A-Z a-z)" "${!r:-ERR}"; done
 
 say "wire channels into the space + put the security primer on #welcome"

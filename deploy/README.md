@@ -18,10 +18,14 @@ The runnable, hardened REDnet deployment. Assembles the components proven in `..
 
 ```bash
 cp rednet.env.example rednet.env     # edit REDNET_DOMAIN etc.
-./setup.sh                            # generates secrets, renders + hardens configs, brings it up, verifies
+./deploy.sh                           # full first-time setup — stack, rooms, governance, operator account
 ```
 
-`setup.sh` generates all secrets (signing key, MAS secrets, the Synapse↔MAS shared secret, DB password) into gitignored files, renders the hardened Synapse + MAS configs from `rednet.env`, starts the stack, and runs a self-check (MAS healthy · Synapse up & delegating · a MAS-issued token accepted through the front).
+`deploy.sh` is the single entry point for first-time deployment. It checks prerequisites, renders
+configs, starts the stack, chains the full bootstrap sequence, builds Element Web, creates your
+admin account, posts setup instructions to the rooms, and prints credentials. Pass `--operator <name>`
+for non-interactive use. Under the hood it calls `setup.sh` (secrets, configs, health check) followed
+by each bootstrap script in dependency order.
 
 ## Config surface (`rednet.env`)
 
@@ -91,11 +95,14 @@ Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. 
 ## Operational profiles
 
 ```bash
-./setup.sh                                   # core+front (default)
+./deploy.sh                                  # full first-time setup (calls everything below)
+# --- or individually: ---
+./setup.sh                                   # core+front stack (generates secrets, starts services)
 ./bootstrap-rooms.sh                          # community space + starter channels
-./bootstrap-operator.sh alice                 # create first operator (admin, all rooms, Draupnir)
 ./bootstrap-governance.sh                     # #vouch-log + #governance (organizer audit trail)
 ./bootstrap-draupnir.sh                       # + moderation (compose --profile moderation)
+./bootstrap-gov-bot.sh                        # + governance bot (compose --profile governance)
+./bootstrap-operator.sh alice                 # create operator (admin, all rooms, Draupnir)
 ./bootstrap-calls.sh                          # + group calls (compose --profile calls; DESIGN §8)
 docker compose --profile monitoring up -d     # + Prometheus/Grafana/Pushgateway/Alertmanager (localhost-bound)
 RESTIC_REPOSITORY=s3:... RESTIC_PASSWORD=... ./backup.sh   # encrypted off-box backup + heartbeat
@@ -165,14 +172,14 @@ export REDNET_OPERATOR=@yourname:example.org
 ./revoke-member.sh --minted-by @organizer --after 2026-06-01 --reason "post-compromise"
 ```
 
-### Governance widget (in-client UI)
+### Governance dashboard
 
-`bootstrap-governance.sh` registers a Matrix widget in the #governance room. Organizers see
-a tabbed UI inside Element with a live dashboard, provenance search, vouch tree, and
-coercion canary alerts. The widget reads `org.rednet.vouch` / `.claimed` / `.revoked`
-events from #vouch-log via the Matrix Widget API (iframe postMessage). No server-side
-component — the widget is a static HTML file served at `/governance/` by the Element Web
-container. Falls back to a manual paste mode (vouch.jsonl) if the Widget API is unavailable.
+The governance dashboard is a standalone page at `/governance/` served by the Element Web
+container. It shows a live dashboard, provenance search, vouch tree visualization, and
+coercion canary alerts across four tabs. The dashboard reads `org.rednet.vouch` / `.claimed`
+/ `.revoked` events from #vouch-log via the Matrix Widget API (iframe postMessage). No
+server-side component — it's a static HTML file. Falls back to manual paste mode (vouch.jsonl)
+if the Widget API is unavailable.
 
 ### Governance bot (in-client moderation)
 
@@ -205,9 +212,9 @@ instead of SSHing into the server.
 The bot uses two tokens: its own (`GOV_BOT_TOKEN`) for replies, and a system token
 (`SYS_TOKEN`) for admin operations (PL changes, kicks). Both are in `gov-bot/.env` (gitignored).
 
-The governance widget in `#gov-bot` provides clipboard-based command composition: buttons copy
-the appropriate `!gov` command to the clipboard, the organizer pastes it in the message box and
-sends. The graph tab's node tooltips also expose Report/Revoke/Role buttons.
+The [governance dashboard](/governance/) provides clipboard-based command composition: buttons
+copy the appropriate `!gov` command to the clipboard, the organizer pastes it into `#gov-bot`
+and sends. The graph tab's node tooltips also expose Report/Revoke/Role buttons.
 
 ### Role model (DESIGN §11)
 

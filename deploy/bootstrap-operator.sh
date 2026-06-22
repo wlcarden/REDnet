@@ -15,7 +15,7 @@
 # After this script, the operator can:
 #   - Log in via Element and see all community + governance rooms
 #   - Mint attributed invites with mint-invite.sh
-#   - Use the governance widget in #governance
+#   - Open the governance dashboard at /governance/
 #   - Issue Draupnir commands in #rednet-mod (if admin + Draupnir running)
 #
 # Requires: stack running, rednet-system account exists (bootstrap-rooms.sh).
@@ -185,30 +185,35 @@ fi
 # --- 6. Summary ---
 say "DONE"
 echo "$USER_ID bootstrapped as $ROLE."
-echo
-GUIDE_BASE="${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT}}"
-case "$ROLE" in
-  admin|organizer) GUIDE_URL="${GUIDE_BASE}/operator-guide" ;;
-  moderator)       GUIDE_URL="${GUIDE_BASE}/moderator-guide" ;;
-esac
 
-echo "The $ROLE should now:"
-echo "  1. Log in with username '$USERNAME' and the password above"
-echo "  2. Accept the room invites they'll see on first login"
-if [ "$ROLE" = "admin" ]; then
-  echo "  3. Set REDNET_OPERATOR=$USER_ID in their rednet.env"
-  if $DRAUPNIR && [ -n "$(resolve_room rednet-mod 2>/dev/null)" ]; then
-    echo "  4. Open #rednet-mod and verify Draupnir responds to !draupnir status"
-  fi
-fi
-echo "  Read the guide: $GUIDE_URL"
-if [ "$ROLE" = "admin" ] || [ "$ROLE" = "organizer" ]; then
+# When called with --existing (e.g. from deploy.sh), the caller handles credentials
+# and next-steps. Only print the interactive summary for standalone use.
+if ! $EXISTING; then
   echo
-  echo "Gov bot commands (in #gov-bot):"
-  echo "  !gov help           — list all commands"
-  echo "  !gov confirm @user  — confirm a vouch"
-  echo "  !gov audit          — run canary checks"
-  echo "  !gov report @user   — report compromised account"
+  GUIDE_BASE="${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT}}"
+  case "$ROLE" in
+    admin|organizer) GUIDE_URL="${GUIDE_BASE}/operator-guide" ;;
+    moderator)       GUIDE_URL="${GUIDE_BASE}/moderator-guide" ;;
+  esac
+
+  echo "The $ROLE should now:"
+  echo "  1. Log in with username '$USERNAME' and the password above"
+  echo "  2. Accept the room invites they'll see on first login"
+  if [ "$ROLE" = "admin" ]; then
+    echo "  3. Set REDNET_OPERATOR=$USER_ID in their rednet.env"
+    if $DRAUPNIR && [ -n "$(resolve_room rednet-mod 2>/dev/null)" ]; then
+      echo "  4. Open #rednet-mod and verify Draupnir responds to !draupnir status"
+    fi
+  fi
+  echo "  Read the guide: $GUIDE_URL"
+  if [ "$ROLE" = "admin" ] || [ "$ROLE" = "organizer" ]; then
+    echo
+    echo "Gov bot commands (in #gov-bot):"
+    echo "  !gov help           — list all commands"
+    echo "  !gov confirm @user  — confirm a vouch"
+    echo "  !gov audit          — run canary checks"
+    echo "  !gov report @user   — report compromised account"
+  fi
+  echo
+  echo "To add more operators: ./bootstrap-operator.sh <username>"
 fi
-echo
-echo "To add more operators: ./bootstrap-operator.sh <username>"

@@ -9,8 +9,17 @@ deploy/ansible/group_vars/all.yml
 *.pub
 *.token
 
+# Governance data (vouch provenance, bot tokens, invite cards)
+deploy/vouch.jsonl
+deploy/gov-bot/.env
+deploy/invites/
+
 # Config rendered from templates (contains secrets)
 deploy/element-web/config.json
+
+# Deploy runtime (credentials + state markers)
+deploy/.first-run-credentials
+deploy/.deploy-messages-posted
 
 # Backups and restic repos
 deploy/backups/
