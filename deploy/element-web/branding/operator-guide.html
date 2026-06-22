@@ -188,6 +188,7 @@
     <strong>New to the platform?</strong>
     Read the <a href="/member-guide" style="color:#3E93DE;">member guide</a> first
     for messaging basics, encryption, privacy practices, and device management.
+    For moderator-specific tools, see the <a href="/moderator-guide" style="color:#3E93DE;">moderator guide</a>.
     This guide covers operator-level administration.
   </div>
 
@@ -207,7 +208,7 @@
     <div class="section-label">Governance rooms (operators only)</div>
     <ul class="room-list">
       <li><span class="room-name">vouch-log</span> — every invite minted, every vouch confirmed, every revocation. Append-only. Do not delete messages here</li>
-      <li><span class="room-name">governance</span> — operator coordination. The governance widget lives here</li>
+      <li><span class="room-name">governance</span> — operator coordination (E2EE). <a href="/governance/" style="color:#3E93DE;">Dashboard →</a></li>
     </ul>
 
     <div class="section-label">Moderation room</div>
@@ -287,10 +288,10 @@
 
   <!-- ==================== GOVERNANCE ==================== -->
   <div class="section" id="governance">
-    <div class="section-title">Governance widget</div>
+    <div class="section-title">Governance dashboard</div>
     <p>
-      Open <code>#governance</code> in Element. The widget shows a tabbed dashboard
-      inside the room — no terminal needed.
+      Open <a href="/governance/" style="color:#3E93DE;font-weight:600;">/governance/</a>
+      in your browser. The dashboard has four tabs — no terminal needed.
     </p>
 
     <div class="section-label">Dashboard tab</div>
@@ -331,6 +332,13 @@
       The coercion canary exists because an organizer under duress might be forced
       to mint invites for an adversary. If you see a sudden spike from any voucher,
       investigate before confirming those invites.
+    </div>
+
+    <div class="callout callout-green">
+      <strong>Bookmark the dashboard.</strong>
+      Direct link: <a href="/governance/" style="color:#30A46C;">/governance/</a> —
+      accessible from any browser on the same network. Check it daily if the
+      community is active.
     </div>
   </div>
 
@@ -413,11 +421,12 @@
       Use <code>#governance</code> (encrypted) for operator coordination.
     </div>
 
-    <div class="section-label">Widget integration</div>
+    <div class="section-label">Dashboard integration</div>
     <p>
-      The governance widget in <code>#gov-bot</code> provides quick-action
-      buttons that copy the appropriate <code>!gov</code> command to your
-      clipboard. Paste into the message box and send. The graph tab's node
+      The <a href="/governance/" style="color:#3E93DE;">governance dashboard</a>
+      provides quick-action buttons that copy the appropriate
+      <code>!gov</code> command to your clipboard. Paste into the
+      <code>#gov-bot</code> message box and send. The graph tab's node
       tooltips also show Report/Revoke/Role buttons on hover.
     </p>
   </div>

@@ -37,7 +37,7 @@ GOV_BOT_ROOM=$(curl -s -H "$GAUTH" "$ACCESS/_matrix/client/v3/directory/room/%23
 if [ -z "$GOV_BOT_ROOM" ]; then
   GOV_BOT_ROOM=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$GAUTH" -H "Content-Type: application/json" -d '{
     "room_alias_name":"gov-bot","name":"'"$REDNET_BRAND"' — Gov Bot",
-    "topic":"Governance bot commands. Organizers issue !gov commands here. Non-E2EE by design (Widget API constraint).",
+    "topic":"Bot commands — type !gov help. Non-E2EE by design (bot can'"'"'t decrypt).",
     "preset":"private_chat","visibility":"private",
     "power_level_content_override":{"invite":50,"kick":50,"ban":50,"state_default":50,"events_default":0}
   }' | roomid_of)

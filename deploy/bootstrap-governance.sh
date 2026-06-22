@@ -48,7 +48,7 @@ say "#vouch-log (append-only audit trail)"
 # No retention override — vouch records must persist indefinitely.
 VOUCH_LOG=$(create_private_room vouch-log \
   "${REDNET_BRAND} — Vouch Log" \
-  "Append-only audit trail: invite vouches, claims, role changes, revocations. Do not delete events." \
+  "Append-only audit trail: vouches, claims, role changes, revocations. Retention-exempt — do not delete events." \
   '{"events_default":50,"invite":50,"kick":50,"ban":50,"state_default":50}' \
   "")
 echo "  #vouch-log -> ${VOUCH_LOG:-ERR}"
@@ -56,7 +56,7 @@ echo "  #vouch-log -> ${VOUCH_LOG:-ERR}"
 say "#governance (organizer coordination)"
 GOVERNANCE=$(create_private_room governance \
   "${REDNET_BRAND} — Governance" \
-  "Organizer coordination: admission policy, moderation decisions, incident response." \
+  "Organizer coordination (E2EE). Admission policy, moderation decisions, incident response." \
   '{"invite":50,"kick":50,"ban":50,"state_default":50}' \
   "")
 echo "  #governance -> ${GOVERNANCE:-ERR}"
