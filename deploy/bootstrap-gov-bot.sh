@@ -37,7 +37,7 @@ GOV_BOT_ROOM=$(curl -s -H "$GAUTH" "$ACCESS/_matrix/client/v3/directory/room/%23
 if [ -z "$GOV_BOT_ROOM" ]; then
   GOV_BOT_ROOM=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$GAUTH" -H "Content-Type: application/json" -d '{
     "room_alias_name":"gov-bot","name":"'"$REDNET_BRAND"' — Gov Bot",
-    "topic":"Bot commands — type !gov help. Non-E2EE by design (bot can'"'"'t decrypt).",
+    "topic":"Bot commands — type !gov help. Dashboard: '"${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT}}"'/governance/ · Non-E2EE by design (bot can'"'"'t decrypt).",
     "preset":"private_chat","visibility":"private",
     "power_level_content_override":{"invite":50,"kick":50,"ban":50,"state_default":50,"events_default":0}
   }' | roomid_of)
@@ -75,11 +75,15 @@ else
 fi
 
 say "register governance widget in #gov-bot"
-WIDGET_URL="${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT}}/governance/?widgetId=\$matrix_widget_id&commandRoom=gov-bot"
+WIDGET_URL="${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT}}/governance/?widgetId=\$matrix_widget_id&parentUrl=\$matrix_room_id&commandRoom=gov-bot"
 curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/im.vector.modular.widgets/governance-widget" \
   -H "$GAUTH" -H "Content-Type: application/json" \
-  -d "{\"type\":\"m.custom\",\"url\":\"$WIDGET_URL\",\"name\":\"Governance\",\"data\":{}}" >/dev/null
-echo "  governance widget registered in #gov-bot"
+  -d "{\"type\":\"m.custom\",\"url\":\"$WIDGET_URL\",\"name\":\"Governance\",\"id\":\"governance-widget\",\"creatorUserId\":\"@rednet-gov:${REDNET_DOMAIN}\",\"data\":{}}" >/dev/null
+# Pin widget to timeline (Element Web needs io.element.widgets.layout to render it)
+curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/io.element.widgets.layout/" \
+  -H "$GAUTH" -H "Content-Type: application/json" \
+  -d '{"widgets":{"governance-widget":{"container":"top","height":50,"width":100,"index":0}}}' >/dev/null
+echo "  governance widget registered + pinned in #gov-bot"
 
 say "wire bot into governance rooms (PL 100 — needs full admin for revocation)"
 GOVERNANCE_ROOMS=(vouch-log governance)

@@ -134,9 +134,9 @@ for alias in "${COMMUNITY_ROOMS[@]}"; do
   fi
 done
 
-# --- 3. Invite to governance rooms ---
+# --- 3. Invite to governance rooms + Organizing sub-space ---
 say "invite to governance rooms"
-for alias in vouch-log governance gov-bot; do
+for alias in organizing vouch-log governance gov-bot; do
   rid=$(resolve_room "$alias")
   if [ -z "$rid" ]; then
     echo "  SKIP #${alias} — not found (run bootstrap-governance.sh)"
@@ -151,7 +151,7 @@ done
 
 # --- 4. Set power levels ---
 say "set power levels (${ROLE} = PL${PL})"
-ALL_ROOMS=(community welcome announcements reference general vouch-log governance gov-bot)
+ALL_ROOMS=(community welcome announcements reference general organizing vouch-log governance gov-bot)
 for alias in "${ALL_ROOMS[@]}"; do
   rid=$(resolve_room "$alias")
   if [ -z "$rid" ]; then

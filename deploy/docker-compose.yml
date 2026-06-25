@@ -59,6 +59,7 @@ services:
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/well-known-client.json:/srv/well-known/client:ro
+      - ./vouch.jsonl:/srv/governance-data/vouch.jsonl:ro
       - rednet_caddy:/data
     ports:
       - "${REDNET_HTTP_PORT:-8080}:8080"

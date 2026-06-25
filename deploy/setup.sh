@@ -90,7 +90,7 @@ c["federation_domain_whitelist"]=[]
 c["trusted_key_servers"]=[]   # closed island — drop the default outbound matrix.org key-server dependency (R2)
 c["presence"]={"enabled":False}
 c["url_preview_enabled"]=False
-c["encryption_enabled_by_default_for_room_type"]="all"  # R2: force E2EE on EVERY new room incl. member-created — no accidental plaintext rooms
+c["encryption_enabled_by_default_for_room_type"]="off"  # R2: bootstrap scripts add E2EE explicitly (initial_state); Element Web forces it via io.element.e2ee.default:true. Server-side "all" was silently encrypting bot rooms (#gov-bot, #rednet-mod) that MUST be plaintext — bots use HTTP, not Olm.
 # push hygiene: stock apps route through Element's gateway (a known metadata vector, ARCHITECTURE.md);
 # never hand message content to it. For E2EE rooms the body is ciphertext anyway — this is belt+braces.
 c["push"]={"include_content":False}
