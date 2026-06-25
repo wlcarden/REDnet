@@ -61,9 +61,25 @@ create_space(){
     \"creation_content\":{\"type\":\"m.space\"},\"power_level_content_override\":{\"events_default\":50,\"invite\":50}
   }" | jqpy "d.get('room_id','')"
 }
-link_child(){  # SPACE_ID CHILD_ID : two-way m.space.child / m.space.parent so clients show the hierarchy
-  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.space.child/$(enc "$2")"  -H "$AUTH" -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":true}" >/dev/null
+link_child(){  # SPACE_ID CHILD_ID [ORDER [SUGGESTED]] : two-way m.space.child / m.space.parent
+  local order="${3:-}" suggested="${4:-true}"
+  local child_body="{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":${suggested}}"
+  [ -n "$order" ] && child_body="{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":${suggested},\"order\":\"${order}\"}"
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.space.child/$(enc "$2")"  -H "$AUTH" -d "$child_body" >/dev/null
   curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$2")/state/m.space.parent/$(enc "$1")" -H "$AUTH" -d "{\"via\":[\"$REDNET_DOMAIN\"],\"canonical\":true}" >/dev/null
+}
+lock_widget_pl(){  # ROOM_ID : restrict im.vector.modular.widgets state event to PL 100 (admin-only)
+  local rid="$1"
+  local PL_STATE PL_UPDATED
+  PL_STATE=$(curl -s "$ACCESS/_matrix/client/v3/rooms/$(enc "$rid")/state/m.room.power_levels/" -H "$AUTH")
+  PL_UPDATED=$(echo "$PL_STATE" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+d.setdefault('events',{})['im.vector.modular.widgets']=100
+print(json.dumps(d))
+" 2>/dev/null)
+  [ -n "$PL_UPDATED" ] && curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$rid")/state/m.room.power_levels/" \
+    -H "$AUTH" -H "Content-Type: application/json" -d "$PL_UPDATED" >/dev/null
 }
 set_topic(){  # ROOM_ID TEXT : python builds the JSON so emoji/quotes/newlines are safe
   python3 -c "import json,sys;print(json.dumps({'topic':sys.argv[1]}))" "$2" \
@@ -86,8 +102,20 @@ REFERENCE=$(create_room reference   "Reference"     "Durable info that outlasts 
 GENERAL=$(create_room general       "General"       "Open discussion. Auto-deletes after retention window — move anything durable to #reference."  ""  "")
 for r in WELCOME ANNOUNCE REFERENCE GENERAL; do printf '  #%s -> %s\n' "$(echo "$r" | tr A-Z a-z)" "${!r:-ERR}"; done
 
-say "wire channels into the space + put the security primer on #welcome"
-for c in "$WELCOME" "$ANNOUNCE" "$REFERENCE" "$GENERAL"; do [ -n "$c" ] && link_child "$SPACE_ID" "$c"; done
+say "lock widget registration to admin-only (PL 100)"
+# Widgets are enabled in config.json but only the system account (PL 100) should be able
+# to register them. This prevents any moderator from adding arbitrary widget URLs.
+for c in "$SPACE_ID" "$WELCOME" "$ANNOUNCE" "$REFERENCE" "$GENERAL"; do
+  [ -n "$c" ] && lock_widget_pl "$c"
+done
+echo "  im.vector.modular.widgets -> PL 100 in all rooms"
+
+say "wire channels into the space (ordered) + put the security primer on #welcome"
+# Order field is a lexicographic sort key — "a" sorts first in the sidebar (Discord-like channel ordering).
+[ -n "$WELCOME" ]   && link_child "$SPACE_ID" "$WELCOME"   "a" true
+[ -n "$GENERAL" ]   && link_child "$SPACE_ID" "$GENERAL"   "b" true
+[ -n "$ANNOUNCE" ]  && link_child "$SPACE_ID" "$ANNOUNCE"  "c" true
+[ -n "$REFERENCE" ] && link_child "$SPACE_ID" "$REFERENCE" "d" true
 if [ -n "$WELCOME" ]; then
   set_topic "$WELCOME" "$PRIMER" && echo "  #welcome topic = security primer"
   WELCOME_MSG="Welcome to ${REDNET_BRAND}. This is your community's secure space.
@@ -132,9 +160,9 @@ echo "  after invite+join: $N room(s); space has $KIDS linked channel(s)"
 
 say "VERDICT"
 if [ "${KIDS:-0}" -ge 4 ]; then
-  echo "STRUCTURE PASS: space '$REDNET_BRAND' + #welcome/#announcements/#reference/#general (4 children); #welcome carries the security primer."
+  echo "STRUCTURE PASS: space '$REDNET_BRAND' + #welcome/#general/#announcements/#reference (4 children, ordered); #welcome carries the security primer."
 else
-  echo "STRUCTURE FAIL: space has only ${KIDS:-0} linked channels."
+  echo "STRUCTURE FAIL: space has only ${KIDS:-0} linked channels (expected >= 4)."
 fi
 if [ "${N:-0}" -ge 4 ]; then
   echo "AUTO-JOIN PASS: invite-to-community.sh + client join → $N rooms."

@@ -47,18 +47,31 @@ else
 fi
 [ -n "$GOV_BOT_ROOM" ] || { echo "ERR: #gov-bot room not created"; exit 1; }
 
-say "link #gov-bot into the community space"
-SPACE_ID=$(resolve_alias "$SAUTH" community 2>/dev/null)
-if [ -n "$SPACE_ID" ]; then
-  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$SPACE_ID")/state/m.space.child/$(enc "$GOV_BOT_ROOM")" \
+say "link #gov-bot into the Organizing sub-space"
+ORGANIZING_ID=$(resolve_alias "$SAUTH" organizing 2>/dev/null)
+if [ -n "$ORGANIZING_ID" ]; then
+  # Link into the Organizing sub-space (created by bootstrap-governance.sh), not the top-level space
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$ORGANIZING_ID")/state/m.space.child/$(enc "$GOV_BOT_ROOM")" \
     -H "$SAUTH" -H "Content-Type: application/json" \
-    -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":false}" >/dev/null
-  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/m.space.parent/$(enc "$SPACE_ID")" \
+    -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":true}" >/dev/null
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/m.space.parent/$(enc "$ORGANIZING_ID")" \
     -H "$GAUTH" -H "Content-Type: application/json" \
     -d "{\"via\":[\"$REDNET_DOMAIN\"],\"canonical\":true}" >/dev/null
-  echo "  linked (suggested: false — not shown to regular members)"
+  echo "  linked to Organizing sub-space"
 else
-  echo "  SKIP: community space not found"
+  # Fallback: link directly to community space if Organizing sub-space not found
+  SPACE_ID=$(resolve_alias "$SAUTH" community 2>/dev/null)
+  if [ -n "$SPACE_ID" ]; then
+    curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$SPACE_ID")/state/m.space.child/$(enc "$GOV_BOT_ROOM")" \
+      -H "$SAUTH" -H "Content-Type: application/json" \
+      -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":false}" >/dev/null
+    curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/m.space.parent/$(enc "$SPACE_ID")" \
+      -H "$GAUTH" -H "Content-Type: application/json" \
+      -d "{\"via\":[\"$REDNET_DOMAIN\"],\"canonical\":true}" >/dev/null
+    echo "  FALLBACK: linked to community space (run bootstrap-governance.sh first for sub-space)"
+  else
+    echo "  SKIP: neither Organizing sub-space nor community space found"
+  fi
 fi
 
 say "register governance widget in #gov-bot"

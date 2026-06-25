@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__REDNET_BRAND__</title>
+</head>
+<body>
+<style>
+  .rednet-home { max-width: 480px; margin: 0 auto; padding: 48px 24px; text-align: center; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  .rednet-home .logo { margin-bottom: 32px; }
+  .rednet-home .logo svg { width: 180px; height: auto; }
+  .rednet-home h2 { font-size: 18px; font-weight: 600; color: #ECEDEE; letter-spacing: -0.3px; margin-bottom: 10px; }
+  .rednet-home .sub { font-size: 13px; color: #8B8D98; line-height: 1.6; margin-bottom: 32px; }
+  .rednet-home .tips { text-align: left; margin-bottom: 32px; }
+  .rednet-home .tip { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; }
+  .rednet-home .tip-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .rednet-home .tip-icon.red { background: rgba(229,72,77,0.12); }
+  .rednet-home .tip-icon.green { background: rgba(48,164,108,0.12); }
+  .rednet-home .tip-icon.amber { background: rgba(229,165,54,0.12); }
+  .rednet-home .tip-icon.blue { background: rgba(62,99,221,0.12); }
+  .rednet-home .tip-text { font-size: 13px; color: #ECEDEE; line-height: 1.5; }
+  .rednet-home .tip-text strong { font-weight: 600; }
+  .rednet-home .tip-text .muted { color: #8B8D98; }
+  .rednet-home .profile-setup { text-align: left; margin-bottom: 32px; padding: 16px; border-radius: 12px; background: rgba(229,72,77,0.04); border: 1px solid rgba(229,72,77,0.12); }
+  .rednet-home .profile-setup h3 { font-size: 14px; font-weight: 600; color: #E5484D; margin: 0 0 8px 0; }
+  .rednet-home .profile-setup p { font-size: 13px; color: #8B8D98; line-height: 1.5; margin: 0 0 12px 0; }
+  .rednet-home .profile-setup .profile-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rednet-home .profile-setup .profile-actions a { font-size: 12px; font-weight: 600; color: #ECEDEE; text-decoration: none; padding: 6px 14px; border-radius: 8px; background: rgba(229,72,77,0.12); border: 1px solid rgba(229,72,77,0.2); transition: background 120ms, border-color 120ms; }
+  .rednet-home .profile-setup .profile-actions a:hover { background: rgba(229,72,77,0.2); border-color: rgba(229,72,77,0.35); }
+  .rednet-home .rooms { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .rednet-home .rooms a { font-size: 12px; font-weight: 600; color: #8B8D98; text-decoration: none; padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); transition: background 120ms, color 120ms, border-color 120ms; }
+  .rednet-home .rooms a:hover { background: rgba(229,72,77,0.08); color: #ECEDEE; border-color: rgba(229,72,77,0.2); }
+  .rednet-home .security { font-size: 12px; color: #62646C; line-height: 1.5; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); }
+</style>
+<div class="rednet-home">
+  <div class="logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 64" role="img" aria-label="__REDNET_BRAND__">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z" fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/><circle cx="48" cy="23" r="3.2"/>
+        <circle cx="48" cy="41" r="3.2"/><circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/>
+        <circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <h2>Encrypted organizing space</h2>
+  <p class="sub">Your messages are end-to-end encrypted. The server stores ciphertext it cannot read.</p>
+
+  <div class="tips">
+    <div class="tip">
+      <div class="tip-icon red">&#x1f4cc;</div>
+      <div class="tip-text"><strong>#welcome</strong> <span class="muted">has a pinned message with your recovery passphrase instructions. Start there if you haven't saved it yet.</span></div>
+    </div>
+    <div class="tip">
+      <div class="tip-icon green">&#x1f512;</div>
+      <div class="tip-text"><strong>Recovery passphrase</strong> <span class="muted">is your lifeline. Lose it and you lose access to message history on new devices. Store it offline.</span></div>
+    </div>
+    <div class="tip">
+      <div class="tip-icon amber">&#x23f3;</div>
+      <div class="tip-text"><strong>Chat auto-deletes</strong> <span class="muted">after the retention window. Move anything worth keeping to #reference before it expires.</span></div>
+    </div>
+    <div class="tip">
+      <div class="tip-icon blue">&#x1f464;</div>
+      <div class="tip-text"><strong>Your identity</strong> <span class="muted">is visible to other members. Use a handle that isn't linked to other platforms or your real name.</span></div>
+    </div>
+  </div>
+
+  <div class="profile-setup">
+    <h3>Set up your profile</h3>
+    <p>Pick a display name and avatar that aren't linked to your real identity or other platforms. This is how other members see you.</p>
+    <div class="profile-actions">
+      <a href="#/settings">Open settings</a>
+    </div>
+  </div>
+
+  <div class="rooms">
+    <a href="#/room/#welcome:__REDNET_DOMAIN__">#welcome</a>
+    <a href="#/room/#general:__REDNET_DOMAIN__">#general</a>
+    <a href="#/room/#announcements:__REDNET_DOMAIN__">#announcements</a>
+    <a href="#/room/#reference:__REDNET_DOMAIN__">#reference</a>
+  </div>
+
+  <div class="security">
+    E2EE protects message content. The server still sees who you message and when. Disable lock-screen notification previews on mobile.
+  </div>
+</div>
+</body>
+</html>

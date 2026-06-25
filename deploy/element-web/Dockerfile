@@ -46,6 +46,7 @@ COPY branding/join.html ./webapp/join.html
 COPY branding/operator-guide.html ./webapp/operator-guide.html
 COPY branding/moderator-guide.html ./webapp/moderator-guide.html
 COPY branding/member-guide.html ./webapp/member-guide.html
+COPY branding/home.html ./webapp/home.html
 COPY governance-widget/index.html ./webapp/governance/index.html
 RUN sed -i 's|<link rel="shortcut icon" href="vector-icons/favicon\.[^"]*\.ico">|<link rel="icon" href="vector-icons/favicon.svg" type="image/svg+xml">|' webapp/index.html \
  && sed -i 's|</head>|<link rel="stylesheet" href="rednet-overrides.css">\n</head>|' webapp/index.html

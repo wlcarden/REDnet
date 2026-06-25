@@ -52,20 +52,48 @@
     "UIFeature.thirdPartyId": false,
     "UIFeature.shareSocial": false,
     "UIFeature.locationSharing": false,
-    "UIFeature.widgets": false,
-    "e2ee.manuallyVerifyAllSessions": false
+    "UIFeature.widgets": true,
+    "e2ee.manuallyVerifyAllSessions": false,
+
+    "_comment_discord_defaults": "Discord-like UX: suppress join/leave noise, auto-emoji, big solo-emoji, badge counts, privacy-first typing/read defaults, force TURN relay to prevent IP leak. FTUE sidebar button navigates to the branded home page (home.html replaces the built-in checklist when embedded_pages.home_url is set).",
+    "showJoinLeaves": false,
+    "showAvatarChanges": false,
+    "showDisplaynameChanges": false,
+    "MessageComposerInput.autoReplaceEmoji": true,
+    "MessageComposerInput.suggestEmoji": true,
+    "TextualBody.enableBigEmoji": true,
+    "Pill.shouldShowPillAvatar": true,
+    "Notifications.alwaysShowBadgeCounts": true,
+    "sendTypingNotifications": false,
+    "sendReadReceipts": false,
+    "webRtcAllowPeerToPeer": false,
+    "FTUE.userOnboardingButton": true
   },
   "features": {
     "feature_video_rooms": __REDNET_CALLS_ENABLED__,
     "feature_group_calls": __REDNET_CALLS_ENABLED__,
-    "feature_element_call_video_rooms": __REDNET_CALLS_ENABLED__
+    "feature_element_call_video_rooms": __REDNET_CALLS_ENABLED__,
+    "feature_render_reaction_images": true,
+    "feature_pinning": true,
+    "feature_ask_to_join": true,
+    "feature_notification_settings2": true,
+    "feature_mjolnir": true,
+    "feature_html_topic": true
   },
   "element_call": {
     "participant_limit": 25,
     "brand": "__REDNET_BRAND__ Call"
   },
+  "integrations_ui_url": "",
+  "integrations_rest_url": "",
+  "integrations_widgets_urls": ["__REDNET_PUBLIC_BASE__"],
+  "embedded_pages": {
+    "home_url": "home.html"
+  },
   "help_url": "__REDNET_PUBLIC_BASE__/member-guide",
   "mobile_guide_toast": false,
+  "default_federate": false,
+  "force_verification": true,
   "_comment_user_notice": "Tier-1 EXPOSURE BANNER (DESIGN §4: the in-UI label IS the exposure control). Element's built-in user_notice — zero fork. show_once:true = shown once per device (dismissed state stored in local storage). The exposure info is ALSO in #welcome's topic (persistent, always visible in that room) and #reference's topic — so the user can revisit it without the banner. Set show_once:false if a deployment needs the banner on every load.",
   "user_notice": {
     "title": "How private is this?",

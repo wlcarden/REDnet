@@ -51,6 +51,9 @@
 
 	# Element Web (served from the CORE, proxied over WG)
 	handle {
+		# Widget security: restrict iframe loading to same-origin only.
+		header Content-Security-Policy "frame-src 'self'; frame-ancestors 'self';"
+		header X-Content-Type-Options nosniff
 		reverse_proxy {{ wg_core_ip }}:8088 {
 			import sanitize
 		}

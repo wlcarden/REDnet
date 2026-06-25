@@ -17,5 +17,10 @@ wg_core_public_key: "PUT_CORE_PUBKEY_HERE"
 # wg_front_private_key: "{{ vault_wg_front_private_key }}"
 wg_front_public_key: "PUT_FRONT_PUBKEY_HERE"
 
+# Git repo for auto-update (update.sh --auto). The core fetches from this remote.
+# If using a private repo, deploy an SSH key to the core and use the SSH URL.
+rednet_git_repo: "https://github.com/yourorg/REDnet.git"
+rednet_git_branch: main
+
 # Ports the CORE publishes ON THE WIREGUARD INTERFACE ONLY (never 0.0.0.0):
 #   8008 Synapse C-S · 8080 MAS · 8088 Element Web · 9091 Pushgateway (front heartbeat target)

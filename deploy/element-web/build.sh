@@ -9,13 +9,17 @@ cd "$(dirname "$0")/.." || exit 1   # -> deploy/
 : "${REDNET_CALLS_ENABLED:=false}"
 say(){ printf '\n=== %s ===\n' "$*"; }
 
-say "render element-web/config.json (homeserver + brand from rednet.env)"
-sed -e "s#__REDNET_DOMAIN__#${REDNET_DOMAIN}#g" \
-    -e "s#__REDNET_BRAND__#${REDNET_BRAND}#g" \
-    -e "s#__REDNET_PUBLIC_BASE__#${REDNET_PUBLIC_BASE}#g" \
-    -e "s#__REDNET_CALLS_ENABLED__#${REDNET_CALLS_ENABLED}#g" \
-    element-web/config.json.template > element-web/config.json
+say "render element-web/config.json + home.html (homeserver + brand from rednet.env)"
+RENDER_SED=(
+  -e "s#__REDNET_DOMAIN__#${REDNET_DOMAIN}#g"
+  -e "s#__REDNET_BRAND__#${REDNET_BRAND}#g"
+  -e "s#__REDNET_PUBLIC_BASE__#${REDNET_PUBLIC_BASE}#g"
+  -e "s#__REDNET_CALLS_ENABLED__#${REDNET_CALLS_ENABLED}#g"
+)
+sed "${RENDER_SED[@]}" element-web/config.json.template > element-web/config.json
+sed "${RENDER_SED[@]}" element-web/branding/home.html.template > element-web/branding/home.html
 echo "config.json -> ${REDNET_PUBLIC_BASE}, brand=${REDNET_BRAND}, calls=${REDNET_CALLS_ENABLED}, element=${ELEMENT_VERSION}"
+echo "home.html   -> rendered (domain=${REDNET_DOMAIN})"
 
 say "build (compose profile 'web')"
 ELEMENT_VERSION="$ELEMENT_VERSION" docker compose --profile web build element

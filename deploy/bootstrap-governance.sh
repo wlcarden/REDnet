@@ -61,21 +61,60 @@ GOVERNANCE=$(create_private_room governance \
   "")
 echo "  #governance -> ${GOVERNANCE:-ERR}"
 
-say "link governance rooms into the community space"
+say "lock widget registration to admin-only (PL 100)"
+lock_widget_pl(){
+  local rid="$1" PL_STATE PL_UPDATED
+  PL_STATE=$(curl -s "$ACCESS/_matrix/client/v3/rooms/$(enc "$rid")/state/m.room.power_levels/" -H "$AUTH")
+  PL_UPDATED=$(echo "$PL_STATE" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+d.setdefault('events',{})['im.vector.modular.widgets']=100
+print(json.dumps(d))
+" 2>/dev/null)
+  [ -n "$PL_UPDATED" ] && curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$rid")/state/m.room.power_levels/" \
+    -H "$AUTH" -H "Content-Type: application/json" -d "$PL_UPDATED" >/dev/null
+}
+for c in "$VOUCH_LOG" "$GOVERNANCE"; do [ -n "$c" ] && lock_widget_pl "$c"; done
+echo "  im.vector.modular.widgets -> PL 100 in governance rooms"
+
+say "Organizing sub-space (Discord-like category for organizer-only channels)"
+# Sub-spaces render as collapsible sections in Element's sidebar.
+# 'suggested: false' + 'order: z' = sorts last, hidden from regular members' suggested rooms list.
+create_space(){
+  if alias_exists "$1"; then get_alias_id "$1"; return; fi
+  curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$AUTH" -H "Content-Type: application/json" -d "{
+    \"room_alias_name\":\"$1\",\"name\":\"$2\",\"topic\":\"$3\",\"preset\":\"private_chat\",\"visibility\":\"private\",
+    \"creation_content\":{\"type\":\"m.space\"},\"power_level_content_override\":{\"events_default\":50,\"invite\":50}
+  }" | jqpy "d.get('room_id','')"
+}
+ORGANIZING=$(create_space organizing "${REDNET_BRAND} — Organizing" "Organizer-only channels: governance, vouching, bot commands.")
+echo "  #organizing -> ${ORGANIZING:-ERR}"
+
+say "link governance rooms into the Organizing sub-space"
 SPACE_ID=$(get_alias_id community 2>/dev/null)
-if [ -n "$SPACE_ID" ]; then
+if [ -n "$SPACE_ID" ] && [ -n "$ORGANIZING" ]; then
+  # Link Organizing sub-space to the top-level community space (sorted last, not suggested)
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$SPACE_ID")/state/m.space.child/$(enc "$ORGANIZING")" \
+    -H "$AUTH" -H "Content-Type: application/json" \
+    -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":false,\"order\":\"z\"}" >/dev/null
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$ORGANIZING")/state/m.space.parent/$(enc "$SPACE_ID")" \
+    -H "$AUTH" -H "Content-Type: application/json" \
+    -d "{\"via\":[\"$REDNET_DOMAIN\"],\"canonical\":true}" >/dev/null
+  echo "  linked Organizing -> community space (order: z, suggested: false)"
+
+  # Link governance rooms as children of the Organizing sub-space (not the top-level space)
   for CHILD in "$VOUCH_LOG" "$GOVERNANCE"; do
     [ -n "$CHILD" ] || continue
-    curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$SPACE_ID")/state/m.space.child/$(enc "$CHILD")" \
+    curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$ORGANIZING")/state/m.space.child/$(enc "$CHILD")" \
       -H "$AUTH" -H "Content-Type: application/json" \
-      -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":false}" >/dev/null
-    curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$CHILD")/state/m.space.parent/$(enc "$SPACE_ID")" \
+      -d "{\"via\":[\"$REDNET_DOMAIN\"],\"suggested\":true}" >/dev/null
+    curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$CHILD")/state/m.space.parent/$(enc "$ORGANIZING")" \
       -H "$AUTH" -H "Content-Type: application/json" \
       -d "{\"via\":[\"$REDNET_DOMAIN\"],\"canonical\":true}" >/dev/null
   done
-  echo "  linked to space $SPACE_ID (suggested: false — not shown to regular members)"
+  echo "  linked #vouch-log + #governance -> Organizing sub-space"
 else
-  echo "  SKIP: community space not found"
+  echo "  SKIP: community space or Organizing sub-space not found"
 fi
 
 say "register governance widget in #governance room"

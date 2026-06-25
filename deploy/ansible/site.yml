@@ -11,12 +11,12 @@
   hosts: core
   become: true
   tasks:
-    - name: Install docker + wireguard + iptables-persistent
+    - name: Install docker + wireguard + iptables-persistent + git
       ansible.builtin.apt:
         # docker-compose-v2 is Ubuntu's compose-v2 plugin (provides `docker compose`); docker-compose-plugin
         # only exists in Docker's official apt repo, which we don't add. python3-yaml backs setup.sh's MAS
-        # config render on hosts without uv. Both caught by the KVM validation (pass 5).
-        name: [docker.io, docker-compose-v2, python3-yaml, wireguard, ufw, iptables-persistent]
+        # config render on hosts without uv. git enables update.sh auto-pull. Both caught by KVM validation (pass 5).
+        name: [docker.io, docker-compose-v2, python3-yaml, wireguard, ufw, iptables-persistent, git]
         update_cache: true
 
     - name: Docker daemon log rotation (bound container-log client-IP retention — R2)
@@ -82,23 +82,15 @@
     - name: WireGuard up + enabled
       ansible.builtin.systemd: { name: wg-quick@wg0, enabled: true, state: started }
 
-    - name: "Sync the deploy/ CODE to the core (R2: exclude ALL local secrets/state so dev creds never leak to the core)"
-      ansible.posix.synchronize:
-        src: "{{ playbook_dir }}/../"
-        dest: /opt/rednet/
-        rsync_opts:
-          - "--exclude=ansible"
-          - "--exclude=data"
-          - "--exclude=backups"
-          - "--exclude=restic-repo"
-          - "--exclude=.env"
-          - "--exclude=rednet.env"
-          - "--exclude=mas/config.yaml"
-          - "--exclude=draupnir/config"
-          - "--exclude=element-web/config.json"
+    - name: "Clone or update the REDnet repo on the core (replaces rsync — enables update.sh auto-pull)"
+      ansible.builtin.git:
+        repo: "{{ rednet_git_repo }}"
+        dest: /opt/rednet
+        version: "{{ rednet_git_branch | default('main') }}"
+        force: false
     - name: Provide the production rednet.env on the core (domain + public base; the core generates its own secrets)
       ansible.builtin.copy:
-        dest: /opt/rednet/rednet.env
+        dest: /opt/rednet/deploy/rednet.env
         mode: "0600"
         content: |
           REDNET_DOMAIN={{ rednet_domain }}
@@ -106,21 +98,24 @@
           REDNET_RETENTION_DAYS={{ rednet_retention_days | default(7) }}
           REDNET_MEDIA_RETENTION_DAYS={{ rednet_media_retention_days | default(7) }}
           REDNET_BRAND={{ rednet_brand | default('REDnet') }}
+          REDNET_AUTO_UPDATE=true
+          REDNET_UPDATE_REMOTE=origin
+          REDNET_UPDATE_BRANCH={{ rednet_git_branch | default('main') }}
     - name: Render the WG port-publishing override
-      ansible.builtin.template: { src: templates/docker-compose.wg.yml.j2, dest: /opt/rednet/docker-compose.wg.yml, mode: "0644" }
+      ansible.builtin.template: { src: templates/docker-compose.wg.yml.j2, dest: /opt/rednet/deploy/docker-compose.wg.yml, mode: "0644" }
 
     - name: Render + harden the core configs (REDNET_ROLE=core -> NO caddy / no public host port — R2 CRITICAL)
       ansible.builtin.command: ./setup.sh
-      args: { chdir: /opt/rednet }
+      args: { chdir: /opt/rednet/deploy }
       environment: { REDNET_ROLE: core }
     - name: Bring up core services on the WG interface (no caddy here; front is the caddy)
       ansible.builtin.command: >
         docker compose -f docker-compose.yml -f docker-compose.wg.yml --profile web --profile monitoring
         up -d postgres mas synapse element prometheus grafana pushgateway
-      args: { chdir: /opt/rednet }
+      args: { chdir: /opt/rednet/deploy }
 
     # R2 HIGH: the scrub + backups were "schedule hourly" in prose but no timer existed — ship them as code.
-    - name: Scrub + backup systemd services
+    - name: Scrub + backup + update systemd services
       ansible.builtin.copy:
         dest: "/etc/systemd/system/rednet-{{ item.n }}.service"
         content: |
@@ -128,12 +123,13 @@
           Description=REDnet {{ item.n }}
           [Service]
           Type=oneshot
-          WorkingDirectory=/opt/rednet
-          ExecStart=/opt/rednet/{{ item.s }}
+          WorkingDirectory=/opt/rednet/deploy
+          ExecStart=/opt/rednet/deploy/{{ item.s }}
         mode: "0644"
       loop:
         - { n: scrub, s: scrub-metadata.sh }
         - { n: backup, s: backup.sh }
+        - { n: update, s: "update.sh --auto" }
     - name: Scrub + backup systemd timers (hourly)
       ansible.builtin.copy:
         dest: "/etc/systemd/system/rednet-{{ item }}.timer"
@@ -148,11 +144,26 @@
           WantedBy=timers.target
         mode: "0644"
       loop: [scrub, backup]
-    - name: Enable scrub + backup timers
+    - name: Auto-update systemd timer (every 15 minutes)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/rednet-update.timer
+        content: |
+          [Unit]
+          Description=REDnet auto-update (pull + rebuild changed services)
+          [Timer]
+          OnUnitActiveSec=15min
+          OnBootSec=5min
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+        mode: "0644"
+    - name: Enable scrub + backup + update timers
       ansible.builtin.systemd: { name: "rednet-{{ item }}.timer", enabled: true, state: started, daemon_reload: true }
-      loop: [scrub, backup]
+      loop: [scrub, backup, update]
     # NOTE: in REDNET_ROLE=core, setup.sh does NOT self-check or bootstrap rooms (no front on the core).
     # Run the self-check + ./bootstrap-rooms.sh + ./bootstrap-draupnir.sh AGAINST THE FRONT, after the front play.
+    # Auto-update: the rednet-update.timer pulls from the git remote every 15 min and rebuilds changed services.
+    # Emergency stop: `touch /opt/rednet/deploy/.update-hold` on the core. Resume: remove the file.
 
 - name: FRONT — disposable public TLS proxy + liveness heartbeat
   hosts: front

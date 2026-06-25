@@ -14,12 +14,14 @@ deploy/vouch.jsonl
 deploy/gov-bot/.env
 deploy/invites/
 
-# Config rendered from templates (contains secrets)
+# Rendered from templates (domain-specific, not secrets but deploy-specific)
 deploy/element-web/config.json
+deploy/element-web/branding/home.html
 
 # Deploy runtime (credentials + state markers)
 deploy/.first-run-credentials
 deploy/.deploy-messages-posted
+deploy/.update-hold
 
 # Backups and restic repos
 deploy/backups/
