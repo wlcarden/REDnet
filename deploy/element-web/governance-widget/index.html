@@ -690,7 +690,7 @@
 
   function sendResponse(reqId, action, data) {
     window.parent.postMessage({
-      api: "toWidget",
+      api: "fromWidget",
       widgetId: widgetId,
       action: action,
       requestId: reqId,
@@ -809,12 +809,21 @@
           ]
         });
         capabilitiesGranted = true;
-        setStatus("connected", "Connected — reading vouch events");
-        readEvents();
+        clearInterval(contentLoadedRetry);
+        clearTimeout(initTimeout);
+        setStatus("connected", "Connected — waiting for capability grant");
+        // Fallback: if notify_capabilities_changed never fires, read after 2s
+        setTimeout(function() {
+          if (totalEvents() === 0) {
+            setStatus("connected", "Connected — reading vouch events");
+            readEvents();
+          }
+        }, 2000);
         return;
       }
 
       if (msg.action === "notify_capabilities_changed") {
+        setStatus("connected", "Connected — reading vouch events");
         readEvents();
         return;
       }
@@ -827,11 +836,22 @@
       }
     }
 
+    // Handle responses to our outbound requests (fromWidget direction, with response field)
     if (msg.api === "fromWidget" && msg.response !== undefined) {
       if (msg.requestId && pendingRequests[msg.requestId]) {
         var cb2 = pendingRequests[msg.requestId];
         delete pendingRequests[msg.requestId];
         cb2(msg.response || msg.data || {});
+        return;
+      }
+    }
+
+    // Also handle toWidget responses (some Element versions echo responses on the same api direction)
+    if (msg.api === "toWidget" && msg.response !== undefined && msg.requestId) {
+      if (pendingRequests[msg.requestId]) {
+        var cb3 = pendingRequests[msg.requestId];
+        delete pendingRequests[msg.requestId];
+        cb3(msg.response || msg.data || {});
       }
     }
   });
@@ -918,23 +938,66 @@
       + roleEvents.length + compartmentEvents.length;
   }
 
-  // --- Fallback: if Widget API negotiation doesn't happen, show manual-load mode ---
-  var initTimeout = setTimeout(function() {
-    if (!capabilitiesGranted) {
-      setStatus("disconnected",
-        "Widget API not available — paste vouch.jsonl content or load via CLI");
-      showFallbackUI();
-    }
-  }, 5000);
+  // --- Standalone detection ---
+  // If not in an iframe, the Widget API can't work (no host to negotiate with).
+  // Fetch vouch.jsonl directly from the server instead.
+  var isStandalone = (window.parent === window);
+  var contentLoadedRetry = null;
+  var initTimeout = null;
+
+  function loadFromServer() {
+    setStatus("connected", "Standalone mode — loading vouch data");
+    fetch("data/vouch.jsonl", { cache: "no-store" })
+      .then(function(r) {
+        if (!r.ok) throw new Error(r.status);
+        return r.text();
+      })
+      .then(function(text) {
+        var lines = text.trim().split("\n");
+        loadJsonlLines(lines);
+        setStatus("connected", "Standalone — " + totalEvents() + " events loaded");
+        refreshUI();
+      })
+      .catch(function() {
+        setStatus("disconnected", "Standalone mode — paste vouch.jsonl below or check server");
+        showFallbackUI();
+      });
+  }
+
+  if (isStandalone) {
+    loadFromServer();
+    // Auto-refresh every 30s so the dashboard stays current while minting invites
+    setInterval(loadFromServer, 30000);
+  } else {
+    // In iframe — use Widget API with retry + timeout
+    contentLoadedRetry = setInterval(function() {
+      if (!capabilitiesGranted) {
+        sendToHost("content_loaded", {});
+      } else {
+        clearInterval(contentLoadedRetry);
+      }
+    }, 1000);
+
+    initTimeout = setTimeout(function() {
+      if (!capabilitiesGranted) {
+        clearInterval(contentLoadedRetry);
+        setStatus("disconnected",
+          "Widget API negotiation timed out — try reloading the widget");
+        showFallbackUI();
+      }
+    }, 10000);
+  }
 
   function showFallbackUI() {
     var el = document.getElementById("activity-empty");
     if (el) {
       el.innerHTML =
         '<div class="icon">&#128268;</div>' +
-        '<div class="msg">Widget API negotiation timed out.<br>' +
-        'This widget reads <code>org.rednet.vouch</code> events from #vouch-log via the Matrix Widget API. ' +
-        'If running outside Element, paste vouch.jsonl data below.</div>' +
+        '<div class="msg">' + (isStandalone
+          ? 'Could not load vouch.jsonl from the server. Paste the data manually:'
+          : 'Widget API negotiation timed out. If viewing outside Element, '
+            + 'open <a href="/governance/" style="color:var(--red)">the standalone dashboard</a> instead.'
+        ) + '</div>' +
         '<textarea id="manual-data" style="width:100%;height:120px;margin-top:12px;' +
         'background:var(--bg);color:var(--text);border:1px solid var(--border);' +
         'border-radius:var(--radius);padding:8px;font-family:var(--mono);font-size:11px;' +
@@ -945,10 +1008,7 @@
     }
   }
 
-  window._loadManualData = function() {
-    var ta = document.getElementById("manual-data");
-    if (!ta) return;
-    var lines = ta.value.trim().split("\n");
+  function loadJsonlLines(lines) {
     vouchEvents = [];
     claimEvents = [];
     revokeEvents = [];
@@ -998,6 +1058,12 @@
         // skip malformed lines
       }
     });
+  }
+
+  window._loadManualData = function() {
+    var ta = document.getElementById("manual-data");
+    if (!ta) return;
+    loadJsonlLines(ta.value.trim().split("\n"));
     setStatus("connected", "Loaded " + totalEvents() + " events from paste");
     refreshUI();
   };

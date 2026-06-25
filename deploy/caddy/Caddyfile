@@ -84,6 +84,18 @@
 		}
 	}
 
+	# --- Governance dashboard data (standalone mode) ---
+	# Serves vouch.jsonl so the dashboard works outside Element's iframe (direct browser access).
+	# Same data is visible to anyone in #vouch-log; production should gate behind auth if the
+	# instance is reachable from untrusted networks.
+	handle /governance/data/vouch.jsonl {
+		header Content-Type application/x-ndjson
+		header Cache-Control "no-cache"
+		root * /srv/governance-data
+		rewrite * /vouch.jsonl
+		file_server
+	}
+
 	# --- Element Web (the soft-fork build) — front proxies / to the element container ---
 	handle {
 		# Widget security: restrict iframe loading to same-origin only.

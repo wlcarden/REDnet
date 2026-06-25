@@ -117,17 +117,6 @@ else
   echo "  SKIP: community space or Organizing sub-space not found"
 fi
 
-say "register governance widget in #governance room"
-if [ -n "$GOVERNANCE" ]; then
-  WIDGET_URL="${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT}}/governance/?widgetId=\$matrix_widget_id"
-  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOVERNANCE")/state/im.vector.modular.widgets/governance-widget" \
-    -H "$AUTH" -H "Content-Type: application/json" \
-    -d "{\"type\":\"m.custom\",\"url\":\"$WIDGET_URL\",\"name\":\"Governance\",\"data\":{}}" >/dev/null
-  echo "  governance widget registered (served at /governance/)"
-else
-  echo "  SKIP: #governance room not created"
-fi
-
 say "initialize local vouch index"
 touch vouch.jsonl
 echo "  vouch.jsonl ready ($(wc -l < vouch.jsonl) existing records)"

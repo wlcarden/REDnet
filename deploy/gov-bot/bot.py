@@ -153,8 +153,23 @@ def kick_user(room_id, user_id, reason=""):
     return "errcode" not in resp.json()
 
 
+def _md_to_html(text):
+    """Convert the Markdown subset the bot uses (bold, code, em-dash, newlines) to HTML."""
+    h = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    h = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", h)
+    h = re.sub(r"`(.+?)`", r"<code>\1</code>", h)
+    h = re.sub(r" — ", r" &mdash; ", h)
+    h = h.replace("\n", "<br>\n")
+    return h
+
+
 def send_message(room_id, body, msgtype="m.text", extra=None, headers=None):
-    content = {"msgtype": msgtype, "body": body}
+    content = {
+        "msgtype": msgtype,
+        "body": body,
+        "format": "org.matrix.custom.html",
+        "formatted_body": _md_to_html(body),
+    }
     if extra:
         content.update(extra)
     resp = http.put(
