@@ -1,7 +1,11 @@
 # REDnet — Governance-Gated Recovery-Key Escrow (design exploration)
 
-> Status: **design exploration**, not a build spec. It maps the construction, the threat analysis,
-> the component inventory, and the open decisions so we can choose deliberately before writing code.
+> Status: **experimental — crypto built and tested (47/47), not yet externally reviewed.**
+> The construction, threat analysis, and test vectors below are the scope for the external
+> security review ([PRODUCTION.md #1](PRODUCTION.md)). Do not deploy the Phase-2 escrow for
+> real users until that review lands. Phase 0 (device-only) and Phase 1 (passphrase, no escrow
+> store) do not carry this caveat.
+>
 > This is the single most cryptographically novel piece of REDnet — everything else leverages
 > existing Matrix/Synapse/Draupnir; this we assemble ourselves.
 
@@ -80,11 +84,13 @@ reconstructed on the member's new device; it never exists server-side.**
 
 ## 4. Threat analysis (the payoff) — ⚠️ READ BY MODE
 
-REDnet ships **moderators-only by default**; the member passphrase is **opt-in** (§8). The two modes have
-**very different** seizure properties — read the right column. (Earlier drafts of this table described a
-card-AND-quorum construction and over-stated the default's protection; corrected here per the security review.)
+REDnet ships **passphrase + M-of-N by default** (§8). The member passphrase is required unless explicitly
+opted out per deployment policy. The two modes have **very different** seizure properties — read the right
+column. (Earlier drafts shipped moderators-only by default and described a card-AND-quorum construction;
+corrected here per the security review and the external design critique — the default mode must cap blast
+radius per member, which only the passphrase mode achieves.)
 
-| Adversary obtains                              | **moderators-only (default)**                                                               | **passphrase + M-of-N (opt-in)**              |
+| Adversary obtains                              | **moderators-only (opt-in per deployment)**                                                 | **passphrase + M-of-N (default)**             |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Seized core alone (Blob + enc_shares + policy) | **No** — no moderator keys to open shares                                                   | **No** — also no passphrase                   |
 | < M moderators (colluding)                     | **No** — Shamir threshold                                                                   | **No** — Shamir threshold                     |
@@ -93,13 +99,11 @@ card-AND-quorum construction and over-stated the default's protection; corrected
 | M moderators + that member's passphrase        | n/a (no passphrase in this mode)                                                            | **Yes** — that one member (the intended path) |
 | Member's seized live device                    | N/A — a logged-in device always holds `K` (a device-security problem, separate from escrow) | same                                          |
 
-**The honest headline:** in the **default** mode, a coerced/arrested **M-moderator quorum — with or without
-the seized core — recovers the cross-signing identity + full backup history of _every_ member.** That is the
-"compromise M moderators → read everyone" outcome §2 weighs; moderators-only **accepts** it for approachability,
-backstopped by the §10 revocation machinery — which lowers the _probability_ of a quorum compromise, **not its
-blast radius**. The clean "seizing the core yields nothing" property holds **only for passphrase-mode members**;
-for default members it holds **only as long as the moderator quorum is never compromised**. Steer high-risk
-members to the opt-in passphrase (§8) — it is the only thing that caps the blast radius per member.
+**The honest headline:** the default (passphrase + M-of-N) caps blast radius per member. A coerced quorum
+recovers only the members whose individual passphrases are also compromised. The moderators-only column is
+retained in the table because a deployment MAY opt into it (§8) for maximum approachability, but that choice
+**accepts** the "compromise M moderators → read everyone" outcome. The revocation machinery (§10) lowers
+the _probability_ of a quorum compromise, **not its blast radius**. Only the passphrase does that.
 
 ## 5. What we'd build (component inventory)
 
@@ -167,12 +171,13 @@ moderator quorum is something a community **grows into**, not something the foun
 
 ## 8. Decisions — current leaning
 
-1. **Member factor: moderators-only by DEFAULT, opt-in passphrase per member** (working assumption).
-   Not "card vs. none" — the real fork is "any member factor, or none," and the answer is _per member_.
-   Default is moderators-only (nothing to carry — meets the UX bar); a higher-risk member can opt into
-   a **memorized recovery passphrase** that ANDs with the quorum, capping the blast radius of a coerced
-   quorum (Spike 05 proves both modes are one record format + a `mode` flag). The passphrase replaces
-   the physical _card_ (a thing to lose) with the card's _function_. Caveat: no trusted hardware to
+1. **Member factor: passphrase + M-of-N by DEFAULT** (decided per design review, 2026-06-30).
+   Every member gets a diceware recovery passphrase that ANDs with the quorum. This caps the blast
+   radius of a coerced quorum to the members whose passphrases are also compromised, rather than all
+   members. A deployment MAY opt into moderators-only mode per policy for maximum approachability, but
+   this is an explicit downgrade that accepts the "compromise M moderators → read everyone" outcome.
+   Spike 05 proves both modes are one record format + a `mode` flag. The passphrase replaces the
+   physical _card_ (a thing to lose) with the card's _function_. Caveat: no trusted hardware to
    rate-limit guesses ⇒ the passphrase must be **diceware-grade**, not a short PIN.
 2. **M and N** + **who the moderators are** — bind to the governance trust graph? Typical N=5–7, M=3.
    Higher M = safer against coercion, more friction to recover. _Still open._

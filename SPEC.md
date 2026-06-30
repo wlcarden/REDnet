@@ -236,7 +236,9 @@ Fork **`matrix-docker-ansible-deploy` (MASH)** — Ansible + Docker, first-class
 - ✅ **Push:** stock Element X via Element's matrix.org gateway, with **`push.include_content: false`** (strip content → only activity-timing can leak, never content/sender/room). UnifiedPush/own-Sygnal = later upgrade. iOS unavoidably uses APNs.
 - ✅ **Web client = soft fork** of Element Web (config + `CryptoSetupExtensions` module + `postLoginSetup()` patch) for the silent ~2-tap onboarding; commit to Tchap-style rebases + AGPL §13. _Note: the seamless onboarding is **web-only**; mobile uses Element X's native flow. Fork still earns keep via branding + enforcing typing/receipt suppression._
 - ✅ **Mobile = stock Element X from the public App Store / Play Store** (no sideload, no MDM), pointed at the server by a **deep link** in the onboarding card; generic "Element" branding (deniable, $0). Branded-in-stores (DIY: own Apple/Google dev accounts + you're the publisher; or Element Pro enterprise) = deliberate later upgrade. Mobile onboarding = Element X native (~5 taps incl. a recovery screen; harmless under accept-loss).
-- ✅ **Mobile search gap:** accept for v1; route archivists to **Element Desktop** (the Reference room holds must-find info).
+- ✅ **Mobile metadata posture:** stock Element X does **not** suppress typing indicators or read receipts by default (the web fork does). Users must toggle these off manually in the mobile app. Document in `SAFETY.md`. A branded Element X build (Element Pro or own fork) could enforce suppression; accept for v1.
+- ✅ **Encrypted search = desktop-only.** E2EE messages are searchable only on Element Desktop / Element Web (where the device holds decrypted copies). Element X mobile cannot search encrypted history. Route archivists to **Element Desktop**; the Reference room + pinned messages hold must-find info. Document in `SAFETY.md`.
+- ✅ **Mobile search gap:** accept for v1 (subsumed by above).
 
 ### Shipping defaults (per-deployment config; override in the fork's vars)
 

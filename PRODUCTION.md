@@ -14,13 +14,21 @@ REDnet creates accounts and bootstraps E2EE keys for people whose threat model i
 The onboarding/recovery code is **bespoke and security-critical**, and self-review is not sufficient for
 code at this stakes level.
 
-- **Scope:** the silent onboarding + Phase-1 passphrase recovery + Phase-2 escrow lifecycle
-  (`deploy/element-web/rednet-module/`, spikes 05–09); the hardening in `deploy/setup.sh`; the two-tier
-  isolation; `RECOVERY.md` design + the TS crypto port (47/47 behavioral tests).
-- **Form:** an external reviewer with Matrix-E2EE + applied-crypto expertise. Provide them the spikes,
-  the test vectors, `DESIGN.md`/`RECOVERY.md`/`ARCHITECTURE.md`, and the threat model.
-- **Acceptance:** findings triaged; criticals fixed and re-reviewed; the recovery-key custody + the
-  metadata residuals explicitly signed off against the threat model.
+- **Scope (scoped, not full-product):** the escrow construction is the review target. Specifically:
+  - The Shamir + ECIES + HKDF + AES-256-GCM pipeline (`spikes/05-escrow-construction/`,
+    `spikes/06-escrow-lifecycle/`, the TS port in `deploy/element-web/rednet-module/`)
+  - The `mode` flag logic (passphrase-default vs. moderators-only opt-in)
+  - The threat analysis in `RECOVERY.md` §4 (seizure properties by mode)
+  - The test vectors (47/47 behavioral tests) as the specification
+  - `setup.sh` hardening and two-tier isolation are in-scope but secondary
+- **Form:** an external reviewer with applied-crypto expertise (not necessarily Matrix-specific; the
+  crypto primitives are standard). Provide: the spikes with test harnesses, `RECOVERY.md`, `DESIGN.md`,
+  the threat model, and the TS source. Budget for a focused 1–2 week engagement, not a full-product audit.
+- **Labeling:** until the external review lands, all escrow-related documentation and UI must carry an
+  **"experimental — not yet externally reviewed"** label. Phase 0 (device-only) and Phase 1 (passphrase,
+  no escrow store) do not require this label.
+- **Acceptance:** findings triaged; criticals fixed and re-reviewed; the passphrase-default blast-radius
+  property and the seizure properties explicitly signed off against the threat model.
 
 ## 2. Pin every image to a digest 🔬 ✅ DONE (2026-06-16)
 
@@ -109,3 +117,19 @@ IPs/UAs unbounded** (incl. the registration IP), the one surface that broke the 
 **All in-sandbox option-2 work is complete.** Every remaining step (🎯) is gated on a real deploy target
 (hosts / devices / people): the #1 security review (the gate before Phase-2 code ships), the Element build,
 the two-host dry-run, the restore drill, and secrets/custody. There is no further in-sandbox hardening to do.
+
+---
+
+## Continuity and handoff
+
+REDnet currently has a bus factor of one. Before deploying for real users, address:
+
+- **Documented runbook:** backup/restore, operator bootstrap, secret rotation, Synapse upgrade, Element
+  fork rebase. Each procedure should be executable by a second person who reads the docs cold.
+- **Second operator:** at minimum, a second person with admin credentials, access to the backup repo
+  password, and familiarity with the bootstrap chain. `bootstrap-operator.sh` supports this.
+- **Upstream-track plan:** Synapse, MAS, and Element all release frequently. Document the rebase/re-pin
+  procedure for the Element fork (`integration.patch` re-anchor) and the digest-pinned images.
+- **Community handoff scenario:** if the sole maintainer becomes unavailable, what happens? At minimum:
+  the server keeps running (Docker restart policies), backups keep running (cron), but no new members can
+  be onboarded and no security patches land. Document this honestly for operators.
