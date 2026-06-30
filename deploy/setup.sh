@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # REDnet deploy — assemble the hardened core+front stack from rednet.env, bring it up, self-check.
+# Usage:
+#   ./setup.sh             # two-host (production) — renders configs for CORE mode
+#   ./setup.sh --dev       # single-host (dev/lab) — starts the full stack locally
 set -uo pipefail
 cd "$(dirname "$0")" || exit 1
 say(){ printf '\n=== %s ===\n' "$*"; }
@@ -129,7 +132,15 @@ if lcp and os.path.exists(lcp):
 yaml.safe_dump(c,open(p,"w")); print("synapse hardened + delegating to MAS")
 PY
 
-ROLE="${REDNET_ROLE:-single}"   # single = dev/single-host (caddy on a host port) | core = two-host data plane
+DEV_MODE=false
+for arg in "$@"; do [ "$arg" = "--dev" ] && DEV_MODE=true; done
+ROLE="${REDNET_ROLE:-core}"   # core = two-host data plane (production default) | single = dev/lab (requires --dev)
+$DEV_MODE && ROLE=single
+if [ "$ROLE" = single ] && ! $DEV_MODE; then
+  echo "Single-host mode requires --dev flag: ./setup.sh --dev"
+  echo "Production deployments use two-host mode by default (see PRODUCTION.md #3)."
+  exit 1
+fi
 if [ "$ROLE" = core ]; then
   # R2 CRITICAL: the core must be DARK. setup.sh must NOT start caddy or publish any 0.0.0.0 host port here —
   # the Ansible core play brings up the WG-bound stack (-f docker-compose.wg.yml); the front lives on its own box.
@@ -138,6 +149,9 @@ if [ "$ROLE" = core ]; then
   echo "FRONT, post-front-deploy. Verify dark: from off-host, 'nc -vz <core_public_ip> 8008 8080' must FAIL."
   exit 0
 fi
+say "⚠️  DEV/LAB MODE — single-host, not for production"
+echo "This mode runs the entire stack on one host. For production, use two-host mode"
+echo "(CORE + FRONT on separate boxes with WireGuard). See PRODUCTION.md #3."
 say "start synapse + caddy (front)"
 docker compose up -d synapse caddy
 echo "waiting for the front..."

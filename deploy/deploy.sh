@@ -5,16 +5,16 @@
 # posts first-run messages to rooms, writes credentials to a file, prints next steps.
 #
 # Usage:
-#   ./deploy.sh                      # interactive — prompts for operator username
-#   ./deploy.sh --operator alice     # non-interactive
+#   ./deploy.sh --operator alice     # two-host production (default)
+#   ./deploy.sh --dev                # single-host dev/lab mode
+#   ./deploy.sh --dev --operator alice  # non-interactive dev mode
 #   ./deploy.sh --skip-element       # skip Element Web build (use Element X mobile instead)
 #
 # This is a FRESH-DEPLOY script. setup.sh renders configs and starts the stack from
 # scratch. Do not run against an existing deployment you want to keep.
 #
-# For two-host production, set REDNET_ROLE=core in rednet.env. deploy.sh adjusts
-# automatically — no Element Web, no front-facing ports, clear instructions for
-# what the FRONT needs.
+# Two-host (production) is the default. Single-host requires --dev.
+# You can also set REDNET_ROLE=core in rednet.env for explicit two-host mode.
 #
 # Requires: docker, docker compose, python3 + pyyaml, jq.
 # Optional: qrencode (for printable invite QR cards).
@@ -119,7 +119,9 @@ set -a; . ./rednet.env; set +a
 : "${REDNET_DOMAIN:?set REDNET_DOMAIN in rednet.env}"
 : "${REDNET_HTTP_PORT:=8080}"
 : "${REDNET_BRAND:=REDnet}"
-ROLE="${REDNET_ROLE:-single}"
+ROLE="${REDNET_ROLE:-core}"
+# --dev flag on deploy.sh itself → single-host dev mode
+for arg in "$@"; do [ "$arg" = "--dev" ] && ROLE=single; done
 ACCESS="http://localhost:${REDNET_HTTP_PORT}"
 PUBLIC_BASE="${REDNET_PUBLIC_BASE:-$ACCESS}"
 
@@ -148,7 +150,11 @@ ok "operator: ${OPERATOR_ID}"
 # ════════════════════════════════════════════════════════════════════════════════
 say "stack (setup.sh → bootstrap-rooms.sh)"
 
-./setup.sh || die "setup.sh failed — check the output above"
+if [ "$ROLE" = "single" ]; then
+  ./setup.sh --dev || die "setup.sh failed — check the output above"
+else
+  ./setup.sh || die "setup.sh failed — check the output above"
+fi
 ok "stack running, rooms bootstrapped"
 
 # ════════════════════════════════════════════════════════════════════════════════

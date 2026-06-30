@@ -68,6 +68,12 @@ REDnet keeps this **minimal and short-lived**, but it is **not zero.** A server 
 reveal a little recent activity. Treat _who you're connected to_ as better-hidden than your words are
 hidden, but not perfectly hidden.
 
+Specifically: the server retains a record of recent client IP addresses for up to **one day** (not
+indefinitely, but not zero). An hourly scrub job removes older records from the authentication layer.
+This means a server seized _right now_ could reveal which IP addresses connected in the past day.
+If hiding your IP address from a seized server matters to you, connect through **Tor** (the Tor
+Browser or Orbot on mobile) or a trusted VPN.
+
 **The other person.**
 Encryption protects the pipe between you, not the people at the ends. If the person you message is an
 informant, or screenshots your chat, or has a compromised phone, **your words to them are exposed.** No
@@ -78,6 +84,27 @@ If your phone _pops up_ "new message," then Apple or Google (and a relay service
 arrived and when_. Never the contents, but the timing and pattern. For most people this is an acceptable
 trade for convenience. For high-risk users it's a real leak: **turn notifications off**, or use the website
 on a computer instead of the phone app.
+
+**Web vs. mobile: the protections are not identical.**
+The REDnet website (Element Web) suppresses typing indicators and read receipts. The **mobile app**
+(Element X from the public app store) does not suppress these by default, because it runs stock code we
+don't control. On mobile, other people in a room can see that you're typing and when you've read a
+message. If this matters, change the setting in the mobile app (Settings → Notifications → Read
+receipts), or use the website for sensitive conversations.
+
+**Searching old messages.**
+Because messages are encrypted, searching through old conversations works **only on the desktop app**
+(Element Desktop or the website), where your device has stored the decrypted copies. The mobile app
+cannot search encrypted message history. If you need to find something, use the website or desktop.
+For must-find information, your community may pin important messages or keep a #reference room.
+
+---
+
+## A note about "online" status
+
+Everyone on REDnet appears **offline** at all times. This is on purpose. The server does not track or
+broadcast who is currently online. You will not see green dots. This means you can't tell at a glance
+whether someone is available, but it also means no one can tell when _you_ are active.
 
 ---
 

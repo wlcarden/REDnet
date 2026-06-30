@@ -16,7 +16,7 @@
 
 REDnet packages a hardened [Matrix](https://matrix.org) homeserver with silent end-to-end encryption, invite-only registration, and operational tooling for communities facing state-level adversaries. Users install [Element](https://element.io) from a public app store, scan a QR code, and start talking. No key ceremonies, no setup wizards.
 
-> **Pre-production.** All in-house verification complete (47/47 crypto tests, browser E2E, CI, operational drills). An [independent security review](PRODUCTION.md) is required before deployment with real users.
+> **Pre-production.** All in-house verification complete (47/47 crypto + lifecycle tests, browser E2E, CI, operational drills). The escrow construction is **experimental** pending [independent security review](PRODUCTION.md). An external review of the escrow crypto is required before deployment with real users.
 
 ---
 
@@ -128,16 +128,16 @@ The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix
 
 ### Verified (in-house)
 
-| Track                  | Status                                             | Evidence                             |
-| ---------------------- | -------------------------------------------------- | ------------------------------------ |
-| **CI**                 | Static lint, integration, Docker build (3 tiers)   | All GREEN                            |
-| **Silent onboarding**  | Module builds, wires into Element                  | Browser E2E 2/2 PASS                 |
-| **Operational drills** | Metadata scrub, backup/restore, restic             | All 3 PASS on live stack             |
-| **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM           | 37/37 PASS                           |
-| **Escrow lifecycle**   | Directory auth, event protocol, recovery handshake | 10/10 PASS                           |
-| **Network isolation**  | Docker firewall bypass, WireGuard aperture         | In-sandbox + KVM PASS                |
-| **Supply chain**       | All images digest-pinned                           | Boots + self-checks PASS             |
-| **Security review**    | AI-assisted, 9-dimension, 71 agents                | 53 findings; all critical/high fixed |
+| Track                  | Status                                                               | Evidence                             |
+| ---------------------- | -------------------------------------------------------------------- | ------------------------------------ |
+| **CI**                 | Static lint, integration, Docker build (3 tiers)                     | All GREEN                            |
+| **Silent onboarding**  | Module builds, wires into Element                                    | Browser E2E 2/2 PASS                 |
+| **Operational drills** | Metadata scrub, backup/restore, restic                               | All 3 PASS on live stack             |
+| **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM (⚠️ experimental)           | 37/37 PASS                           |
+| **Escrow lifecycle**   | Directory auth, event protocol, recovery handshake (⚠️ experimental) | 10/10 PASS                           |
+| **Network isolation**  | Docker firewall bypass, WireGuard aperture                           | In-sandbox + KVM PASS                |
+| **Supply chain**       | All images digest-pinned                                             | Boots + self-checks PASS             |
+| **Security review**    | AI-assisted, 9-dimension, 71 agents                                  | 53 findings; all critical/high fixed |
 
 ### Remaining (external)
 
@@ -150,9 +150,9 @@ The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix
 
 - **QR onboarding flow** — built (`mint-invite.sh` + `/join` landing page); needs live-stack validation
 - **Governance tooling** — built (attributed invites, vouch provenance, compartments, canary, revocation, in-client widget); needs live-stack validation
-- **Phase-2 recovery** — crypto + lifecycle built (47/47 tests); moderator approval tool + coordination bot remain ([RECOVERY.md](RECOVERY.md))
+- **Phase-2 recovery** — crypto + lifecycle built (37 escrow-crypto + 10 lifecycle = 47 tests; ⚠️ experimental pending external review); moderator approval tool + coordination bot remain ([RECOVERY.md](RECOVERY.md))
 - **Group calls** — scaffolded (LiveKit SFU + JWT service + Caddy routing); needs production media node ([DESIGN.md §8](DESIGN.md))
-- **Public preview** — scaffolded (matrix-viewer, OFF by default); conflicts with mandatory E2EE ([SPEC.md §11](SPEC.md))
+- **Public preview** — scaffolded (matrix-viewer, OFF by default); requires `world_readable` rooms which **cannot be E2EE** and are SEO-indexed. If enabled, scope to a single intentional non-sensitive public lobby; never member rooms ([SPEC.md §12](SPEC.md))
 
 ## Documentation
 
