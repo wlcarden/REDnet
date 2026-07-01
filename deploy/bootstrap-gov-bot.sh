@@ -28,8 +28,16 @@ GOV_TOK=$(mas issue-compatibility-token rednet-gov GOVDEV | grep -oE '(mct_|syt_
 [ -n "${GOV_TOK:-}" ] || { echo "ERR: no gov bot token"; exit 1; }
 GAUTH="Authorization: Bearer $GOV_TOK"
 
-say "system token"
-SYS_TOK=$(mas issue-compatibility-token rednet-system GOVSYS2 | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
+say "system token (Synapse-admin scoped — !gov delete + audit sweep use the admin API)"
+# Under MAS delegation, Synapse admin is an OAuth SCOPE on the token, not a row in
+# synapse's users table. promote-admin makes rednet-system admin-CAPABLE; the
+# --yes-i-want-to-grant-synapse-admin-privileges flag mints a token that actually
+# CARRIES urn:synapse:admin:*. Both are required; a bare psql UPDATE does nothing.
+mas promote-admin rednet-system 2>&1 | grep -qi 'promoted\|already' \
+  && echo "  rednet-system is admin-capable in MAS" \
+  || echo "  WARN: promote-admin failed — !gov delete + room sweep will be disabled"
+SYS_TOK=$(mas issue-compatibility-token rednet-system GOVSYS2 --yes-i-want-to-grant-synapse-admin-privileges \
+  | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 [ -n "${SYS_TOK:-}" ] || { echo "ERR: no system token — run bootstrap-rooms.sh first"; exit 1; }
 SAUTH="Authorization: Bearer $SYS_TOK"
 
@@ -136,14 +144,6 @@ print(json.dumps(d))
     echo "  #$alias -> room not found"
   fi
 done
-
-say "grant rednet-system the Synapse admin flag (!gov delete uses the admin purge API)"
-# Same direct-psql pattern as scrub-metadata.sh. MAS-managed accounts still row in
-# synapse's users table; the admin API checks this flag on the requesting token's user.
-docker compose exec -T postgres psql -U synapse -d synapse -q \
-  -c "UPDATE users SET admin = 1 WHERE name = '@rednet-system:${REDNET_DOMAIN}';" \
-  && echo "  rednet-system is a Synapse admin" \
-  || echo "  WARN: could not set admin flag — !gov delete will fail until it is set"
 
 say "render gov-bot config (tokens injected — gitignored)"
 mkdir -p gov-bot

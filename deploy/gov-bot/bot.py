@@ -51,6 +51,13 @@ from urllib.parse import quote
 
 import requests as http
 
+# When run as a script (python3 bot.py) this module is named __main__, so
+# community.py's `import bot` would re-execute this file as a SECOND module
+# and deadlock on the circular import. Alias ourselves under the module name
+# first — community then binds the already-running instance, same as pytest.
+if __name__ == "__main__":
+    sys.modules["bot"] = sys.modules[__name__]
+
 DOMAIN = os.environ["REDNET_DOMAIN"]
 ACCESS = os.environ.get("REDNET_ACCESS_URL", "http://synapse:8008")
 BOT_TOKEN = os.environ["GOV_BOT_TOKEN"]
@@ -1076,4 +1083,9 @@ def main():
 
 
 if __name__ == "__main__":
+    if "--check-imports" in sys.argv:
+        # Exercised by test_community.py: proves the script-execution path
+        # (module named __main__) survives the bot<->community import cycle.
+        print("imports ok")
+        sys.exit(0)
     main()
