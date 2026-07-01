@@ -137,7 +137,8 @@ fi
 
 MAS_UP=false
 for _ in $(seq 1 15); do
-  docker compose exec -T mas mas-cli manage list-users --config /config.yaml >/dev/null 2>&1 && { MAS_UP=true; break; }
+  # list-admin-users is a valid read-only liveness probe (no `list-users` in MAS 1.19.0)
+  docker compose exec -T mas mas-cli manage list-admin-users --config /config.yaml >/dev/null 2>&1 && { MAS_UP=true; break; }
   sleep 2
 done
 if $MAS_UP; then

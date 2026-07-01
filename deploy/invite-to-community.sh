@@ -38,10 +38,19 @@ for alias in "${ROOMS[@]}"; do
     FAIL=$((FAIL + 1))
     continue
   fi
-  RESP=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$RID")/invite" \
-    -H "$AUTH" -H "Content-Type: application/json" \
-    -d "{\"user_id\":\"$USER_ID\"}")
-  ERR=$(echo "$RESP" | python3 -c "import sys,json;print(json.load(sys.stdin).get('errcode',''))" 2>/dev/null)
+  # rc_invites burst is 5 (then 0.1/s). This loop is exactly 5 invites, so a
+  # single onboarding fits — but back-to-back onboards share the per-issuer
+  # burst and get M_LIMIT_EXCEEDED. Retry past the throttle window so a member
+  # never silently misses a room.
+  ERR="?"
+  for _ in 1 2 3 4 5; do
+    RESP=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$RID")/invite" \
+      -H "$AUTH" -H "Content-Type: application/json" \
+      -d "{\"user_id\":\"$USER_ID\"}")
+    ERR=$(echo "$RESP" | python3 -c "import sys,json;print(json.load(sys.stdin).get('errcode',''))" 2>/dev/null)
+    [ "$ERR" = "M_LIMIT_EXCEEDED" ] || break
+    sleep 11
+  done
   if [ -z "$ERR" ] || [ "$ERR" = "M_FORBIDDEN" ]; then
     echo "  #${alias} — invited (or already a member)"
     OK=$((OK + 1))

@@ -70,16 +70,32 @@ resolve_room(){
     | python3 -c "import sys,json;print(json.load(sys.stdin).get('room_id',''))" 2>/dev/null
 }
 
+member_state(){  # echoes the operator's membership in a room ("" if none)
+  curl -s -H "$AUTH" "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.room.member/$USER_ID" \
+    | python3 -c "import sys,json;print(json.load(sys.stdin).get('membership',''))" 2>/dev/null
+}
+
 invite_user(){
-  local room_id="$1"
+  # Robust because the old version masked real failures as "already a member".
+  # Two things break naive invites here: (1) Synapse rc_invites (burst 5, then
+  # 0.1/s) throttles this ~10-invite loop with M_LIMIT_EXCEEDED; (2) in bot-created
+  # rooms (#gov-bot, #rednet-mod) the system account's invite permission depends on
+  # a PL grant that can lag. So: short-circuit if already in the room, otherwise
+  # invite and VERIFY membership actually landed — retrying past both failure modes
+  # rather than trusting the POST's response code.
+  local room_id="$1" cur
   [ -n "$room_id" ] || return 1
-  local resp
-  resp=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$room_id")/invite" \
-    -H "$AUTH" -H "Content-Type: application/json" \
-    -d "{\"user_id\":\"$USER_ID\"}")
-  local err
-  err=$(echo "$resp" | python3 -c "import sys,json;print(json.load(sys.stdin).get('errcode',''))" 2>/dev/null)
-  [ -z "$err" ] || [ "$err" = "M_FORBIDDEN" ]
+  cur=$(member_state "$room_id")
+  { [ "$cur" = "join" ] || [ "$cur" = "invite" ]; } && return 0
+  local _
+  for _ in 1 2 3 4 5; do
+    curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$room_id")/invite" \
+      -H "$AUTH" -H "Content-Type: application/json" -d "{\"user_id\":\"$USER_ID\"}" >/dev/null
+    cur=$(member_state "$room_id")
+    { [ "$cur" = "join" ] || [ "$cur" = "invite" ]; } && return 0
+    sleep 6   # back off past rate-limit window / let a lagging PL grant settle
+  done
+  return 1  # membership never landed — surface it
 }
 
 set_power_level(){

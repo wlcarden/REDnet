@@ -56,6 +56,30 @@ else
 fi
 [ -n "$GOV_BOT_ROOM" ] || { echo "ERR: #gov-bot room not created"; exit 1; }
 
+# The bot (rednet-gov) creates #gov-bot, so it alone is a joined PL100 member —
+# rednet-system is neither joined nor privileged. Matrix requires being a JOINED
+# member to invite, so bootstrap-operator.sh (adding the operator AS rednet-system,
+# in Phase 5) would fail and no operator could reach #gov-bot. Make rednet-system a
+# joined PL100 member NOW: grant PL, invite it (via the bot), and join it. Without
+# the explicit join it only becomes a member later (when deploy.sh posts the
+# first-run checklist in Phase 6) — too late for the Phase 5 operator invite.
+GB_PL=$(curl -s -H "$GAUTH" "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/m.room.power_levels/")
+GB_PL_NEW=$(echo "$GB_PL" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+d.setdefault('users',{})['@rednet-system:$REDNET_DOMAIN']=100
+print(json.dumps(d))
+" 2>/dev/null)
+[ -n "$GB_PL_NEW" ] && curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/state/m.room.power_levels/" \
+  -H "$GAUTH" -H "Content-Type: application/json" -d "$GB_PL_NEW" >/dev/null
+# invite (as the bot, PL100 creator) + join (as rednet-system) so it's a real member
+curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$GOV_BOT_ROOM")/invite" \
+  -H "$GAUTH" -H "Content-Type: application/json" \
+  -d "{\"user_id\":\"@rednet-system:$REDNET_DOMAIN\"}" >/dev/null 2>&1
+curl -s -XPOST "$ACCESS/_matrix/client/v3/join/$(enc "$GOV_BOT_ROOM")" \
+  -H "$SAUTH" -H "Content-Type: application/json" -d '{}' >/dev/null 2>&1 \
+  && echo "  rednet-system joined #gov-bot at PL100 (so it can invite the operator)"
+
 say "link #gov-bot into the Organizing sub-space"
 ORGANIZING_ID=$(resolve_alias "$SAUTH" organizing 2>/dev/null)
 if [ -n "$ORGANIZING_ID" ]; then

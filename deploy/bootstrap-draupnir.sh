@@ -39,6 +39,31 @@ fi
 [ -n "$MROOM" ] || { echo "management room not created"; exit 1; }
 echo "management room: $MROOM"
 
+# The Draupnir bot creates #rednet-mod, so it alone is a joined member with PL100
+# — rednet-system is neither joined nor privileged. Matrix requires being a JOINED
+# member to invite, so bootstrap-operator.sh (adding the operator AS rednet-system)
+# would fail and no operator could reach the moderation channel. Make rednet-system
+# a joined PL100 member here — grant PL, invite it (via the bot), and join it — so
+# it can invite the operator in Phase 5. (#gov-bot ends up this way already.)
+MOD_PL=$(curl -s -H "$BAUTH" "$ACCESS/_matrix/client/v3/rooms/$(enc "$MROOM")/state/m.room.power_levels/")
+MOD_PL_NEW=$(echo "$MOD_PL" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+d.setdefault('users',{})['@rednet-system:$REDNET_DOMAIN']=100
+print(json.dumps(d))
+" 2>/dev/null)
+[ -n "$MOD_PL_NEW" ] && curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$MROOM")/state/m.room.power_levels/" \
+  -H "$BAUTH" -H "Content-Type: application/json" -d "$MOD_PL_NEW" >/dev/null
+MOD_SYS_TOK=$(mas issue-compatibility-token rednet-system MODJOIN | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
+if [ -n "${MOD_SYS_TOK:-}" ]; then
+  curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$MROOM")/invite" \
+    -H "$BAUTH" -H "Content-Type: application/json" \
+    -d "{\"user_id\":\"@rednet-system:$REDNET_DOMAIN\"}" >/dev/null 2>&1
+  curl -s -XPOST "$ACCESS/_matrix/client/v3/join/$(enc "$MROOM")" \
+    -H "Authorization: Bearer $MOD_SYS_TOK" -H "Content-Type: application/json" -d '{}' >/dev/null 2>&1
+  echo "  rednet-system joined #rednet-mod at PL100 (so it can invite the operator)"
+fi
+
 say "policy list room (ban-list for Draupnir enforcement)"
 POLICY_ROOM=$(curl -s -H "$BAUTH" "$ACCESS/_matrix/client/v3/directory/room/%23rednet-banlist%3A$REDNET_DOMAIN" | roomid_of)
 if [ -z "$POLICY_ROOM" ]; then
