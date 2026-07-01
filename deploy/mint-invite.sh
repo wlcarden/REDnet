@@ -24,7 +24,8 @@ cd "$(dirname "$0")" || exit 1
 : "${REDNET_HTTP_PORT:=8080}"
 : "${REDNET_PUBLIC_BASE:=https://${REDNET_DOMAIN}}"
 
-ACCESS="http://localhost:${REDNET_HTTP_PORT}"
+. ./lib-access.sh
+ACCESS="$API_URL"
 JOIN_URL_BASE="${REDNET_PUBLIC_BASE}/join"
 OUTDIR="invites"
 mkdir -p "$OUTDIR"

@@ -12,7 +12,8 @@ cd "$(dirname "$0")" || exit 1
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"
 : "${REDNET_HTTP_PORT:=8080}"
-ACCESS="http://localhost:${REDNET_HTTP_PORT}"
+. ./lib-access.sh
+ACCESS="$API_URL"
 mas(){ docker compose exec -T mas mas-cli manage "$@" --config /config.yaml 2>&1; }
 enc(){ python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$1"; }
 

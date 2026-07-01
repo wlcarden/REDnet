@@ -6,7 +6,8 @@ set -uo pipefail
 cd "$(dirname "$0")" || exit 1
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"; : "${REDNET_HTTP_PORT:=8080}"
-ACCESS="http://localhost:${REDNET_HTTP_PORT}"
+. ./lib-access.sh
+ACCESS="$API_URL"
 say(){ printf '\n=== %s ===\n' "$*"; }
 genpw(){ LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32; }  # always exactly 32 alnum chars
 mas(){ docker compose exec -T mas mas-cli manage "$@" --config /config.yaml 2>&1; }

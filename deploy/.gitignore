@@ -47,6 +47,7 @@ vouch.jsonl
 
 # Gov bot rendered config holds the bot access token. NEVER commit.
 gov-bot/.env
+gov-bot/__pycache__/
 
 # LiveKit secrets (API key + secret). NEVER commit.
 livekit/livekit.secrets.yaml
