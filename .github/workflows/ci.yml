@@ -69,3 +69,55 @@ jobs:
 
       - name: Cross-language test vectors
         run: node test-vectors.mjs
+
+  gov-bot:
+    name: Gov Bot — unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/gov-bot
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --quiet -r requirements.txt pytest
+
+      - name: Pytest
+        run: python -m pytest test_bot.py -v
+
+  element-build:
+    name: Element Web — patch & build check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/element-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract pinned version
+        id: ver
+        run: |
+          VER=$(grep -oP 'ELEMENT_VERSION[=:]\K[v\d.]+' build.sh | head -1)
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "Element version: $VER"
+
+      - name: Clone Element Web at pinned version
+        run: |
+          git clone --depth 1 --branch "${{ steps.ver.outputs.version }}" \
+            https://github.com/element-hq/element-web.git /tmp/element-web
+
+      - name: Apply integration patch
+        run: |
+          cd /tmp/element-web
+          git apply --check "${{ github.workspace }}/deploy/element-web/integration.patch"
+          echo "Patch applies cleanly to ${{ steps.ver.outputs.version }}"
+
+      - name: Verify module builds
+        working-directory: deploy/element-web/rednet-module
+        run: |
+          npm install --no-audit --no-fund
+          npm run typecheck
