@@ -61,3 +61,10 @@ element-web/e2e/node_modules/
 element-web/e2e/test-results/
 element-web/e2e/package-lock.json
 element-web/e2e/debug-*.png
+
+# Python test caches.
+synapse-modules/__pycache__/
+gov-bot/.hypothesis/
+synapse-modules/.hypothesis/
+gov-bot/.pytest_cache/
+synapse-modules/.pytest_cache/

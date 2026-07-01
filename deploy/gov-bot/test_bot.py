@@ -19,6 +19,7 @@ os.environ.setdefault("REDNET_ACCESS_URL", "http://synapse:8008")
 
 sys.path.insert(0, os.path.dirname(__file__))
 import bot
+import community
 
 
 # ── parse_args / parse_flags ─────────────────────────────────────────────────
@@ -161,6 +162,11 @@ class TestVouchIndex:
 
 
 class TestAuditLogic:
+    @pytest.fixture(autouse=True)
+    def _no_room_sweep(self):
+        with patch.object(community, "room_canaries", return_value=[]):
+            yield
+
     def _make_vouch(self, voucher, ts, token_hash="h"):
         return {
             "type": "vouch",

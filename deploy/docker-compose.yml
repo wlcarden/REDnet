@@ -45,8 +45,10 @@ services:
     environment:
       SYNAPSE_SERVER_NAME: ${REDNET_DOMAIN:?}
       SYNAPSE_REPORT_STATS: "no"
+      PYTHONPATH: /modules # rednet_room_policy (COMMUNITY-MANAGEMENT.md), wired by setup.sh
     volumes:
       - rednet_synapse:/data
+      - ./synapse-modules:/modules:ro
 
   caddy: # FRONT — the only public face; TLS + reverse-proxy split + serves Element Web
     image: caddy@sha256:77c07d5ebfa5be9fd6c820d2094ae662c9e7eeb9bf98346b7f639900263ee2a2 # Caddy v2.11.4 (2-alpine)
