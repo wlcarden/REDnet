@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # API_URL is consumed by the sourcing script
 # Shared API_URL detection for bootstrap scripts.
 # Source this after loading rednet.env. Sets API_URL to where Synapse's C-S API is reachable:
 #   - Two-host production (docker-compose.wg.yml exists): Synapse on the WG interface directly
