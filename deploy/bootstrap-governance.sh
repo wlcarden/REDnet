@@ -15,7 +15,8 @@ set -uo pipefail
 cd "$(dirname "$0")" || exit 1
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"; : "${REDNET_HTTP_PORT:=8080}"; : "${REDNET_BRAND:=REDnet}"
-ACCESS="http://localhost:${REDNET_HTTP_PORT}"
+. ./lib-access.sh
+ACCESS="$API_URL"
 say(){ printf '\n=== %s ===\n' "$*"; }
 jqpy(){ python3 -c "import sys,json;d=json.load(sys.stdin);print($1)" 2>/dev/null; }
 mas(){ docker compose exec -T mas mas-cli manage "$@" --config /config.yaml 2>&1; }

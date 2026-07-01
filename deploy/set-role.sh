@@ -19,7 +19,8 @@ set -uo pipefail
 cd "$(dirname "$0")" || exit 1
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"; : "${REDNET_HTTP_PORT:=8080}"
-ACCESS="http://localhost:${REDNET_HTTP_PORT}"
+. ./lib-access.sh
+ACCESS="$API_URL"
 
 command -v jq >/dev/null 2>&1 || { echo "ERR: jq required" >&2; exit 1; }
 
