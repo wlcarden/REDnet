@@ -109,6 +109,11 @@ c["rc_registration"]={"per_second":0.05,"burst_count":3}
 # the real brute-force defense, kept tight. Add per-IP rate-limiting at the front edge for credential-stuffing.
 c["rc_login"]={"address":{"per_second":1000,"burst_count":1000},"account":{"per_second":0.17,"burst_count":5},"failed_attempts":{"per_second":0.17,"burst_count":5}}
 c["rc_invites"]={"per_room":{"per_second":0.1,"burst_count":5},"per_user":{"per_second":0.1,"burst_count":5},"per_issuer":{"per_second":0.1,"burst_count":5}}  # SPEC §4 (R2)
+# Closed network — no untrusted traffic to throttle. Default 0.2/s burst 10 is for public servers; raise for
+# bot burst operations (revoke-chain kicks, DM creation sweeps) without needing a synapse-admin credential.
+c["rc_message"]={"per_second":0.5,"burst_count":50}
+c["rc_joins"]={"local":{"per_second":0.5,"burst_count":20},"remote":{"per_second":0.01,"burst_count":1}}
+c["default_room_version"]="12"
 # auto-join the system rooms (created by bootstrap-rooms.sh)
 _d=os.environ['DOMAIN']  # land members inside the space + its starter channels
 c["auto_join_rooms"]=[f"#{a}:{_d}" for a in ("community","welcome","announcements","reference","general")]

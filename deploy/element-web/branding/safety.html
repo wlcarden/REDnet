@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safety Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111316; color: #ECEDEE; min-height: 100vh;
+    display: flex; justify-content: center;
+    padding: 32px 24px 64px;
+  }
+  .guide {
+    max-width: 560px; width: 100%;
+  }
+  .logo { text-align: center; margin-bottom: 24px; }
+  .logo svg { width: 160px; height: auto; }
+
+  h1 {
+    font-size: 20px; font-weight: 600; letter-spacing: -0.3px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px; color: #8B8D98; text-align: center;
+    line-height: 1.5; margin-bottom: 24px;
+  }
+
+  /* --- Nav --- */
+  .nav {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 28px; justify-content: center;
+  }
+  .nav a {
+    font-size: 11px; font-weight: 600; color: #8B8D98;
+    text-decoration: none; padding: 5px 10px; border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 120ms, color 120ms;
+  }
+  .nav a:hover { background: rgba(229,72,77,0.1); color: #E5484D; }
+
+  /* --- Sections --- */
+  .section {
+    background: #16181B; border-radius: 12px; padding: 24px 22px;
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px; font-weight: 600; letter-spacing: -0.2px;
+    margin-bottom: 12px; padding-top: 4px;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #62646C; margin-bottom: 10px;
+    margin-top: 16px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  p {
+    font-size: 13px; color: #8B8D98; line-height: 1.6; margin-bottom: 12px;
+  }
+  p:last-child { margin-bottom: 0; }
+
+  /* --- Callouts --- */
+  .callout {
+    padding: 12px 14px; border-radius: 0 8px 8px 0;
+    font-size: 12px; line-height: 1.6; margin-bottom: 14px;
+  }
+  .callout:last-child { margin-bottom: 0; }
+  .callout strong { color: #ECEDEE; font-weight: 600; }
+  .callout-red {
+    background: rgba(229,72,77,0.08); border-left: 3px solid #E5484D; color: #C4C7C9;
+  }
+  .callout-amber {
+    background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; color: #C4C7C9;
+  }
+  .callout-blue {
+    background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; color: #C4C7C9;
+  }
+  .callout-green {
+    background: rgba(48,164,108,0.08); border-left: 3px solid #30A46C; color: #C4C7C9;
+  }
+
+  /* --- Key/value list --- */
+  .kv-list { list-style: none; margin-bottom: 12px; }
+  .kv-list li {
+    font-size: 13px; color: #C4C7C9; line-height: 1.5;
+    padding: 6px 0 6px 20px; position: relative;
+  }
+  .kv-list li::before {
+    content: ''; position: absolute; left: 0; top: 12px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(229,72,77,0.4);
+  }
+  .kv-label { font-weight: 600; color: #ECEDEE; }
+
+  /* --- Tier cards --- */
+  .tier {
+    padding: 14px 16px; border-radius: 10px; margin-bottom: 10px;
+    font-size: 12px; line-height: 1.6;
+  }
+  .tier:last-child { margin-bottom: 0; }
+  .tier strong { color: #ECEDEE; }
+  .tier-1 { background: rgba(48,164,108,0.08); border: 1px solid rgba(48,164,108,0.2); color: #C4C7C9; }
+  .tier-2 { background: rgba(229,165,54,0.08); border: 1px solid rgba(229,165,54,0.2); color: #C4C7C9; }
+  .tier-3 { background: rgba(229,72,77,0.08); border: 1px solid rgba(229,72,77,0.2); color: #C4C7C9; }
+
+  /* --- Bottom links --- */
+  .bottom-links {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    margin-top: 24px;
+  }
+  .bottom-links a {
+    font-size: 12px; font-weight: 600; color: #8B8D98;
+    text-decoration: none; padding: 8px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 120ms, color 120ms;
+  }
+  .bottom-links a:hover { background: rgba(229,72,77,0.1); color: #E5484D; }
+</style>
+</head>
+<body>
+<div class="guide">
+  <div class="logo">
+    <svg viewBox="0 0 252 64" role="img" aria-label="REDnet">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z"
+        fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/>
+        <circle cx="48" cy="23" r="3.2"/><circle cx="48" cy="41" r="3.2"/>
+        <circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/>
+        <circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, sans-serif" font-size="30"
+        font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <h1>What's protected, what isn't</h1>
+  <p class="subtitle">
+    A plain-language safety guide. No technical background needed.
+    If you read only one section, read the short version.
+  </p>
+
+  <div class="nav">
+    <a href="#short">Short version</a>
+    <a href="#protected">Protected</a>
+    <a href="#not-protected">Not protected</a>
+    <a href="#tiers">Safety tiers</a>
+    <a href="#your-part">Your part</a>
+    <a href="#passphrase">Passphrase</a>
+    <a href="#bottom-line">Bottom line</a>
+  </div>
+
+  <!-- ==================== SHORT VERSION ==================== -->
+  <div class="section" id="short">
+    <div class="section-title">The short version</div>
+    <p>
+      REDnet keeps <strong style="color:#ECEDEE;">the words inside your messages secret</strong>,
+      even from the people who run the server. You can sign up
+      <strong style="color:#ECEDEE;">without giving your real name, phone number, or email.</strong>
+      And if the server is ever seized, the messages stored on it stay
+      <strong style="color:#ECEDEE;">scrambled and unreadable.</strong>
+    </p>
+    <p>But no app can do everything. REDnet <strong style="color:#ECEDEE;">cannot:</strong></p>
+    <ul class="kv-list">
+      <li>hide the <strong style="color:#ECEDEE;">fact</strong> that you're using an encrypted chat app</li>
+      <li>protect you if your <strong style="color:#ECEDEE;">phone or laptop is unlocked, stolen,
+        or infected with spyware</strong></li>
+      <li>protect you from a person you're talking to who is an
+        <strong style="color:#ECEDEE;">informant</strong> or whose device is compromised</li>
+    </ul>
+    <div class="callout callout-red">
+      <strong>Three habits that keep you safe:</strong><br>
+      1. Guard your device like it's the key to everything. It is.<br>
+      2. Match what you say to the room's safety level.<br>
+      3. When something would be catastrophic if read by the wrong person,
+      say it in person. Not in any app.
+    </div>
+  </div>
+
+  <!-- ==================== WHAT'S PROTECTED ==================== -->
+  <div class="section" id="protected">
+    <div class="section-title">What REDnet protects</div>
+
+    <div class="section-label">Your messages</div>
+    <p>
+      Your messages are sealed with end-to-end encryption. Think of every message as a
+      letter in an envelope that only you and the person you're writing to have the key
+      to open. The server passes the envelope along but cannot open it. Neither can the
+      people who run the server, nor someone who seizes it.
+    </p>
+
+    <div class="section-label">Your identity when you sign up</div>
+    <p>
+      REDnet does not ask for your phone number, email, or real name. You join with a
+      one-time invite code from someone already trusted in your community. There is no
+      "phone number = your identity" link the way there is with most apps.
+    </p>
+
+    <div class="section-label">The server, if it's seized</div>
+    <p>
+      REDnet is built on the assumption that the server will eventually be taken.
+      Messages are stored scrambled (unreadable without the keys, which live only on
+      people's devices), and the small records of who connected and when are kept tiny
+      and erased fast. A seized server is meant to be a disappointment to whoever
+      seizes it.
+    </p>
+  </div>
+
+  <!-- ==================== WHAT'S NOT PROTECTED ==================== -->
+  <div class="section" id="not-protected">
+    <div class="section-title">What REDnet does NOT protect</div>
+    <div class="callout callout-amber">
+      <strong>Believing you're protected when you're not is more dangerous than knowing
+      your limits.</strong>
+    </div>
+
+    <div class="section-label">Your device</div>
+    <p>
+      Encryption protects messages in transit and on the server. It does nothing if
+      someone has your unlocked phone in their hand, or has infected it with spyware
+      (like Pegasus). On your own screen, your messages are readable (that's the point),
+      so anyone who controls your device reads what you read.
+    </p>
+    <div class="callout callout-red">
+      <strong>Your device security is your job, and it's the weakest point.</strong>
+      Lock it with a strong passcode, keep it updated, don't tap suspicious links, and
+      have a plan if it might be seized.
+    </div>
+
+    <div class="section-label">The fact that you're using an encrypted app</div>
+    <p>
+      Someone who can watch your internet connection (an internet provider, a border
+      checkpoint, a state telecom) often can't read your messages but can tell you're
+      using encrypted chat. In some places, that alone draws attention. REDnet can't
+      hide this. If merely being seen to use a secure tool is dangerous where you are,
+      handle it offline.
+    </p>
+
+    <div class="section-label">Some of "who talked to whom, and when"</div>
+    <p>
+      The server needs to route messages, so it sees limited patterns: who's online,
+      who's in which room. REDnet keeps this minimal and short-lived, but it is not
+      zero. A server seized right now could reveal a little recent activity.
+    </p>
+    <p>
+      Specifically: the server retains a record of recent client IP addresses for up
+      to <strong style="color:#ECEDEE;">one day</strong>. An hourly scrub job removes
+      older records from the authentication layer. If hiding your IP address from a
+      seized server matters to you, connect through
+      <strong style="color:#ECEDEE;">Tor</strong> or a trusted VPN.
+    </p>
+
+    <div class="section-label">The other person</div>
+    <p>
+      Encryption protects the pipe between you, not the people at the ends. If the
+      person you message is an informant, or screenshots your chat, or has a compromised
+      phone, your words to them are exposed. No encryption can prevent that. Trust
+      people, not just tools.
+    </p>
+
+    <div class="section-label">Notifications on your phone</div>
+    <p>
+      If your phone pops up "new message," then Apple or Google (and a relay service)
+      learn that something arrived and when. Never the contents, but the timing and
+      pattern. For high-risk users: turn notifications off, or use the website on a
+      computer instead of the phone app.
+    </p>
+
+    <div class="section-label">Web vs. mobile</div>
+    <p>
+      The REDnet website suppresses typing indicators and read receipts. The mobile app
+      (Element X from the public app store) does not suppress these by default, because
+      it runs stock code. On mobile, other people in a room can see that you're typing
+      and when you've read a message.
+    </p>
+    <div class="callout callout-blue">
+      To change this on mobile: Settings &gt; Notifications &gt; Read receipts. Or use
+      the website for sensitive conversations.
+    </div>
+
+    <div class="section-label">Searching old messages</div>
+    <p>
+      Because messages are encrypted, searching old conversations works only on the
+      desktop app or website, where your device has stored the decrypted copies. The
+      mobile app cannot search encrypted message history. For must-find information,
+      pin important messages or use #reference.
+    </p>
+  </div>
+
+  <!-- ==================== ONLINE STATUS ==================== -->
+  <div class="section" id="status">
+    <div class="section-title">Online status</div>
+    <p>
+      Everyone on REDnet appears <strong style="color:#ECEDEE;">offline</strong> at all
+      times. This is on purpose. The server does not track or broadcast who is currently
+      online. You will not see green dots. This means you can't tell at a glance whether
+      someone is available, but it also means no one can tell when you are active.
+    </p>
+  </div>
+
+  <!-- ==================== SAFETY TIERS ==================== -->
+  <div class="section" id="tiers">
+    <div class="section-title">Safety tiers</div>
+    <p>
+      Match what you say to the room's safety level. The levels describe what stays
+      secret if the worst happens, not what topics are allowed. Only you know what's
+      sensitive for you.
+    </p>
+
+    <div class="tier tier-1">
+      <strong>Tier 1: "The words are secret."</strong><br>
+      This is most of REDnet. Safe to assume: nobody can read your messages. Not safe to
+      assume: that the fact you talked to someone, or roughly when, is perfectly hidden.<br>
+      <strong>Good for:</strong> day-to-day coordination, planning, organizing.<br>
+      <strong>Not for:</strong> anything where even knowing two people are in contact could
+      get someone hurt.
+    </div>
+
+    <div class="tier tier-2">
+      <strong>Tier 2: "The words and who-you-are are secret."</strong><br>
+      A separate, higher-security tool your community may link to. Use it when hiding the
+      connection between people matters, not just the content.
+    </div>
+
+    <div class="tier tier-3">
+      <strong>Tier 3: "Nothing is written down anywhere."</strong><br>
+      In person, no phones in the room. The only way to protect something whose existence
+      is dangerous. When in doubt, this is always the safest choice.
+    </div>
+
+    <div class="callout callout-amber" style="margin-top: 14px;">
+      <strong>Rule of thumb:</strong> if you catch yourself thinking "I really hope no one
+      ever sees this," it belongs a tier higher than wherever you're typing it.
+    </div>
+  </div>
+
+  <!-- ==================== YOUR PART ==================== -->
+  <div class="section" id="your-part">
+    <div class="section-title">Your part of the job</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Lock and update your device.</span>
+        A strong passcode (not a 4-digit PIN), automatic screen lock, latest software.
+        This matters more than any feature REDnet has.</li>
+      <li><span class="kv-label">Protect your recovery passphrase</span>
+        (see below).</li>
+      <li><span class="kv-label">Use your own invite code.</span>
+        Don't pass your account around. Each person should join with their own code
+        so the community can tell who's who and cut off a compromised account.</li>
+      <li><span class="kv-label">Check that contacts are verified.</span>
+        The app shows when a person's identity is confirmed (a green shield or check).
+        If it warns you a contact is "unverified" or "changed," stop and ask them
+        out-of-band before sharing anything sensitive.</li>
+      <li><span class="kv-label">Match the tier.</span>
+        Take sensitive things to a higher tier or in person.</li>
+      <li><span class="kv-label">Assume the worst is possible.</span>
+        Don't write what would be catastrophic if your device were seized or your
+        contact turned. The app is a tool, not a guarantee.</li>
+    </ul>
+  </div>
+
+  <!-- ==================== RECOVERY PASSPHRASE ==================== -->
+  <div class="section" id="passphrase">
+    <div class="section-title">Your recovery passphrase</div>
+    <p>
+      When you set up REDnet, you get a recovery passphrase (a short list of words).
+      This is how you get your account and message history back if you lose your phone.
+    </p>
+    <div class="callout callout-red">
+      <strong>Write it down and store it somewhere safe and separate from your device.</strong>
+      Not a note on the same phone. Not a screenshot. Not in a text message.
+    </div>
+    <p>
+      No one can reset it for you. Not REDnet, not your organizers. That's on purpose:
+      if they could reset it, so could anyone who seizes the server or pressures them.
+      If you lose both your device and your passphrase, your old messages are gone for
+      good. That's the safe failure, by design.
+    </p>
+  </div>
+
+  <!-- ==================== BOTTOM LINE ==================== -->
+  <div class="section" id="bottom-line">
+    <div class="section-title">The honest bottom line</div>
+    <p>
+      REDnet makes things much harder, not impossible, for a powerful, well-funded
+      adversary. It protects your words and your sign-up identity. It cannot protect a
+      hacked or seized device, cannot hide that you're using it, and cannot save you
+      from a bad actor you choose to trust.
+    </p>
+    <div class="callout callout-amber">
+      This software has <strong>not yet had a professional outside security audit.</strong>
+      It's built and self-tested, but for the highest-stakes situations, where a mistake
+      means prison or worse, <strong>do not bet your life on any app.</strong> Use
+      Tier 3: in person, no devices.
+    </div>
+    <p>
+      Used with these habits, REDnet is a strong shield. Used carelessly (a hacked phone,
+      the wrong words in the wrong room, an untrustworthy contact), no app can save you.
+      The tool does its part. These habits are yours.
+    </p>
+  </div>
+
+  <div class="bottom-links">
+    <a href="/member-guide">Member guide</a>
+    <a href="/">Back to app</a>
+  </div>
+</div>
+</body>
+</html>

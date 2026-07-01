@@ -188,6 +188,8 @@
     <strong>New to the platform?</strong>
     Read the <a href="/member-guide" style="color:#3E93DE;">member guide</a> first
     for messaging basics, encryption, privacy practices, and device management.
+    Review the <a href="/safety" style="color:#3E93DE;">safety guide</a> to understand
+    what the platform protects and what it doesn't.
     This guide covers moderation-specific tools.
   </div>
 
@@ -371,6 +373,15 @@
     </p>
 
     <div class="callout callout-blue">
+      <strong>Members report through a private DM.</strong>
+      Regular members do not have access to <code>#gov-bot</code>. They use
+      <code>!report</code> in a private DM with <code>@rednet-gov</code>.
+      Reports filed this way appear in <code>#gov-bot</code> as alerts.
+      The reporter's identity is visible to operators but not to the
+      person being reported.
+    </div>
+
+    <div class="callout callout-blue">
       <strong>You can also use the governance dashboard.</strong>
       Open <a href="/governance/" style="color:#3E93DE;">/governance/</a>
       in your browser — the Provenance tab shows quick-action buttons that
@@ -415,6 +426,8 @@
     <p>
       For suspected compromise, use <code>!gov report @user --detail "..."</code>
       in <code>#gov-bot</code> first — this creates an immediate alert.
+      (Members without <code>#gov-bot</code> access can use
+      <code>!report</code> in their DM with <code>@rednet-gov</code>.)
       Then send a direct message to an operator with the username, the room, and
       a brief description. If you cannot reach an operator by DM,
       post in <code>#general</code> asking them to check their messages.

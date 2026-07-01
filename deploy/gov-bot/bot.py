@@ -2,11 +2,15 @@
 """REDnet governance bot.
 
 Listens in #gov-bot (non-E2EE) for !gov commands from organizers/admins.
-Executes governance actions via the Matrix client-server API. All events
-are recorded to vouch.jsonl (canonical on-disk audit trail). The bot does
-NOT post to E2EE rooms (#vouch-log, #welcome) since it cannot encrypt.
+Also creates unencrypted DM rooms with each member for private !report
+commands — reports are forwarded to #gov-bot so operators see them, but
+other members cannot see who reported whom.
 
-Commands and required power levels:
+All events are recorded to vouch.jsonl (canonical on-disk audit trail).
+The bot does NOT post to E2EE rooms (#vouch-log, #welcome) since it
+cannot encrypt.
+
+Operator commands (in #gov-bot):
   !gov status                              PL 0   Bot health check
   !gov audit                               PL 50  Run canary checks
   !gov report @user --detail "..."         PL 0   Report compromised account
@@ -14,6 +18,10 @@ Commands and required power levels:
   !gov role @user moderator|organizer      PL 75  Set role (organizer needs PL100)
   !gov revoke @user --reason "..."         PL 100 Revoke a member
   !gov revoke-chain @voucher [--after D]   PL 100 Bulk revoke downstream vouches
+
+Member commands (in DM with @rednet-gov):
+  !report @user --detail "..."             Any    Private compromised-account report
+  !report @user reason text                Any    Same, freeform detail
 
 Environment:
   REDNET_DOMAIN        Required. The Matrix server domain.
@@ -79,6 +87,10 @@ ROLE_PL = {
 BURST_THRESHOLD = 5
 UNCLAIMED_RATE_THRESHOLD = 50
 STALE_DAYS = 7
+
+REPORT_DMS = {}
+LAST_DM_SCAN = 0
+DM_SCAN_INTERVAL = 300
 
 
 def enc(s):
@@ -210,6 +222,187 @@ def append_vouch_jsonl(record):
         f.write(json.dumps(record, separators=(",", ":")) + "\n")
 
 
+def discover_report_dms():
+    """Load existing bot DM rooms from m.direct account data."""
+    r = http.get(
+        f"{ACCESS}/_matrix/client/v3/user/{enc(BOT_USER)}/account_data/m.direct",
+        headers=BOT_HEADERS,
+        timeout=10,
+    )
+    if r.status_code != 200:
+        return
+    data = r.json()
+    for user_id, room_ids in data.items():
+        if isinstance(room_ids, list) and room_ids:
+            REPORT_DMS[user_id] = room_ids[0]
+    print(
+        f"[INFO] Discovered {len(REPORT_DMS)} existing report DM rooms", file=sys.stderr
+    )
+
+
+def save_m_direct():
+    """Persist the bot's DM room mapping as m.direct account data."""
+    payload = {uid: [rid] for uid, rid in REPORT_DMS.items()}
+    http.put(
+        f"{ACCESS}/_matrix/client/v3/user/{enc(BOT_USER)}/account_data/m.direct",
+        headers=BOT_HEADERS,
+        json=payload,
+        timeout=10,
+    )
+
+
+def create_report_dm(user_id):
+    """Create an unencrypted DM room with a member for private reporting."""
+    if user_id in REPORT_DMS:
+        return REPORT_DMS[user_id]
+
+    resp = http.post(
+        f"{ACCESS}/_matrix/client/v3/createRoom",
+        headers=BOT_HEADERS,
+        json={
+            "preset": "trusted_private_chat",
+            "invite": [user_id],
+            "is_direct": True,
+            "topic": "Private reporting channel",
+            "initial_state": [],
+        },
+        timeout=10,
+    )
+    data = resp.json()
+    room_id = data.get("room_id")
+    if not room_id:
+        print(
+            f"[WARN] Failed to create report DM for {user_id}: {data}",
+            file=sys.stderr,
+        )
+        return None
+
+    REPORT_DMS[user_id] = room_id
+    save_m_direct()
+
+    send_notice(
+        room_id,
+        "**Private reporting channel**\n\n"
+        "Use this room to report a compromised or suspicious account. "
+        "Only organizers and admins will see your report.\n\n"
+        'Usage: `!report @username --detail "describe what you observed"`\n\n'
+        "You can also write the reason directly after the username:\n"
+        "`!report @username suspicious login from new device`",
+    )
+
+    print(f"[INFO] Created report DM for {user_id}: {room_id}", file=sys.stderr)
+    return room_id
+
+
+def ensure_report_dms():
+    """Scan community membership and create DM rooms for members who lack one."""
+    global LAST_DM_SCAN
+    LAST_DM_SCAN = time.time()
+
+    community_rid = ROOM_IDS.get("community")
+    if not community_rid:
+        return
+
+    r = http.get(
+        f"{ACCESS}/_matrix/client/v3/rooms/{enc(community_rid)}/members",
+        headers=SYS_HEADERS,
+        params={"membership": "join"},
+        timeout=30,
+    )
+    if r.status_code != 200:
+        return
+
+    created = 0
+    for member in r.json().get("chunk", []):
+        user_id = member.get("state_key", "")
+        if not user_id or user_id == BOT_USER:
+            continue
+        if user_id.startswith("@rednet-"):
+            continue
+        if user_id not in REPORT_DMS:
+            if create_report_dm(user_id):
+                created += 1
+
+    if created:
+        print(f"[INFO] Created {created} new report DM rooms", file=sys.stderr)
+
+
+def handle_report(room_id, sender, body):
+    """Handle a !report command from a member's DM room."""
+    if sender == BOT_USER:
+        return
+
+    parts = parse_args(body)
+    if len(parts) < 2 or parts[0] != "!report":
+        reply(
+            room_id,
+            'Usage: `!report @user --detail "describe what you observed"`\n'
+            "Or: `!report @user reason text here`",
+        )
+        return
+
+    args = parts[1:]
+    positional, flags = parse_flags(args, "detail", "severity")
+
+    if not positional or not positional[0].startswith("@"):
+        reply(
+            room_id,
+            'Usage: `!report @user --detail "describe what you observed"`\n'
+            "Or: `!report @user reason text here`",
+        )
+        return
+
+    target = positional[0]
+    detail = flags.get("detail", "")
+    severity = flags.get("severity", "suspected")
+
+    if not detail and len(positional) > 1:
+        detail = " ".join(positional[1:])
+
+    if not detail:
+        reply(room_id, "Please include a description of what you observed.")
+        return
+
+    ts = now_iso()
+
+    append_vouch_jsonl(
+        {
+            "type": "alert",
+            "account": target,
+            "reported_by": sender,
+            "severity": severity,
+            "detail": detail,
+            "timestamp": ts,
+        }
+    )
+
+    if GOV_BOT_ROOM_ID:
+        alert_body = {
+            "msgtype": "org.rednet.alert.compromised",
+            "body": (
+                f"ALERT: {target} reported as {severity} compromised"
+                f" by {sender}: {detail}"
+            ),
+            "org.rednet.alert.compromised": {
+                "account": target,
+                "reported_by": sender,
+                "severity": severity,
+                "detail": detail,
+                "timestamp": ts,
+            },
+        }
+        send_message(
+            GOV_BOT_ROOM_ID, alert_body["body"], extra=alert_body, headers=BOT_HEADERS
+        )
+
+    reply(
+        room_id,
+        f"Report received for `{target}`. "
+        f"Organizers have been notified and will follow up.\n\n"
+        f"You do not need to take further action unless contacted.",
+    )
+
+
 def parse_args(text):
     try:
         return shlex.split(text)
@@ -238,17 +431,77 @@ def parse_flags(args, *flag_names):
 # --- Command handlers ---
 
 
+def _server_health():
+    """Probe Synapse for version and liveness. Uses unauthenticated client endpoints."""
+    health = {"synapse": "unknown", "version": "?"}
+    try:
+        r = http.get(f"{ACCESS}/_matrix/client/versions", timeout=5)
+        if r.status_code == 200:
+            health["synapse"] = "up"
+            versions = r.json().get("versions", [])
+            if versions:
+                health["version"] = versions[-1]
+        else:
+            health["synapse"] = f"error ({r.status_code})"
+    except Exception:
+        health["synapse"] = "unreachable"
+    try:
+        r = http.get(
+            f"{ACCESS}/_matrix/client/v3/rooms/{enc(GOV_BOT_ROOM_ID)}/members",
+            headers=SYS_HEADERS,
+            params={"membership": "join"},
+            timeout=10,
+        )
+        if r.status_code == 200:
+            members = r.json().get("chunk", [])
+            health["gov_members"] = len(members)
+    except Exception:
+        pass
+    community_rid = ROOM_IDS.get("community")
+    if community_rid:
+        try:
+            r = http.get(
+                f"{ACCESS}/_matrix/client/v3/rooms/{enc(community_rid)}/members",
+                headers=SYS_HEADERS,
+                params={"membership": "join"},
+                timeout=10,
+            )
+            if r.status_code == 200:
+                members = [
+                    m
+                    for m in r.json().get("chunk", [])
+                    if not m.get("state_key", "").startswith("@rednet-")
+                ]
+                health["community_members"] = len(members)
+        except Exception:
+            pass
+    return health
+
+
 def cmd_status(room_id, sender, args):
     records = read_vouch_jsonl()
     vouches = sum(1 for r in records if r.get("type") == "vouch")
     claimed = sum(1 for r in records if r.get("type") == "claimed")
     revoked = sum(1 for r in records if r.get("type") == "revoked")
     roles = sum(1 for r in records if r.get("type") == "role")
+    alerts = sum(1 for r in records if r.get("type") == "alert")
+
+    health = _server_health()
 
     lines = [
         "**Gov Bot Status**",
+        f"Synapse: **{health['synapse']}** (spec {health['version']})",
         f"Domain: `{DOMAIN}`",
+    ]
+    if "community_members" in health:
+        lines.append(f"Community members: {health['community_members']}")
+    lines += [
         f"Vouch index: {vouches} minted, {claimed} confirmed, {revoked} revoked, {roles} role changes",
+    ]
+    if alerts:
+        lines.append(f"Alerts filed: {alerts}")
+    lines += [
+        f"Report DMs active: {len(REPORT_DMS)}",
         f"Rooms resolved: {len(ROOM_IDS)}",
         f"Bot user: `{BOT_USER}`",
     ]
@@ -717,18 +970,33 @@ def sync_loop():
             data = r.json()
             since = data.get("next_batch", since)
 
+            for rid in data.get("rooms", {}).get("invite", {}):
+                try:
+                    http.post(
+                        f"{ACCESS}/_matrix/client/v3/join/{enc(rid)}",
+                        headers=BOT_HEADERS,
+                        json={},
+                        timeout=10,
+                    )
+                    print(f"[INFO] Auto-joined room {rid}", file=sys.stderr)
+                except Exception as e:
+                    print(f"[WARN] Failed to auto-join {rid}: {e}", file=sys.stderr)
+
             rooms = data.get("rooms", {}).get("join", {})
             for rid, room_data in rooms.items():
-                if rid != GOV_BOT_ROOM_ID:
-                    continue
                 for event in room_data.get("timeline", {}).get("events", []):
                     if event.get("type") != "m.room.message":
                         continue
                     content = event.get("content", {})
                     body = content.get("body", "")
                     sender = event.get("sender", "")
-                    if body.startswith("!gov"):
+                    if rid == GOV_BOT_ROOM_ID and body.startswith("!gov"):
                         handle_command(rid, sender, body)
+                    elif body.startswith("!report"):
+                        handle_report(rid, sender, body)
+
+            if time.time() - LAST_DM_SCAN > DM_SCAN_INTERVAL:
+                ensure_report_dms()
 
         except http.exceptions.ConnectionError:
             print("[WARN] Connection lost, retrying in 5s...", file=sys.stderr)
@@ -770,6 +1038,10 @@ def main():
         json={},
         timeout=10,
     )
+
+    print("[INFO] Setting up report DM rooms...", file=sys.stderr)
+    discover_report_dms()
+    ensure_report_dms()
 
     send_notice(GOV_BOT_ROOM_ID, "Gov Bot online. Type `!gov help` for commands.")
 
