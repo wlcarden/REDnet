@@ -416,6 +416,44 @@
 <span class="comment"># Revoke a voucher and everyone they introduced (admin only):</span>
 !gov revoke-chain @voucher <span class="flag">--reason</span> <span class="string">"reason"</span></div>
 
+    <div class="section-label">Community management (rooms &amp; spaces)</div>
+    <p>
+      Room creation is server-locked to the system accounts — members'
+      clients can only create DMs. Every shared room is born through the bot:
+      always encrypted, linked into the space hierarchy, logged to the audit
+      trail. Visibility tiers: <strong>open</strong> (any member of the parent
+      space joins freely), <strong>knock</strong> (visible, "Ask to join" —
+      the default), <strong>private</strong> (invite-only;
+      <code>--unlisted</code> hides even the name).
+    </p>
+    <div class="cmd"><span class="comment"># Create a room (default: knock, linked under the community space):</span>
+!gov room <span class="string">"Kitchen Crew"</span>
+!gov room <span class="string">"Action Planning"</span> <span class="flag">--visibility</span> private <span class="flag">--space</span> organizing
+!gov room <span class="string">"Legal Defense"</span> <span class="flag">--visibility</span> private <span class="flag">--unlisted</span>
+
+<span class="comment"># Create a sub-space:</span>
+!gov space <span class="string">"Regional NW"</span>
+
+<span class="comment"># Member requests (members file these from their bot DM):</span>
+!gov requests
+!gov approve REQ-a1b2c3 <span class="flag">--visibility</span> knock
+!gov deny REQ-a1b2c3 not a fit right now
+
+<span class="comment"># Inspect:</span>
+!gov rooms
+!gov members kitchen-crew
+
+<span class="comment"># Wind down (archive = read-only + unlinked; delete = purged, admin only):</span>
+!gov archive kitchen-crew
+!gov delete kitchen-crew <span class="flag">--confirm</span></div>
+
+    <div class="callout callout-blue">
+      <strong>Approved requesters become moderators.</strong>
+      When you approve a member's request, they're invited and given PL 50 in
+      the new room — they handle its join requests and invites from then on.
+      Approve once, then hands off.
+    </div>
+
     <div class="callout callout-blue">
       <strong>#gov-bot is unencrypted.</strong>
       Same pattern as <code>#rednet-mod</code> — the Widget API cannot send

@@ -185,6 +185,56 @@ else
   warn "user_ips_max_age not explicitly set (Synapse default: 28 days)"
 fi
 
+# ── 9. Room creation lockdown ───────────────────────────────────────────────
+echo
+echo "=== Room Creation Lockdown ==="
+if echo "$HS_YAML" | grep -q 'rednet_room_policy'; then
+  ok "rednet_room_policy module configured"
+else
+  fail "rednet_room_policy module NOT in homeserver.yaml — members can create rooms"
+fi
+if echo "$HS_YAML" | grep -q 'alias_creation_rules'; then
+  ok "alias_creation_rules present (alias squatting blocked)"
+else
+  fail "alias_creation_rules missing"
+fi
+
+# Live probe: a fresh non-system user must be denied shared-room creation but
+# allowed a DM-shaped creation. Throwaway account is locked afterwards.
+PROBE_USER="hardencheck-$(date +%s)"
+PROBE_PW=$(python3 -c "import secrets;print(secrets.token_urlsafe(24))")
+if docker compose exec -T mas mas-cli manage register-user "$PROBE_USER" \
+     --password "$PROBE_PW" --yes --ignore-password-complexity --config /config.yaml >/dev/null 2>&1; then
+  PROBE_TOK=$(docker compose exec -T mas mas-cli manage issue-compatibility-token "$PROBE_USER" HARDEN --config /config.yaml 2>/dev/null \
+    | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
+  if [ -n "${PROBE_TOK:-}" ]; then
+    DENY_RESP=$(curl -s -XPOST "${ACCESS}/_matrix/client/v3/createRoom" \
+      -H "Authorization: Bearer $PROBE_TOK" -H "Content-Type: application/json" \
+      -d '{"name":"lockdown probe","preset":"private_chat"}' 2>/dev/null)
+    DENY_ERR=$(echo "$DENY_RESP" | jq -r '.errcode // empty' 2>/dev/null)
+    if [ "$DENY_ERR" = "M_FORBIDDEN" ]; then
+      ok "member shared-room creation denied (M_FORBIDDEN)"
+    elif echo "$DENY_RESP" | jq -e '.room_id' >/dev/null 2>&1; then
+      fail "member CREATED a shared room — lockdown not enforced"
+    else
+      fail "unexpected createRoom response: ${DENY_ERR:-empty}"
+    fi
+    DM_RESP=$(curl -s -XPOST "${ACCESS}/_matrix/client/v3/createRoom" \
+      -H "Authorization: Bearer $PROBE_TOK" -H "Content-Type: application/json" \
+      -d '{"is_direct":true,"preset":"trusted_private_chat"}' 2>/dev/null)
+    if echo "$DM_RESP" | jq -e '.room_id' >/dev/null 2>&1; then
+      ok "member DM creation still allowed"
+    else
+      fail "member DM creation BLOCKED — DMs are broken ($(echo "$DM_RESP" | jq -r '.errcode // "no response"' 2>/dev/null))"
+    fi
+  else
+    warn "could not mint probe token — live lockdown test skipped"
+  fi
+  docker compose exec -T mas mas-cli manage lock-user "$PROBE_USER" --config /config.yaml >/dev/null 2>&1 || true
+else
+  warn "could not register probe user — live lockdown test skipped"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo
 echo "════════════════════════════════════════════════════"

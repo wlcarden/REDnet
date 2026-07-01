@@ -137,6 +137,14 @@ print(json.dumps(d))
   fi
 done
 
+say "grant rednet-system the Synapse admin flag (!gov delete uses the admin purge API)"
+# Same direct-psql pattern as scrub-metadata.sh. MAS-managed accounts still row in
+# synapse's users table; the admin API checks this flag on the requesting token's user.
+docker compose exec -T postgres psql -U synapse -d synapse -q \
+  -c "UPDATE users SET admin = 1 WHERE name = '@rednet-system:${REDNET_DOMAIN}';" \
+  && echo "  rednet-system is a Synapse admin" \
+  || echo "  WARN: could not set admin flag — !gov delete will fail until it is set"
+
 say "render gov-bot config (tokens injected — gitignored)"
 mkdir -p gov-bot
 cat > gov-bot/.env <<ENVEOF

@@ -19,9 +19,16 @@ Operator commands (in #gov-bot):
   !gov revoke @user --reason "..."         PL 100 Revoke a member
   !gov revoke-chain @voucher [--after D]   PL 100 Bulk revoke downstream vouches
 
+Community management (in #gov-bot — see community.py / COMMUNITY-MANAGEMENT.md):
+  !gov space|room|invite|rooms|members     PL 75  Create + inspect rooms/spaces
+  !gov requests|approve|deny               PL 75  Member request queue
+  !gov archive                             PL 75  Lock + unlink a room
+  !gov delete <room> --confirm             PL 100 Purge a room from the server
+
 Member commands (in DM with @rednet-gov):
   !report @user --detail "..."             Any    Private compromised-account report
   !report @user reason text                Any    Same, freeform detail
+  !gov request room|space "Name" --why ... Any    Request a new room/space
 
 Environment:
   REDNET_DOMAIN        Required. The Matrix server domain.
@@ -560,6 +567,10 @@ def cmd_audit(room_id, sender, args):
             f"**STALE** {len(stale)} invite(s) unclaimed for >{STALE_DAYS} days: {labels}"
         )
 
+    # Room canaries — the detection layer behind the creation lockdown
+    # (COMMUNITY-MANAGEMENT.md): unencrypted rooms, oversized "DMs".
+    alerts.extend(community.room_canaries())
+
     if not alerts:
         reply(
             room_id,
@@ -857,6 +868,13 @@ COMMANDS = {
     "revoke-chain": (PL_ADMIN, cmd_revoke_chain),
 }
 
+# Community management (rooms/spaces/requests — COMMUNITY-MANAGEMENT.md).
+# Imported here, not at the top: community.py reads the PL_* constants at
+# import time, so bot's module globals must exist first.
+import community  # noqa: E402
+
+COMMANDS.update(community.COMMANDS)
+
 
 def handle_command(room_id, sender, body):
     if sender == BOT_USER:
@@ -880,6 +898,7 @@ def handle_command(room_id, sender, body):
             "revoke": "Revoke a member (PL -1, kick from all rooms)",
             "revoke-chain": "List members introduced by a voucher for bulk revoke",
         }
+        descs.update(community.DESCRIPTIONS)
         lines = ["**Gov Bot Commands**", ""]
         for name, (min_pl, _) in sorted(COMMANDS.items()):
             avail = "✓" if sender_pl >= min_pl else "✗"
@@ -917,7 +936,7 @@ def handle_command(room_id, sender, body):
 def resolve_rooms():
     global GOV_BOT_ROOM_ID
 
-    for alias in COMMUNITY_ROOMS + GOVERNANCE_ROOMS + ["gov-bot"]:
+    for alias in COMMUNITY_ROOMS + GOVERNANCE_ROOMS + ["gov-bot", "organizing"]:
         rid = resolve_alias(alias)
         if rid:
             ROOM_IDS[alias] = rid
@@ -994,6 +1013,14 @@ def sync_loop():
                         handle_command(rid, sender, body)
                     elif body.startswith("!report"):
                         handle_report(rid, sender, body)
+                    elif (
+                        body.startswith("!gov")
+                        and sender != BOT_USER
+                        and rid in REPORT_DMS.values()
+                    ):
+                        # Members aren't in #gov-bot — their DM is where they
+                        # can !gov request a room/space (COMMUNITY-MANAGEMENT.md).
+                        community.handle_dm_gov(rid, sender, body)
 
             if time.time() - LAST_DM_SCAN > DM_SCAN_INTERVAL:
                 ensure_report_dms()

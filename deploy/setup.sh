@@ -119,6 +119,14 @@ _d=os.environ['DOMAIN']  # land members inside the space + its starter channels
 c["auto_join_rooms"]=[f"#{a}:{_d}" for a in ("community","welcome","announcements","reference","general")]
 c["auto_join_mxid_localpart"]="rednet-system"
 c["autocreate_auto_join_rooms"]=False
+# --- room-creation lockdown (COMMUNITY-MANAGEMENT.md): only system accounts create shared
+# rooms; members' clients keep DMs. Module mounted at /modules (compose sets PYTHONPATH).
+_creators=[f"@rednet-system:{_d}",f"@rednet-gov:{_d}",f"@rednet-mod:{_d}"]
+c["modules"]=[{"module":"rednet_room_policy.RednetRoomPolicy","config":{"allowed_creators":_creators}}]
+# Layered: alias squatting (#general2 phishing) blocked even if the module fails to load,
+# and nothing ever publishes to the room directory — the space hierarchy IS the directory.
+c["alias_creation_rules"]=[{"user_id":u,"alias":"*","room_id":"*","action":"allow"} for u in _creators]+[{"user_id":"*","alias":"*","room_id":"*","action":"deny"}]
+c["room_list_publication_rules"]=[{"user_id":"*","alias":"*","room_id":"*","action":"deny"}]
 # close the federation port: keep only the client resource on the 8008 listener + trust the proxy
 for l in c.get("listeners",[]):
     if l.get("port")==8008:
