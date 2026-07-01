@@ -162,14 +162,61 @@
   </p>
 
   <div class="nav">
+    <a href="#start">Getting started</a>
     <a href="#rooms">Rooms</a>
     <a href="#messaging">Messaging</a>
     <a href="#encryption">Encryption</a>
     <a href="#privacy">Privacy</a>
     <a href="#devices">Devices</a>
     <a href="#reporting">Reporting</a>
+    <a href="/safety">Safety guide</a>
     <a href="#roles">Roles</a>
     <a href="#help">Troubleshooting</a>
+  </div>
+
+  <!-- ==================== GETTING STARTED ==================== -->
+  <div class="section" id="start">
+    <div class="section-title">Getting started</div>
+    <p>
+      REDnet runs on Matrix, an encrypted messaging protocol. You access it
+      through Element — either the website your organizer gave you or the
+      Element X app from your phone's app store. Both connect to the same
+      account and the same rooms.
+    </p>
+
+    <div class="section-label">The sidebar</div>
+    <p>
+      The left side of the screen has three areas:
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">Rooms</span> — group conversations, like channels. Click a room name to open it</li>
+      <li><span class="kv-label">People (DMs)</span> — private one-on-one conversations. Click the People icon or section to see them</li>
+      <li><span class="kv-label">Spaces</span> — folders that group rooms together. Your community is a Space. Click its name to browse all rooms you have access to</li>
+    </ul>
+
+    <div class="section-label">Direct messages</div>
+    <p>
+      A DM is a private conversation between you and one other person. DMs are
+      encrypted the same way rooms are.
+    </p>
+    <ul class="kv-list">
+      <li><span class="kv-label">Find a DM</span> — look under People in the sidebar. If someone has messaged you, their name appears there</li>
+      <li><span class="kv-label">Start a new DM</span> — click the + or compose button near the People section, then type the person's username</li>
+      <li><span class="kv-label">Bot DM</span> — you have a DM with <code>@rednet-gov</code> (the governance bot). This is where you report problems</li>
+    </ul>
+
+    <div class="section-label">Searching messages</div>
+    <ul class="kv-list">
+      <li><span class="kv-label">Search bar</span> — press <code>Ctrl+K</code> (or <code>Cmd+K</code> on Mac) to open search. Type a word or phrase to find messages across rooms</li>
+      <li><span class="kv-label">In-room search</span> — click the search icon at the top of a room to search within that room only</li>
+      <li><span class="kv-label">Limitation</span> — search works on the web and desktop app. The mobile app cannot search encrypted message history</li>
+    </ul>
+
+    <div class="callout callout-green">
+      <strong>First time?</strong> Open <code>#welcome</code> in the sidebar and read the
+      pinned message. It has your recovery passphrase instructions. Then explore
+      <code>#general</code> and say hello.
+    </div>
   </div>
 
   <!-- ==================== ROOMS ==================== -->
@@ -404,31 +451,25 @@
     <div class="section-label">Report a compromised account</div>
     <p>
       If you notice a member behaving strangely (messages they deny sending,
-      unfamiliar activity, unknown devices), report it in the
-      <code>#gov-bot</code> room:
+      unfamiliar activity, unknown devices), report it through your private
+      channel with the governance bot:
     </p>
     <ol class="steps">
-      <li>Open <code>#gov-bot</code> from the room list</li>
-      <li>Type: <code>!gov report @username --detail "what you observed"</code></li>
-      <li>The bot posts an alert that organizers and admins can act on</li>
+      <li>Open your direct messages (People section in the sidebar)</li>
+      <li>Find <code>@rednet-gov</code></li>
+      <li>Type: <code>!report @username --detail "what you observed"</code></li>
     </ol>
+    <p>
+      You can also write the reason directly after the username:<br>
+      <code>!report @username suspicious login from new device</code>
+    </p>
 
     <div class="callout callout-blue">
-      <strong>Anyone can report, regardless of role.</strong>
-      The <code>!gov report</code> command does not require moderator or organizer
-      permissions. Reporting does not kick or ban anyone; it flags the account
-      for review.
+      <strong>Reports are confidential.</strong>
+      Only organizers and admins can see who filed a report. The person you
+      report will not know you reported them. Reporting does not kick or ban
+      anyone; it flags the account for review.
     </div>
-
-    <div class="section-label">Check community status</div>
-    <p>
-      You can see a summary of the community (member count, active alerts) at
-      any time:
-    </p>
-    <ol class="steps">
-      <li>Open <code>#gov-bot</code></li>
-      <li>Type: <code>!gov status</code></li>
-    </ol>
 
     <div class="section-label">If your own account is compromised</div>
     <div class="callout callout-red">
@@ -446,8 +487,8 @@
       If someone posts personal information (real names, locations, photos of
       faces), alert a moderator by DM or mention them in the room. Moderators
       can delete messages. If the content is urgent and no moderator is online,
-      use <code>!gov report</code> in <code>#gov-bot</code> to create a
-      permanent record.
+      use <code>!report</code> in your DM with <code>@rednet-gov</code> to
+      create a permanent record.
     </p>
   </div>
 

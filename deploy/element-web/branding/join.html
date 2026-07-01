@@ -38,7 +38,7 @@
     background: rgba(255,255,255,0.08);
     transition: background 0.3s;
   }
-  .step-pip.done { background: #E5484D; }
+  .step-pip.done { background: #E5484D; cursor: pointer; }
   .step-pip.current { background: rgba(229,72,77,0.5); }
 
   .step-panel { display: none; }
@@ -341,6 +341,7 @@
 
       <div class="btn-row">
         <a class="btn btn-primary" href="/member-guide">Read the member guide</a>
+        <a class="btn btn-secondary" href="/safety">Safety guide</a>
         <button class="btn btn-secondary" id="btn-back-to-1">Back to invite</button>
       </div>
     </div>
@@ -391,9 +392,9 @@
 
   var stepLinks = document.querySelectorAll('.step-pip');
   stepLinks.forEach(function(pip) {
-    pip.style.cursor = 'pointer';
     pip.addEventListener('click', function() {
       var target = parseInt(pip.getAttribute('data-step'), 10);
+      if (target > currentStep) return;
       showStep(target);
     });
   });

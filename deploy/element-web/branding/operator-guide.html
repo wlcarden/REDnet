@@ -181,6 +181,7 @@
     <a href="#gov-bot">Gov bot</a>
     <a href="#compartments">Compartments</a>
     <a href="#revocation">Revocation</a>
+    <a href="#server-admin">Server admin</a>
     <a href="#security">Your security</a>
   </div>
 
@@ -188,6 +189,7 @@
     <strong>New to the platform?</strong>
     Read the <a href="/member-guide" style="color:#3E93DE;">member guide</a> first
     for messaging basics, encryption, privacy practices, and device management.
+    Review the <a href="/safety" style="color:#3E93DE;">safety guide</a> for what the platform protects and what it doesn't.
     For moderator-specific tools, see the <a href="/moderator-guide" style="color:#3E93DE;">moderator guide</a>.
     This guide covers operator-level administration.
   </div>
@@ -421,6 +423,25 @@
       Use <code>#governance</code> (encrypted) for operator coordination.
     </div>
 
+    <div class="section-label">Member reporting via DM</div>
+    <p>
+      Regular members do not have access to <code>#gov-bot</code>. On startup
+      (and every 5 minutes), the bot creates an unencrypted DM room with each
+      community member. Members use <code>!report @user --detail "..."</code>
+      in that DM. The bot forwards the alert to <code>#gov-bot</code> where
+      operators see it.
+    </p>
+    <p>
+      Reports are confidential: the reporter's identity is visible in the
+      <code>#gov-bot</code> alert (so operators can follow up), but the
+      reported user and other members cannot see who filed the report.
+    </p>
+    <p>
+      The DM rooms are tracked via the bot's <code>m.direct</code> account
+      data and survive restarts. If a DM room is missing for a member, the
+      periodic scan creates one automatically.
+    </p>
+
     <div class="section-label">Dashboard integration</div>
     <p>
       The <a href="/governance/" style="color:#3E93DE;">governance dashboard</a>
@@ -484,6 +505,46 @@
       <strong>Revocation is permanent and visible.</strong>
       The person will see they have been removed. Everyone in <code>#vouch-log</code>
       will see the revocation event. Make sure you mean it.
+    </div>
+  </div>
+
+  <!-- ==================== SERVER ADMIN ==================== -->
+  <div class="section" id="server-admin">
+    <div class="section-title">Server administration</div>
+    <p>
+      For routine checks, <code>!gov status</code> in <code>#gov-bot</code>
+      reports Synapse health, community membership count, vouch index, and
+      active report DM rooms. Run it from your phone without SSH.
+    </p>
+
+    <div class="section-label">Ketesa (optional admin UI)</div>
+    <p>
+      Ketesa is a web-based admin panel for Synapse with native MAS
+      authentication. It provides user management, room statistics (including
+      per-room database size), and event report review through a browser
+      interface.
+    </p>
+    <p>
+      Self-hosted option (recommended for REDnet's threat model):
+    </p>
+    <div class="cmd"><span class="comment"># Add to docker-compose.yml under services:</span>
+ketesa:
+  image: ghcr.io/etkecc/ketesa:latest
+  ports:
+    - "127.0.0.1:8090:80"
+  restart: unless-stopped</div>
+    <p>
+      Then open <code>http://localhost:8090</code> on the server, point it at
+      your homeserver URL, and log in with your MAS account. Binding to
+      <code>127.0.0.1</code> ensures it is only accessible from the server
+      itself (use SSH port forwarding to reach it from your workstation:
+      <code>ssh -L 8090:127.0.0.1:8090 your-server</code>).
+    </p>
+
+    <div class="callout callout-blue">
+      <strong>Do not expose Ketesa to the public internet.</strong>
+      It provides admin-level operations through a web UI. Restrict access to
+      localhost or a VPN/WireGuard interface.
     </div>
   </div>
 
