@@ -22,7 +22,8 @@ warn() { printf "  \033[1;33m⚠\033[0m %s\n" "$*"; WARN=$((WARN + 1)); }
 
 enc(){ python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$1"; }
 
-SYS_TOK=$(docker compose exec -T mas mas-cli manage issue-compatibility-token rednet-system VERIFY 2>/dev/null \
+# mas-cli prints the token in an INFO log line on STDERR — merge, don't discard.
+SYS_TOK=$(docker compose exec -T mas mas-cli manage issue-compatibility-token rednet-system VERIFY 2>&1 \
   | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 if [ -z "${SYS_TOK:-}" ]; then
   echo "ERROR: could not mint system token — is the stack running?" >&2
@@ -49,11 +50,14 @@ else
   fi
 fi
 
+# The SPA's try_files fallback answers 200 HTML on any path — only a JSON body
+# with an m.server key is an actual federation delegation document.
 FED_WK=$(curl -sf "${ACCESS}/.well-known/matrix/server" 2>/dev/null || true)
-if [ -z "$FED_WK" ]; then
-  ok "no .well-known/matrix/server (federation discovery disabled)"
+FED_WK_SERVER=$(echo "$FED_WK" | jq -r '."m.server" // empty' 2>/dev/null)
+if [ -z "$FED_WK_SERVER" ]; then
+  ok "no .well-known/matrix/server delegation (federation discovery disabled)"
 else
-  fail ".well-known/matrix/server exists — federation may be discoverable"
+  fail ".well-known/matrix/server delegates to ${FED_WK_SERVER} — federation discoverable"
 fi
 
 # ── 2. Guest access disabled ────────────────────────────────────────────────
@@ -76,18 +80,26 @@ fi
 # ── 3. Password auth disabled (MAS delegation) ──────────────────────────────
 echo
 echo "=== MAS Delegation ==="
-LOGIN_RESP=$(curl -sf "${ACCESS}/_matrix/client/v3/login" 2>/dev/null || true)
-PW_FLOW=$(echo "$LOGIN_RESP" | jq '[.flows[]? | select(.type == "m.login.password")] | length' 2>/dev/null)
-SSO_FLOW=$(echo "$LOGIN_RESP" | jq '[.flows[]? | select(.type == "m.login.sso")] | length' 2>/dev/null)
-if [ "${PW_FLOW:-0}" = "0" ]; then
-  ok "m.login.password flow not advertised"
+# The real invariant is Synapse-side: password_config.enabled MUST be false.
+# MAS's compatibility layer legitimately advertises m.login.password (that is
+# how mobile clients authenticate through MAS) — the msc3824 delegated-OIDC
+# marker on the SSO flow proves the login endpoint is MAS's, not Synapse's.
+PW_CONFIG=$(docker compose exec -T synapse python3 -c \
+  "import yaml; c=yaml.safe_load(open('/data/homeserver.yaml')); print(c.get('password_config',{}).get('enabled',True))" 2>/dev/null)
+if [ "$PW_CONFIG" = "False" ]; then
+  ok "Synapse password_config.enabled = false"
 else
-  fail "m.login.password flow IS advertised — password_config may not be disabled"
+  fail "Synapse password_config.enabled is NOT false (got: ${PW_CONFIG:-unreadable})"
 fi
-if [ "${SSO_FLOW:-0}" != "0" ]; then
-  ok "m.login.sso flow active (MAS OIDC delegation)"
+LOGIN_RESP=$(curl -sf "${ACCESS}/_matrix/client/v3/login" 2>/dev/null || true)
+SSO_FLOW=$(echo "$LOGIN_RESP" | jq '[.flows[]? | select(.type == "m.login.sso")] | length' 2>/dev/null)
+DELEGATED=$(echo "$LOGIN_RESP" | jq '[.flows[]? | select(."org.matrix.msc3824.delegated_oidc_compatibility" == true)] | length' 2>/dev/null)
+if [ "${SSO_FLOW:-0}" != "0" ] && [ "${DELEGATED:-0}" != "0" ]; then
+  ok "login flows served by MAS (SSO + delegated-OIDC compatibility marker)"
+elif [ "${SSO_FLOW:-0}" != "0" ]; then
+  warn "m.login.sso advertised but no delegated-OIDC marker — verify MAS handles /login"
 else
-  warn "m.login.sso flow not found (check MAS delegation config)"
+  fail "m.login.sso flow not found — MAS delegation may be broken"
 fi
 
 # ── 4. E2EE on all community rooms ──────────────────────────────────────────
@@ -205,7 +217,7 @@ PROBE_USER="hardencheck-$(date +%s)"
 PROBE_PW=$(python3 -c "import secrets;print(secrets.token_urlsafe(24))")
 if docker compose exec -T mas mas-cli manage register-user "$PROBE_USER" \
      --password "$PROBE_PW" --yes --ignore-password-complexity --config /config.yaml >/dev/null 2>&1; then
-  PROBE_TOK=$(docker compose exec -T mas mas-cli manage issue-compatibility-token "$PROBE_USER" HARDEN --config /config.yaml 2>/dev/null \
+  PROBE_TOK=$(docker compose exec -T mas mas-cli manage issue-compatibility-token "$PROBE_USER" HARDEN --config /config.yaml 2>&1 \
     | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
   if [ -n "${PROBE_TOK:-}" ]; then
     DENY_RESP=$(curl -s -XPOST "${ACCESS}/_matrix/client/v3/createRoom" \

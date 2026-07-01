@@ -475,3 +475,23 @@ class TestDispatch:
     def test_dm_other_commands_get_hint(self, mock_reply):
         community.handle_dm_gov("!dm:test", "@member:test", "!gov rooms")
         assert "request" in mock_reply.call_args[0][1]
+
+
+# ── script-execution regression ──────────────────────────────────────────────
+
+
+def test_bot_runs_as_script():
+    """python3 bot.py names the module __main__, not `bot` — the import cycle
+    with community.py must survive that (it crashed the container once)."""
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "bot.py", "--check-imports"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        cwd=os.path.dirname(os.path.abspath(__file__)),
+        env={**os.environ},
+    )
+    assert result.returncode == 0, result.stderr
+    assert "imports ok" in result.stdout

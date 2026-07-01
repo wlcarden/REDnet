@@ -26,10 +26,11 @@ gates creation only.
 ### Enforcement (layered)
 
 1. **Synapse module** (`synapse-modules/rednet_room_policy.py`, wired by
-   setup.sh): `user_may_create_room` allows `rednet-system`, `rednet-gov`,
-   `rednet-mod`, permits DM-shaped requests from anyone (`is_direct`, no alias,
-   ≤1 invite, private preset), and denies everything else with an error telling
-   the member to use `!gov request`.
+   setup.sh): the `on_create_room` third-party-rules callback allows
+   `rednet-system`, `rednet-gov`, `rednet-mod`, permits DM-shaped requests from
+   anyone (`is_direct`, no alias, ≤1 invite, private preset), and denies
+   everything else by raising a `SynapseError` whose message tells the member to
+   use `!gov request`.
 2. **`alias_creation_rules`** (vanilla config): only the system accounts may
    attach aliases. Blocks alias squatting even if the module fails to load.
 3. **`room_list_publication_rules`**: nobody publishes to the room directory;
@@ -43,6 +44,21 @@ custom (non-Element) client can shape a createRoom request like a DM and get a
 1:1 room through. It cannot attach an alias, and the sweep flags growth. A
 coerced insider could always fall back to Signal; this bounds what the _server_
 legitimizes, it does not pretend to stop out-of-band coordination.
+
+### Synapse admin scope (delete + sweep)
+
+`!gov delete` (purge API) and the `!gov audit` room sweep (list-all-rooms API)
+need `/_synapse/admin`. Under MAS delegation that is **not** a row in Synapse's
+`users` table — it's the `urn:synapse:admin:*` OAuth scope on the bot's token.
+bootstrap-gov-bot.sh sets this up in two steps: `mas-cli manage promote-admin
+rednet-system` (makes the account admin-capable) and issuing the bot's
+`SYS_TOKEN` with `--yes-i-want-to-grant-synapse-admin-privileges` (mints a token
+that carries the scope). A direct `UPDATE users SET admin=1` does nothing here —
+MAS owns that state. The FRONT Caddy also blocks `/_synapse/admin` from the
+public edge (defense in depth); the bot reaches it over the internal
+`synapse:8008`, never through Caddy. If the token lacks the scope, both commands
+fail closed with a "not a server admin" message and the sweep degrades to a
+visible `SWEEP SKIPPED` audit alert.
 
 ### Visibility tiers (creator picks one; all rooms E2EE, all audited)
 
