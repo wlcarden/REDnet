@@ -101,7 +101,7 @@ jobs:
       - name: Extract pinned version
         id: ver
         run: |
-          VER=$(grep -oP 'ELEMENT_VERSION[=:]\K[v\d.]+' build.sh | head -1)
+          VER=$(grep -oP 'ELEMENT_VERSION[:=]+\K[v\d.]+' build.sh | head -1)
           echo "version=$VER" >> "$GITHUB_OUTPUT"
           echo "Element version: $VER"
 
