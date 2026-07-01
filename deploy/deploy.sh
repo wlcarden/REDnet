@@ -40,13 +40,16 @@ txn_id(){ printf 'deploy-%s-%s' "$(date +%s%N)" "$$"; }
 # ── parse arguments ─────────────────────────────────────────────────────────────
 OPERATOR_USERNAME=""
 SKIP_ELEMENT=false
+DEV_MODE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --dev)           DEV_MODE=true; shift ;;
     --operator)      OPERATOR_USERNAME="$2"; shift 2 ;;
     --skip-element)  SKIP_ELEMENT=true; shift ;;
     --help|-h)
-      echo "Usage: $0 [--operator <username>] [--skip-element]"
+      echo "Usage: $0 [--dev] [--operator <username>] [--skip-element]"
+      echo "  --dev               Single-host dev/lab mode (default is two-host production)"
       echo "  --operator <name>   Operator username (prompted if omitted)"
       echo "  --skip-element      Skip Element Web build (use Element X mobile)"
       exit 0 ;;
@@ -120,8 +123,9 @@ set -a; . ./rednet.env; set +a
 : "${REDNET_HTTP_PORT:=8080}"
 : "${REDNET_BRAND:=REDnet}"
 ROLE="${REDNET_ROLE:-core}"
-# --dev flag on deploy.sh itself → single-host dev mode
-for arg in "$@"; do [ "$arg" = "--dev" ] && ROLE=single; done
+# --dev flag on deploy.sh itself → single-host dev mode (parsed above; the arg
+# list is already consumed by the parser's shifts, so key off DEV_MODE here).
+$DEV_MODE && ROLE=single
 ACCESS="http://localhost:${REDNET_HTTP_PORT}"
 PUBLIC_BASE="${REDNET_PUBLIC_BASE:-$ACCESS}"
 
@@ -194,7 +198,9 @@ fi
 
 MAS_OK=false
 for _ in $(seq 1 15); do
-  docker compose exec -T mas mas-cli manage list-users --config /config.yaml >/dev/null 2>&1 && { MAS_OK=true; break; }
+  # list-admin-users is a read-only liveness probe that exists in MAS 1.19.0
+  # (there is no `list-users`; the bootstrap chain relies on this CLI working).
+  docker compose exec -T mas mas-cli manage list-admin-users --config /config.yaml >/dev/null 2>&1 && { MAS_OK=true; break; }
   sleep 2
 done
 if $MAS_OK; then

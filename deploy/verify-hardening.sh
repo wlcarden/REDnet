@@ -105,7 +105,10 @@ fi
 # ── 4. E2EE on all community rooms ──────────────────────────────────────────
 echo
 echo "=== Room Encryption ==="
-for alias in community welcome announcements reference general governance vouch-log; do
+# #community is deliberately EXCLUDED: it is the top-level Space (m.space), and
+# Matrix spaces are always unencrypted state-only containers — never E2EE. It is
+# checked below as a space instead. The list here is the message-carrying rooms.
+for alias in welcome announcements reference general governance vouch-log; do
   RID=$(curl -sf -H "$AUTH" "${ACCESS}/_matrix/client/v3/directory/room/%23${alias}%3A${REDNET_DOMAIN}" 2>/dev/null \
     | jq -r '.room_id // empty' 2>/dev/null)
   if [ -z "$RID" ]; then
@@ -123,6 +126,20 @@ for alias in community welcome announcements reference general governance vouch-
     fail "#${alias} — NOT ENCRYPTED"
   fi
 done
+
+# #community must be a Space (unencrypted container), not a regular room.
+COMM_RID=$(curl -sf -H "$AUTH" "${ACCESS}/_matrix/client/v3/directory/room/%23community%3A${REDNET_DOMAIN}" 2>/dev/null \
+  | jq -r '.room_id // empty' 2>/dev/null)
+if [ -n "$COMM_RID" ]; then
+  COMM_TYPE=$(curl -sf -H "$AUTH" \
+    "${ACCESS}/_matrix/client/v3/rooms/$(enc "$COMM_RID")/state/m.room.create/" 2>/dev/null \
+    | jq -r '.type // empty' 2>/dev/null)
+  if [ "$COMM_TYPE" = "m.space" ]; then
+    ok "#community — Space (m.space, unencrypted container as expected)"
+  else
+    fail "#community — expected m.space, got '${COMM_TYPE:-regular room}'"
+  fi
+fi
 
 GOV_BOT_RID=$(curl -sf -H "$AUTH" "${ACCESS}/_matrix/client/v3/directory/room/%23gov-bot%3A${REDNET_DOMAIN}" 2>/dev/null \
   | jq -r '.room_id // empty' 2>/dev/null)
