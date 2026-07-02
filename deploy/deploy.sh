@@ -227,13 +227,22 @@ ok "gov-bot + #gov-bot"
 # ════════════════════════════════════════════════════════════════════════════════
 # PHASE 4: ELEMENT WEB
 # ════════════════════════════════════════════════════════════════════════════════
+# Tracks whether a web client is actually reachable, so the summary doesn't tell
+# the operator to "open <url> and log in" when the Element build/serve failed.
+WEB_OK=false
 if [ "$ROLE" = "core" ]; then
   warn "CORE mode — skipping Element Web (the FRONT serves it)"
 elif $SKIP_ELEMENT; then
-  warn "Element Web skipped (--skip-element). Use Element X on mobile to log in."
-  warn "  Server address: ${REDNET_DOMAIN}"
+  if [ "$ROLE" = "single" ]; then
+    warn "Element Web skipped (--skip-element) in dev mode — a localhost dev deploy"
+    warn "  is not reachable from a phone. Drop --skip-element to log in via the browser."
+  else
+    warn "Element Web skipped (--skip-element). Use Element X on mobile to log in."
+    warn "  Server address: ${REDNET_DOMAIN}"
+  fi
 elif docker compose --profile web ps --format '{{.Name}}' 2>/dev/null | grep -q element; then
   ok "Element Web already running"
+  WEB_OK=true
 else
   say "Element Web (soft-fork build — this takes 3-5 minutes)"
   # Pass the deploy's PUBLIC_BASE so Element's homeserver base_url matches where
@@ -249,6 +258,7 @@ else
   done
   if curl -sf "${ACCESS}/" -o /dev/null 2>/dev/null; then
     ok "Element Web serving at ${ACCESS}/"
+    WEB_OK=true
   else
     warn "Element Web not responding — check: docker compose logs element"
   fi
@@ -303,6 +313,11 @@ else
     warn "could not get system token — skipping room messages"
   else
     SAUTH="Authorization: Bearer $SYS_TOK"
+    # Track failures of the survival-critical onboarding messages (the pinned
+    # #welcome founder setup and the #gov-bot checklist). The marker below is only
+    # written when these landed, so a re-run retries them instead of silently
+    # skipping the recovery-passphrase / second-device guidance the operator needs.
+    MSG_CRITICAL_FAIL=0
     resolve_room(){
       curl -s -H "$SAUTH" "$API_URL/_matrix/client/v3/directory/room/%23${1}%3A${REDNET_DOMAIN}" \
         | jq -r '.room_id // empty' 2>/dev/null
@@ -369,7 +384,11 @@ You are the first admin. Every member of this community traces back to an invite
         ok "#welcome — founder setup (pinned)"
       else
         warn "#welcome — message send failed"
+        MSG_CRITICAL_FAIL=$((MSG_CRITICAL_FAIL + 1))
       fi
+    else
+      warn "#welcome room not found — founder setup not posted"
+      MSG_CRITICAL_FAIL=$((MSG_CRITICAL_FAIL + 1))
     fi
 
     # ── #gov-bot: operational checklist ──
@@ -402,9 +421,18 @@ Your deployment is live. Work through these before inviting anyone.
 
 Your account: ${OPERATOR_ID} (PL100 admin)"
 
-      send_msg "$GOV_BOT_ID" "m.notice" "$CHECKLIST_BODY" >/dev/null 2>&1 \
-        && ok "#gov-bot — operational checklist" \
-        || warn "#gov-bot — message send failed"
+      # Capture the event_id: curl -s exits 0 even on an HTTP error, so the send's
+      # success can only be judged by whether Synapse returned an event_id.
+      CHECK_EID=$(send_msg "$GOV_BOT_ID" "m.notice" "$CHECKLIST_BODY" | jq -r '.event_id // empty' 2>/dev/null)
+      if [ -n "$CHECK_EID" ]; then
+        ok "#gov-bot — operational checklist"
+      else
+        warn "#gov-bot — message send failed"
+        MSG_CRITICAL_FAIL=$((MSG_CRITICAL_FAIL + 1))
+      fi
+    else
+      warn "#gov-bot room not found — operational checklist not posted"
+      MSG_CRITICAL_FAIL=$((MSG_CRITICAL_FAIL + 1))
     fi
 
     # ── #governance: dashboard context ──
@@ -477,7 +505,12 @@ Covers messaging, encryption, privacy practices, device setup, and what to do if
       "Append-only audit trail: vouches, claims, role changes, revocations. Retention-exempt — do not delete events." \
       && ok "#vouch-log topic updated"
 
-    touch .deploy-messages-posted
+    if [ "$MSG_CRITICAL_FAIL" -eq 0 ]; then
+      touch .deploy-messages-posted
+    else
+      warn "${MSG_CRITICAL_FAIL} critical onboarding message(s) did not post — NOT marking messages done"
+      warn "  re-run ./deploy.sh to retry (the founder needs the pinned #welcome + #gov-bot guidance)"
+    fi
   fi
 fi
 
@@ -536,6 +569,37 @@ smoke_check(){
   fi
 }
 
+op_room_check(){
+  # Verify the operator was actually provisioned into a room, not just that the
+  # room exists. Reads the operator's own m.room.member state event (the pattern
+  # bootstrap-operator uses) rather than /joined_members: a freshly-provisioned
+  # operator is in `invite` state until first login, so /joined_members would be
+  # empty on every healthy deploy and couldn't tell "invited OK" from "never
+  # invited". A missing/leave/ban membership, or a PL that isn't 100, is a real
+  # provisioning failure and counts against the smoke test.
+  local alias="$1" rid member pl
+  rid=$(curl -sf -H "$SAUTH" "$API_URL/_matrix/client/v3/directory/room/%23${alias}%3A${REDNET_DOMAIN}" 2>/dev/null \
+    | jq -r '.room_id // empty' 2>/dev/null)
+  if [ -z "$rid" ]; then
+    fail "operator #${alias}: room not found"
+    SMOKE_FAIL=$((SMOKE_FAIL + 1))
+    return
+  fi
+  member=$(curl -sf -H "$SAUTH" \
+    "$API_URL/_matrix/client/v3/rooms/$(enc "$rid")/state/m.room.member/${OPERATOR_ID}" 2>/dev/null \
+    | jq -r '.membership // empty' 2>/dev/null)
+  pl=$(curl -sf -H "$SAUTH" \
+    "$API_URL/_matrix/client/v3/rooms/$(enc "$rid")/state/m.room.power_levels/" 2>/dev/null \
+    | jq -r --arg u "$OPERATOR_ID" '.users[$u] // "none"' 2>/dev/null)
+  if { [ "$member" = "invite" ] || [ "$member" = "join" ]; } && [ "$pl" = "100" ]; then
+    ok "operator #${alias} (${member}, PL${pl})"
+    SMOKE_PASS=$((SMOKE_PASS + 1))
+  else
+    fail "operator #${alias}: membership='${member:-none}' PL='${pl:-none}' (want invite|join + PL100)"
+    SMOKE_FAIL=$((SMOKE_FAIL + 1))
+  fi
+}
+
 SMOKE_TOK=$(mas issue-compatibility-token rednet-system SMOKE 2>/dev/null | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 if [ -n "$SMOKE_TOK" ]; then
   SAUTH="Authorization: Bearer $SMOKE_TOK"
@@ -559,20 +623,12 @@ if [ -n "$SMOKE_TOK" ]; then
     fi
   fi
 
-  OP_IN_COMMUNITY=$(curl -sf -H "$SAUTH" \
-    "$API_URL/_matrix/client/v3/directory/room/%23community%3A${REDNET_DOMAIN}" 2>/dev/null \
-    | jq -r '.room_id // empty' 2>/dev/null)
-  if [ -n "$OP_IN_COMMUNITY" ]; then
-    OP_MEMBER=$(curl -sf -H "$SAUTH" \
-      "$API_URL/_matrix/client/v3/rooms/$(enc "$OP_IN_COMMUNITY")/joined_members" 2>/dev/null \
-      | jq -r ".joined | keys[]" 2>/dev/null | grep -c "$OPERATOR_USERNAME" || true)
-    if [ "$OP_MEMBER" -gt 0 ]; then
-      ok "operator ${OPERATOR_ID} in community space"
-      SMOKE_PASS=$((SMOKE_PASS + 1))
-    else
-      warn "operator ${OPERATOR_ID} not yet in community space (may need to accept invite)"
-    fi
-  fi
+  # Operator provisioning: the exact incident class the old check missed (operator
+  # created but missing from rooms / lacking PL) now counts against the smoke test
+  # instead of a single #community warn that always fired on a healthy deploy.
+  for room in community welcome announcements reference general governance vouch-log gov-bot; do
+    op_room_check "$room"
+  done
 
   echo
   if [ "$SMOKE_FAIL" -eq 0 ]; then
@@ -593,7 +649,17 @@ printf "${BOLD}═════════════════════�
 printf "${BOLD}  ${RED}RED${NC}${DIM}net${NC}${BOLD} deployed${NC}\n"
 printf "${BOLD}════════════════════════════════════════════════════${NC}\n"
 echo
-printf "  Login:     ${CYAN}${LOGIN_URL}${NC}\n"
+# In single/dev mode the login URL is a localhost address served only by Element
+# Web; if that build/serve failed there is no client there, so don't present a
+# dead URL as the way in.
+WEB_UNAVAILABLE=false
+{ [ "$ROLE" = "single" ] && ! $WEB_OK; } && WEB_UNAVAILABLE=true
+if $WEB_UNAVAILABLE; then
+  printf "  ${YELLOW}Login:     Element Web is not serving at ${ACCESS}${NC}\n"
+  printf "  ${DIM}           build/serve failed — see: docker compose logs element${NC}\n"
+else
+  printf "  Login:     ${CYAN}${LOGIN_URL}${NC}\n"
+fi
 printf "  Account:   ${BOLD}${OPERATOR_ID}${NC}  (PL100 admin)\n"
 printf "  Password:  ${BOLD}${OPERATOR_PW}${NC}\n"
 echo
@@ -607,7 +673,12 @@ printf "  Credentials saved to: ${DIM}${CRED_FILE}${NC}\n"
 printf "  ${DIM}(delete after first login)${NC}\n"
 echo
 printf "  ${BOLD}NEXT:${NC}\n"
-printf "    1. Open ${CYAN}${LOGIN_URL}${NC} and log in\n"
+if $WEB_UNAVAILABLE; then
+  printf "    1. ${YELLOW}Bring up a web client first:${NC} docker compose --profile web up -d element\n"
+  printf "       then open ${CYAN}${ACCESS}${NC} and log in ${DIM}(dev is localhost-only — a phone can't reach it)${NC}\n"
+else
+  printf "    1. Open ${CYAN}${LOGIN_URL}${NC} and log in\n"
+fi
 printf "    2. Save the recovery passphrase when prompted\n"
 printf "    3. Accept the room invites\n"
 printf "    4. Open ${BOLD}#gov-bot${NC} and type: ${CYAN}!gov status${NC}\n"

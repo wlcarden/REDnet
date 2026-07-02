@@ -82,7 +82,13 @@ def call_mint(expires_in):
 
 
 def record_vouch(token, voucher, label):
-    """Attribute the invite to the operator — HASH only, never the token."""
+    """Attribute the invite to the operator — HASH only, never the token.
+
+    Returns (token_hash, vouch_recorded). vouch_recorded is True only when the
+    #vouch-log event actually posted (Synapse returned an event_id); a swallowed
+    failure would leave an admission with no room-visible provenance, so the
+    caller surfaces this to the operator instead of handing out a card silently.
+    """
     h = hashlib.sha256(token.encode()).hexdigest()
     ts = bot.now_iso()
     bot.append_vouch_jsonl(
@@ -96,6 +102,7 @@ def record_vouch(token, voucher, label):
             "source": "in-client",
         }
     )
+    posted = False
     vl = bot.ROOM_IDS.get("vouch-log")
     if vl:
         body = {
@@ -110,15 +117,26 @@ def record_vouch(token, voucher, label):
             },
         }
         try:
-            http.put(
+            r = http.put(
                 f"{bot.ACCESS}/_matrix/client/v3/rooms/{bot.enc(vl)}/send/m.room.message/{bot.txn_id()}",
                 headers=bot.SYS_HEADERS,
                 json=body,
                 timeout=10,
             )
+            posted = r.status_code == 200 and bool((r.json() or {}).get("event_id"))
+            if not posted:
+                print(
+                    f"[WARN] vouch-log post returned no event_id (status {r.status_code})",
+                    file=sys.stderr,
+                )
         except Exception as e:
             print(f"[WARN] vouch-log post failed: {e}", file=sys.stderr)
-    return h
+    else:
+        print(
+            "[WARN] vouch-log room unknown — provenance recorded locally only",
+            file=sys.stderr,
+        )
+    return h, posted
 
 
 def render_card(token, label, expires_at, fmt):
@@ -201,7 +219,7 @@ class Handler(BaseHTTPRequestHandler):
             for i in range(count):
                 lbl = label if count == 1 else f"{label} #{i + 1}"
                 token, exp = call_mint(expires_in)
-                h = record_vouch(token, mxid, lbl)
+                h, vouch_ok = record_vouch(token, mxid, lbl)
                 content = render_card(token, lbl, exp, fmt)
                 invites.append(
                     {
@@ -210,6 +228,7 @@ class Handler(BaseHTTPRequestHandler):
                         "token_hash": h,
                         "format": fmt,
                         "content": content,
+                        "vouch_recorded": vouch_ok,
                     }
                 )
         except Exception as e:

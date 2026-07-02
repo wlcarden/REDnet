@@ -70,9 +70,14 @@ post_vouch_event(){
         timestamp: $ts
       }
     }')
-  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$room_id")/send/m.room.message/$(txn_id)" \
+  # Judge success by the returned event_id, not curl's exit code: `curl -s` exits 0
+  # even on an HTTP 5xx, so discarding the body would hide a failed vouch-log post.
+  local resp eid
+  resp=$(curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$room_id")/send/m.room.message/$(txn_id)" \
     -H "$auth" -H "Content-Type: application/json" \
-    -d "$body" >/dev/null
+    -d "$body")
+  eid=$(printf '%s' "$resp" | jq -r '.event_id // empty' 2>/dev/null)
+  [ -n "$eid" ]
 }
 
 append_local_index(){
@@ -155,7 +160,8 @@ mint_and_record(){
   local hash
   hash=$(sha256 "$token")
 
-  post_vouch_event "$SAUTH" "$VOUCH_LOG_ID" "$hash" "$VOUCHER" "$LABEL" "$COMPARTMENT" "$ts"
+  local vouch_ok=true
+  post_vouch_event "$SAUTH" "$VOUCH_LOG_ID" "$hash" "$VOUCHER" "$LABEL" "$COMPARTMENT" "$ts" || vouch_ok=false
   append_local_index "$hash" "$VOUCHER" "$LABEL" "$COMPARTMENT" "$ts"
 
   local card
@@ -168,6 +174,11 @@ mint_and_record(){
   fi
   echo "  vouch:  $VOUCHER → \"$LABEL\" (${hash:0:12}...)"
   echo "  card:   $card"
+  if ! $vouch_ok; then
+    echo "  ⚠ PROVENANCE NOT RECORDED: the #vouch-log event did not post." >&2
+    echo "    Recorded locally in vouch.jsonl only — the room-visible coercion canary is blind to this invite." >&2
+    echo "    Re-post the vouch before distributing this card, or treat it as unattributed." >&2
+  fi
 }
 
 echo "Voucher: $VOUCHER"

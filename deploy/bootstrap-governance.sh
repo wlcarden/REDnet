@@ -132,4 +132,5 @@ if [ -n "$VOUCH_LOG" ] && [ -n "$GOVERNANCE" ]; then
   echo "NEXT: invite organizers to both rooms, then use mint-invite.sh to create attributed invites."
 else
   echo "FAIL: one or more rooms not created."
+  exit 1
 fi

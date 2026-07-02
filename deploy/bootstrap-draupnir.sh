@@ -160,4 +160,5 @@ if [ "$LIVE" = 1 ]; then
 else
   echo "FAIL: no operational notice from @rednet-mod. Draupnir logs (last 40 lines):"
   docker compose logs draupnir 2>&1 | tail -40
+  exit 1
 fi

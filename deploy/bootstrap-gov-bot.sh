@@ -244,4 +244,5 @@ if [ "$LIVE" = 1 ]; then
 else
   echo "FAIL: no startup notice from @rednet-gov. Check logs:"
   echo "  docker compose logs gov-bot"
+  exit 1
 fi
