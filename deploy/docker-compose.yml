@@ -109,6 +109,9 @@ services:
     env_file: gov-bot/.env
     volumes:
       - ./vouch.jsonl:/data/vouch.jsonl
+      # Shared invite-card renderer (single source with the CLI) — mounted, not
+      # baked, so both paths stay identical. qrencode is in the bot image.
+      - ./render-invite-card.py:/app/render-invite-card.py:ro
 
   mint-svc: # CORE — the ONLY holder of MAS-admin power, behind one operation (mint a
             # registration token). Internal network only — NOT proxied by Caddy. The gov-bot

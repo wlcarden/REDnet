@@ -49,6 +49,15 @@
 		respond `{"m.homeserver":{"base_url":"https://{{ rednet_domain }}"}}` 200
 	}
 
+	# In-client invite minting -> gov-bot endpoint on the CORE (COMMUNITY-MANAGEMENT.md).
+	# The endpoint authenticates the operator (Matrix OpenID -> PL>=75) and calls the
+	# isolated mint-svc; the token returns to the operator's browser, never Matrix.
+	handle /governance/mint* {
+		reverse_proxy {{ wg_core_ip }}:8091 {
+			import sanitize
+		}
+	}
+
 	# Element Web (served from the CORE, proxied over WG)
 	handle {
 		# Widget security: restrict iframe loading to same-origin only.

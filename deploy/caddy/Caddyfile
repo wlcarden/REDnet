@@ -84,6 +84,15 @@
 		}
 	}
 
+	# --- In-client invite minting -> gov-bot endpoint (COMMUNITY-MANAGEMENT.md) ---
+	# The endpoint authenticates the operator itself (Matrix OpenID token -> PL>=75), then
+	# calls the isolated mint-svc. Token is returned to the operator's browser, never Matrix.
+	handle /governance/mint* {
+		reverse_proxy gov-bot:8091 {
+			import sanitize
+		}
+	}
+
 	# --- Governance dashboard data (standalone mode) ---
 	# Serves vouch.jsonl so the dashboard works outside Element's iframe (direct browser access).
 	# Same data is visible to anyone in #vouch-log; production should gate behind auth if the
