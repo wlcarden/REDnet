@@ -8,5 +8,9 @@ services:
     ports: ["{{ wg_core_ip }}:8080:8080"]
   element:
     ports: ["{{ wg_core_ip }}:8088:80"]
+  gov-bot:
+    # in-client invite minting endpoint — reachable by the FRONT over WG only
+    # (COMMUNITY-MANAGEMENT.md). mint-svc is NOT published: nothing but the bot reaches it.
+    ports: ["{{ wg_core_ip }}:8091:8091"]
   pushgateway:
     ports: ["{{ wg_core_ip }}:9091:9091"]

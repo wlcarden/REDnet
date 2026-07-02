@@ -1077,6 +1077,15 @@ def main():
     discover_report_dms()
     ensure_report_dms()
 
+    # In-client invite minting endpoint (COMMUNITY-MANAGEMENT.md). Best-effort:
+    # if mint-svc isn't configured, governance still works — only minting is off.
+    try:
+        import mint_endpoint
+
+        mint_endpoint.start()
+    except Exception as e:
+        print(f"[WARN] mint endpoint not started: {e}", file=sys.stderr)
+
     send_notice(GOV_BOT_ROOM_ID, "Gov Bot online. Type `!gov help` for commands.")
 
     sync_loop()

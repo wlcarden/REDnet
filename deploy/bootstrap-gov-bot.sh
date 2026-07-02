@@ -201,6 +201,8 @@ say "render gov-bot config (tokens injected — gitignored)"
 mkdir -p gov-bot
 cat > gov-bot/.env <<ENVEOF
 REDNET_DOMAIN=$REDNET_DOMAIN
+REDNET_BRAND=${REDNET_BRAND:-REDnet}
+REDNET_PUBLIC_BASE=${REDNET_PUBLIC_BASE:-http://localhost:${REDNET_HTTP_PORT:-8080}}
 GOV_BOT_TOKEN=$GOV_TOK
 SYS_TOKEN=$SYS_TOK
 REDNET_ACCESS_URL=http://synapse:8008
