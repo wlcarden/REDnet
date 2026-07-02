@@ -469,6 +469,39 @@
     pointer-events: none;
   }
   .cmd-toast.show { opacity: 1; }
+
+  /* --- Mint tab --- */
+  .mint-form { max-width: 440px; }
+  .mint-label { display:block; font-size:11px; font-weight:600; color:var(--text-dim); margin:12px 0 4px; }
+  .mint-input {
+    width:100%; padding:9px 11px; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--text); font-size:13px; box-sizing:border-box;
+  }
+  .mint-input:focus { outline:none; border-color:var(--red); }
+  .mint-row { display:flex; gap:12px; }
+  .mint-row > div:first-child { flex:1; }
+  .mint-btn {
+    margin-top:16px; width:100%; padding:11px; background:var(--red); color:#fff; border:none;
+    border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .mint-btn:hover:not(:disabled) { background:#DC3D43; }
+  .mint-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .mint-note { font-size:10px; color:var(--text-dim); margin-top:8px; line-height:1.55; }
+  .mint-status { font-size:12px; margin-top:10px; min-height:16px; }
+  .mint-status.err { color:var(--red); }
+  .mint-status.ok { color:var(--green); }
+  .mint-result-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px;
+    margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  }
+  .mint-result-card .lbl { font-weight:600; color:var(--text); font-size:12px; }
+  .mint-result-card .exp { color:var(--text-dim); font-size:10px; margin-top:2px; }
+  .mint-result-card .acts { display:flex; gap:6px; flex:0 0 auto; }
+  .mint-result-card .acts button {
+    padding:6px 10px; font-size:11px; border-radius:6px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text); cursor:pointer;
+  }
+  .mint-result-card .acts button:hover { border-color:var(--red); }
 </style>
 </head>
 <body>
@@ -491,6 +524,7 @@
     <button class="tab" data-tab="provenance" role="tab">Provenance</button>
     <button class="tab" data-tab="audit" role="tab">Audit</button>
     <button class="tab" data-tab="graph" role="tab">Graph</button>
+    <button class="tab" data-tab="mint" role="tab">Mint</button>
   </div>
 
   <!-- Dashboard -->
@@ -609,6 +643,38 @@
       Copies command to clipboard — paste in <strong>#gov-bot</strong> to execute.
       Replace @USER with the actual username.
     </div>
+  </div>
+
+  <!-- Mint -->
+  <div class="panel" id="panel-mint">
+    <div class="section-title">Mint an invite</div>
+    <div class="mint-form">
+      <label class="mint-label" for="mint-label">Who is this invite for?</label>
+      <input type="text" class="mint-input" id="mint-label"
+             placeholder="e.g. Maria, Tuesday group" maxlength="120" autocomplete="off">
+      <div class="mint-row">
+        <div>
+          <label class="mint-label" for="mint-format">Format</label>
+          <select class="mint-input" id="mint-format">
+            <option value="print-card">Print card (3.5&times;2.25&Prime;)</option>
+            <option value="half-sheet">Instruction sheet (&frac12; page)</option>
+            <option value="wallet">Wallet card</option>
+            <option value="plain">Plain text</option>
+          </select>
+        </div>
+        <div style="flex:0 0 90px">
+          <label class="mint-label" for="mint-count">How many</label>
+          <input type="number" class="mint-input" id="mint-count" value="1" min="1" max="25">
+        </div>
+      </div>
+      <button class="mint-btn" id="mint-go">Mint invite</button>
+      <div class="mint-note">
+        The invite (with its token) opens in <strong>your browser</strong> to print or save &mdash;
+        it is never sent through chat. Each is single-use and expires in 7 days.
+      </div>
+      <div class="mint-status" id="mint-status" role="status"></div>
+    </div>
+    <div id="mint-results"></div>
   </div>
 </div>
 
@@ -825,6 +891,18 @@
       if (msg.action === "notify_capabilities_changed") {
         setStatus("connected", "Connected — reading vouch events");
         readEvents();
+        return;
+      }
+
+      // Delayed OpenID token (Mint tab): the host prompts the user, then pushes
+      // the credentials here. Ack and hand off to the waiting mint flow.
+      if (msg.action === "openid_credentials") {
+        sendResponse(msg.requestId, "openid_credentials", {});
+        if (openidPending) {
+          var oc = openidPending; openidPending = null;
+          var d = msg.data || {};
+          oc(d.access_token ? d : null);
+        }
         return;
       }
 
@@ -1086,6 +1164,104 @@
       if (tab.dataset.tab === "graph") renderGraph();
     });
   });
+
+  // --- Mint tab: OpenID token -> POST /governance/mint -> render cards ---
+  var openidPending = null;
+
+  function getOpenIDToken(cb) {
+    var rid = sendToHost("get_openid", {});
+    pendingRequests[rid] = function(data) {
+      data = data || {};
+      if (data.access_token) { cb(data); return; }         // granted inline
+      if (data.state === "request" || data.state === "requested") { openidPending = cb; return; }
+      cb(null);                                              // blocked / unknown
+    };
+  }
+
+  function openCard(html) {
+    var w = window.open("", "_blank");
+    if (!w) { showToast("Allow pop-ups to print the invite"); return; }
+    w.document.write(html); w.document.close();
+    setTimeout(function() { try { w.focus(); w.print(); } catch (e) {} }, 350);
+  }
+  function downloadInvite(inv, i) {
+    var ext = inv.format === "plain" ? "txt" : "html";
+    var type = inv.format === "plain" ? "text/plain" : "text/html";
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([inv.content], { type: type }));
+    a.download = "rednet-invite-" + (i + 1) + "." + ext;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function renderMintResults(invites) {
+    var box = document.getElementById("mint-results");
+    box.innerHTML = "";
+    invites.forEach(function(inv, i) {
+      var card = document.createElement("div"); card.className = "mint-result-card";
+      var info = document.createElement("div");
+      info.innerHTML = '<div class="lbl">' + esc(inv.label) + '</div>' +
+        '<div class="exp">Expires ' + esc((inv.expires_at || "").slice(0, 10)) + '</div>';
+      var acts = document.createElement("div"); acts.className = "acts";
+      var isPlain = inv.format === "plain";
+      var b1 = document.createElement("button");
+      b1.textContent = isPlain ? "Copy text" : "Open / Print";
+      b1.onclick = function() {
+        if (isPlain) {
+          if (navigator.clipboard) navigator.clipboard.writeText(inv.content).then(function() { showToast("Copied invite text"); });
+        } else { openCard(inv.content); }
+      };
+      var b2 = document.createElement("button"); b2.textContent = "Download";
+      b2.onclick = function() { downloadInvite(inv, i); };
+      acts.appendChild(b1); acts.appendChild(b2);
+      card.appendChild(info); card.appendChild(acts);
+      box.appendChild(card);
+    });
+  }
+  function doMint() {
+    var label = document.getElementById("mint-label").value.trim();
+    var format = document.getElementById("mint-format").value;
+    var count = Math.max(1, Math.min(parseInt(document.getElementById("mint-count").value, 10) || 1, 25));
+    var statusEl = document.getElementById("mint-status");
+    var btn = document.getElementById("mint-go");
+    if (!label) { statusEl.className = "mint-status err"; statusEl.textContent = "Enter who this invite is for."; return; }
+    btn.disabled = true; statusEl.className = "mint-status"; statusEl.textContent = "Verifying your identity…";
+    getOpenIDToken(function(oid) {
+      if (!oid || !oid.access_token) {
+        statusEl.className = "mint-status err";
+        statusEl.textContent = "Could not verify your identity. Approve the request and try again.";
+        btn.disabled = false; return;
+      }
+      statusEl.textContent = "Minting…";
+      fetch("/governance/mint", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ openid_token: oid.access_token, label: label, format: format, count: count })
+      }).then(function(r) { return r.json().then(function(j) { return { ok: r.ok, j: j }; }); })
+        .then(function(res) {
+          btn.disabled = false;
+          if (!res.ok || !res.j.invites) {
+            var err = res.j && res.j.error;
+            statusEl.className = "mint-status err";
+            statusEl.textContent =
+              err === "not_an_organizer" ? "You need the organizer role (PL 75) to mint invites." :
+              err === "unauthorized" ? "Identity check failed — try again." :
+              err === "label_required" ? "Enter who this invite is for." :
+              ("Mint failed" + (err ? ": " + err : "") + ".");
+            return;
+          }
+          var n = res.j.invites.length;
+          statusEl.className = "mint-status ok";
+          statusEl.textContent = "Minted " + n + " invite" + (n > 1 ? "s" : "") + " — open or download below.";
+          renderMintResults(res.j.invites);
+          document.getElementById("mint-label").value = "";
+        }).catch(function() {
+          btn.disabled = false; statusEl.className = "mint-status err"; statusEl.textContent = "Network error — try again.";
+        });
+    });
+  }
+  var mintGo = document.getElementById("mint-go");
+  if (mintGo) mintGo.addEventListener("click", doMint);
+  var mintLabelInput = document.getElementById("mint-label");
+  if (mintLabelInput) mintLabelInput.addEventListener("keydown", function(e) { if (e.key === "Enter") doMint(); });
 
   var searchInput = document.getElementById("provenance-search");
   if (searchInput) {

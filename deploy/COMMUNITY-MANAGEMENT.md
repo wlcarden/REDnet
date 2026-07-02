@@ -126,3 +126,39 @@ Revocation, role assignment, and the vouch system are untouched. `archive` is
 PL75 because it's reversible in spirit (nothing is destroyed); `delete` is
 PL100 because purge is forensic-relevant — on seizure, an archived room is
 evidence, a purged one is not (client-side copies notwithstanding).
+
+## Invite minting (in-client + CLI)
+
+Two paths mint attributed, single-use, 7-day invite tokens; both preserve the
+same invariant: **the token reaches only the operator (a local file or their own
+browser) — never Matrix. #vouch-log gets the SHA-256 hash only** (the coercion
+canary; DESIGN §11).
+
+**CLI** (`mint-invite.sh`, SSH on CORE) — maximum-security path, token never
+leaves the host. Produces a card via `render-invite-card.py`.
+
+**In-client** (governance dashboard → Mint tab) — no SSH. The flow, and the
+least-privilege split that makes it safe:
+
+1. The widget requests the operator's Matrix **OpenID token** and POSTs it to
+   `/governance/mint` (Caddy → gov-bot:8091).
+2. The **gov-bot endpoint** (`mint_endpoint.py`) verifies that token via the
+   internal `userinfo` endpoint (Synapse `openid` listener resource — serves
+   only identity, NOT federation, which stays closed + Caddy-blocked), and
+   requires **PL ≥ 75 in #governance** (organizer).
+3. It calls **mint-svc** — the ONLY holder of MAS admin. MAS admin is
+   all-or-nothing (`urn:mas:admin`), so it's isolated in a stdlib service
+   exposing one operation, on the internal network only (not Caddy-proxied),
+   gated by a shared secret. The gov-bot — the largest attack surface (Matrix
+   sync + command parsing) — never holds MAS admin; if compromised it can only
+   *request a mint*.
+4. mint-svc does `client_credentials → urn:mas:admin → POST
+   /api/admin/v1/user-registration-tokens` (`usage_limit:1`, `expires_at`).
+5. The endpoint records the hash-only vouch, renders the card with the shared
+   renderer, and returns it to the browser. The token is displayed/printed
+   client-side.
+
+Formats (both paths): `print-card`, `wallet`, `half-sheet` (QR + OPSEC
+guidance), `plain`. Provisioning: setup.sh exposes the MAS `adminapi` +
+registers the mint OAuth client + adds the `openid` Synapse resource;
+bootstrap-gov-bot.sh renders `mint-svc/.env` and the shared `MINT_SVC_SECRET`.
