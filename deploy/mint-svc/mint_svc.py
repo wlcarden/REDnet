@@ -26,6 +26,7 @@ Env:
   MINT_MAX_EXPIRES_IN cap on requested expiry seconds (default 2592000 = 30d)
 """
 
+import hmac
 import json
 import os
 import sys
@@ -116,9 +117,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != "/mint":
             return self._json(404, {"error": "not_found"})
-        # constant-effort secret check
+        # constant-time secret check — hmac.compare_digest avoids leaking the
+        # secret's length/prefix through byte-by-byte `!=` short-circuit timing.
+        # Compare as bytes: compare_digest rejects non-ASCII str, so a crafted
+        # header value would otherwise raise and 500 instead of a clean 403.
         got = self.headers.get("X-Mint-Secret", "")
-        if not got or got != MINT_SVC_SECRET:
+        if not got or not hmac.compare_digest(
+            got.encode("utf-8"), MINT_SVC_SECRET.encode("utf-8")
+        ):
             return self._json(403, {"error": "forbidden"})
         try:
             length = int(self.headers.get("Content-Length", "0") or "0")

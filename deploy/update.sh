@@ -6,8 +6,8 @@
 #   ./update.sh --auto   Unattended: pulls and rebuilds silently. For cron/systemd timer.
 #
 # Controls (in rednet.env):
-#   REDNET_AUTO_UPDATE=true       Auto mode pulls and rebuilds (default: true)
-#   REDNET_VERIFY_SIGNATURES=true Require GPG-signed commits (default: false)
+#   REDNET_AUTO_UPDATE=true       Auto mode pulls and rebuilds (default: false — opt in)
+#   REDNET_VERIFY_SIGNATURES=true Require signed commits in auto mode (default: true)
 #   REDNET_UPDATE_REMOTE=origin   Git remote to fetch from (default: origin)
 #   REDNET_UPDATE_BRANCH=main     Git branch to track (default: main)
 #
@@ -23,8 +23,11 @@ warn() { printf "${YELLOW}[update]${NC} %s\n" "$*"; }
 fail() { printf "${RED}[update]${NC} %s\n" "$*"; }
 
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
-: "${REDNET_AUTO_UPDATE:=true}"
-: "${REDNET_VERIFY_SIGNATURES:=false}"
+# Fail safe: unattended updates are opt-in, and when enabled they require signed
+# commits. A default-on 15-min auto-pull+rebuild of the CORE is an RCE vector if
+# the git remote is compromised/subpoenaed (bootstrap audit F3).
+: "${REDNET_AUTO_UPDATE:=false}"
+: "${REDNET_VERIFY_SIGNATURES:=true}"
 : "${REDNET_UPDATE_REMOTE:=origin}"
 : "${REDNET_UPDATE_BRANCH:=main}"
 
