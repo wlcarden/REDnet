@@ -264,13 +264,13 @@
       <div id="web-section" style="display:none;">
         <div class="section-label">Steps</div>
         <ol class="steps">
-          <li>Click "Create account" below to open the app</li>
-          <li>Click "Create Account," paste your token when asked</li>
-          <li>Pick your username and a strong password</li>
+          <li>Click "Create account" below</li>
+          <li>Pick a username that is not your real name, and a strong password</li>
+          <li>Your invite token fills in automatically — just continue</li>
           <li>Write down the recovery passphrase you're shown</li>
         </ol>
         <div class="btn-row">
-          <a id="web-link" class="btn btn-primary" href="/">Create account</a>
+          <a id="web-link" class="btn btn-primary" href="/register">Create account</a>
           <button class="btn btn-secondary" id="show-mobile">I'm on a phone</button>
         </div>
       </div>
@@ -358,6 +358,13 @@
   document.getElementById('has-token').style.display = 'block';
   document.getElementById('token-display').textContent = token;
   document.getElementById('server-display').textContent = location.hostname;
+
+  // Hand the token to the (same-origin) MAS registration flow: stash it so the
+  // branded base.html overlay can pre-fill the invite-token field, sparing the
+  // user a manual paste. sessionStorage is per-tab and cleared on close.
+  try { sessionStorage.setItem('rednet_invite_token', token); } catch (e) {}
+  var webLink = document.getElementById('web-link');
+  if (webLink) webLink.setAttribute('href', '/register');
 
   var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   var currentStep = 0;
