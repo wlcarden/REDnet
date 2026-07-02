@@ -96,7 +96,7 @@ class TestVouchIsHashOnly:
         bot.ROOM_IDS.pop(
             "vouch-log", None
         )  # skip the room post, just check the index record
-        me.record_vouch("SECRET-TOKEN-VALUE", "@op:test", "Maria")
+        h, posted = me.record_vouch("SECRET-TOKEN-VALUE", "@op:test", "Maria")
         rec = mock_append.call_args[0][0]
         assert rec["type"] == "vouch"
         assert rec["voucher"] == "@op:test"
@@ -104,3 +104,34 @@ class TestVouchIsHashOnly:
         # the raw token must never appear in the recorded vouch
         assert "SECRET-TOKEN-VALUE" not in str(rec)
         assert rec["source"] == "in-client"
+        # no vouch-log room resolved → the post could not land, must report False
+        assert posted is False
+        assert h == rec["token_hash"]
+
+
+class TestVouchRecordedFlag:
+    """The vouch-log post must not be silently swallowed: record_vouch reports
+    whether the room-visible provenance event actually landed (F25)."""
+
+    @patch.object(bot, "append_vouch_jsonl")
+    def test_posted_true_when_event_id_returned(self, _append):
+        bot.ROOM_IDS["vouch-log"] = "!vl:test"
+        with patch.object(me.http, "put", return_value=_resp(200, {"event_id": "$e"})):
+            _h, posted = me.record_vouch("tok", "@op:test", "Maria")
+        assert posted is True
+
+    @patch.object(bot, "append_vouch_jsonl")
+    def test_posted_false_when_no_event_id(self, _append):
+        bot.ROOM_IDS["vouch-log"] = "!vl:test"
+        with patch.object(
+            me.http, "put", return_value=_resp(500, {"errcode": "M_UNKNOWN"})
+        ):
+            _h, posted = me.record_vouch("tok", "@op:test", "Maria")
+        assert posted is False
+
+    @patch.object(bot, "append_vouch_jsonl")
+    def test_posted_false_on_network_error(self, _append):
+        bot.ROOM_IDS["vouch-log"] = "!vl:test"
+        with patch.object(me.http, "put", side_effect=OSError("boom")):
+            _h, posted = me.record_vouch("tok", "@op:test", "Maria")
+        assert posted is False

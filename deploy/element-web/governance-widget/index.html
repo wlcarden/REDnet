@@ -1214,6 +1214,15 @@
       b2.onclick = function() { downloadInvite(inv, i); };
       acts.appendChild(b1); acts.appendChild(b2);
       card.appendChild(info); card.appendChild(acts);
+      // The server records the vouch (hash-only) as it mints. If that #vouch-log
+      // write failed, the invite is unattributed — say so rather than handing out
+      // a clean-looking card whose provenance the coercion canary never saw.
+      if (inv.vouch_recorded === false) {
+        var warnRow = document.createElement("div");
+        warnRow.style.cssText = "flex-basis:100%;color:#ff6b6b;font-size:11px;margin-top:6px;line-height:1.4";
+        warnRow.textContent = "⚠ Provenance not recorded — the #vouch-log entry did not post. This invite is unattributed; re-mint before distributing.";
+        card.appendChild(warnRow);
+      }
       box.appendChild(card);
     });
   }
