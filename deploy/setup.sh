@@ -40,9 +40,10 @@ say "render MAS config (no-PII, delegated)"
 # uv (dev machine) supplies an ephemeral pyyaml; on a clean deploy host fall back to system python3 +
 # the python3-yaml package (installed by the Ansible). Keeps dev behavior, removes the hard uv dependency.
 if command -v uv >/dev/null 2>&1; then PYRUN="uv run --quiet --with pyyaml python3"; else PYRUN="python3"; fi
-MAS_SECRET=$($PYRUN - "$REDNET_DOMAIN" "$PUBLIC_BASE" "$PGPW" <<'PY'
+MAS_SECRET=$($PYRUN - "$REDNET_DOMAIN" "$PUBLIC_BASE" "$PGPW" "${REDNET_BRAND:-REDnet}" <<'PY'
 import sys,yaml
 domain,access,pgpw=sys.argv[1],sys.argv[2],sys.argv[3]
+brand=sys.argv[4] if len(sys.argv)>4 else "REDnet"
 p="mas/config.yaml"; c=yaml.safe_load(open(p))
 c["database"]={"uri":f"postgresql://synapse:{pgpw}@postgres/mas"}
 c["http"]["public_base"]=access+"/"; c["http"]["issuer"]=access+"/"
@@ -54,6 +55,13 @@ acct["password_registration_email_required"]=False  # no PII (SPEC §5)
 acct["password_registration_token_required"]=True    # ★ invite-token gate: closed, attributable entry (SPEC §5).
 # Organizers mint registration tokens via the MAS admin API / `mas-cli manage`; the append-only mint log is
 # the coercion canary (DESIGN §7/§11). Without this, anyone reaching the front can self-register.
+# Auth branding: the VISUAL rebrand (logo + REDnet accent + reframed "Redeem your invite") is the
+# base.html overlay bind-mounted in docker-compose; this branding block adds the service name + the
+# footer policy link. logo_uri/policy_uri are same-origin paths served by the front. (Auth branding notes
+# in mas/templates/base.html.)
+c["branding"]={"service_name":brand,
+               "logo_uri":access+"/themes/element/img/logos/rednet.svg",
+               "policy_uri":access+"/safety"}
 yaml.safe_dump(c,open(p,"w")); print(c["matrix"]["secret"])
 PY
 )
