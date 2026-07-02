@@ -235,7 +235,17 @@
       if something goes wrong, the vouch graph shows who brought them in.
     </p>
 
-    <div class="section-label">Mint a single invite</div>
+    <div class="section-label">In the app (no terminal)</div>
+    <p>
+      Open the <a href="/governance/" style="color:#3E93DE;">governance dashboard</a> &rarr;
+      <strong>Mint</strong> tab. Enter who it's for, pick a format (print card, wallet card,
+      instruction sheet, or plain text) and how many, then mint. The invite opens in your
+      browser to print or download &mdash; it is never sent through chat. You'll confirm sharing
+      your identity once (that's how the app checks you're an organizer). Requires the organizer
+      role (PL&nbsp;75). Each token is single-use and expires in 7 days.
+    </p>
+
+    <div class="section-label">From the terminal &mdash; mint a single invite</div>
     <div class="cmd"><span class="comment"># The label says who the invite is for. Be specific.</span>
 ./mint-invite.sh <span class="flag">--label</span> <span class="string">"Maria, Tuesday group"</span></div>
     <p>
