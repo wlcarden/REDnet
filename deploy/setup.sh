@@ -62,6 +62,24 @@ acct["password_registration_token_required"]=True    # ★ invite-token gate: cl
 c["branding"]={"service_name":brand,
                "logo_uri":access+"/themes/element/img/logos/rednet.svg",
                "policy_uri":access+"/safety"}
+# --- Invite minting (COMMUNITY-MANAGEMENT.md): mint-svc is the SOLE holder of MAS-admin,
+# behind one operation. Expose the admin REST API, register a client_credentials client, and
+# allow it admin. bootstrap-gov-bot.sh reads this client's id/secret to render mint-svc/.env.
+import secrets as _sec, time as _t, random as _rnd
+def _ulid():
+    _a='0123456789ABCDEFGHJKMNPQRSTVWXYZ'; _ms=int(_t.time()*1000)
+    return ''.join(_a[(_ms>>(50-_i*5))&31] for _i in range(10))+''.join(_rnd.choice(_a) for _ in range(16))
+for _l in c["http"]["listeners"]:            # serve /api/admin/v1 (off by default)
+    if _l.get("name")=="web" and "adminapi" not in [_r.get("name") for _r in _l["resources"]]:
+        _l["resources"].append({"name":"adminapi"})
+_ac=c.setdefault("policy",{}).setdefault("data",{}).setdefault("admin_clients",[])
+if _ac:                                       # idempotent: reuse the existing mint client on re-render
+    _cid=_ac[0]
+else:
+    _cid=_ulid()
+    c.setdefault("clients",[]).append({"client_id":_cid,"client_auth_method":"client_secret_post",
+                                       "client_secret":_sec.token_urlsafe(32)})
+    _ac.append(_cid)
 yaml.safe_dump(c,open(p,"w")); print(c["matrix"]["secret"])
 PY
 )
@@ -135,12 +153,17 @@ c["modules"]=[{"module":"rednet_room_policy.RednetRoomPolicy","config":{"allowed
 # and nothing ever publishes to the room directory — the space hierarchy IS the directory.
 c["alias_creation_rules"]=[{"user_id":u,"alias":"*","room_id":"*","action":"allow"} for u in _creators]+[{"user_id":"*","alias":"*","room_id":"*","action":"deny"}]
 c["room_list_publication_rules"]=[{"user_id":"*","alias":"*","room_id":"*","action":"deny"}]
-# close the federation port: keep only the client resource on the 8008 listener + trust the proxy
+# close the federation port: keep only the client resource on the 8008 listener + trust the proxy.
+# ALSO add "openid" — it serves ONLY /_matrix/federation/v1/openid/userinfo (identity verification for
+# the governance widget's mint flow), NOT federation traffic. The front (Caddy) still blocks external
+# /_matrix/federation/*; the gov-bot verifies OpenID tokens internally. (COMMUNITY-MANAGEMENT.md.)
 for l in c.get("listeners",[]):
     if l.get("port")==8008:
         l["x_forwarded"]=True
         for r in l.get("resources",[]):
-            if "names" in r: r["names"]=[n for n in r["names"] if n!="federation"]
+            if "names" in r:
+                r["names"]=[n for n in r["names"] if n!="federation"]
+                if "openid" not in r["names"]: r["names"].append("openid")
 # metrics listener — CORE-internal only (NOT published to the host); Prometheus scrapes it over the
 # private docker network / WireGuard. enable_metrics gates Synapse's /_synapse/metrics exporter.
 c["enable_metrics"]=True

@@ -71,3 +71,6 @@ synapse-modules/.pytest_cache/
 
 # Python bytecode (render-invite-card.py etc.)
 __pycache__/
+
+# Mint service secrets (MAS-admin client credentials). NEVER commit.
+mint-svc/.env

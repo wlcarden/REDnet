@@ -169,6 +169,34 @@ print(json.dumps(d))
   fi
 done
 
+say "render mint-svc config (isolated MAS-admin holder — gitignored)"
+# The mint OAuth client lives in mas/config.yaml (registered by setup.sh: client_credentials +
+# policy.data.admin_clients). Read it back so mint-svc can obtain urn:mas:admin tokens. The shared
+# MINT_SVC_SECRET gates the gov-bot -> mint-svc call. (COMMUNITY-MANAGEMENT.md invite minting.)
+MINT_SVC_SECRET=$(python3 -c "import secrets;print(secrets.token_urlsafe(32))")
+read -r MINT_CID MINT_CSEC <<EOF2
+$(python3 -c "
+import yaml
+c=yaml.safe_load(open('mas/config.yaml'))
+cid=(c.get('policy',{}).get('data',{}).get('admin_clients') or [''])[0]
+sec=next((x.get('client_secret','') for x in c.get('clients',[]) if x.get('client_id')==cid),'')
+print(cid, sec)
+" 2>/dev/null)
+EOF2
+if [ -n "$MINT_CID" ] && [ -n "$MINT_CSEC" ]; then
+  mkdir -p mint-svc
+  cat > mint-svc/.env <<ENVEOF
+MINT_SVC_SECRET=$MINT_SVC_SECRET
+MAS_BASE=http://mas:8080
+MINT_CLIENT_ID=$MINT_CID
+MINT_CLIENT_SECRET=$MINT_CSEC
+MINT_BIND=0.0.0.0:8090
+ENVEOF
+  echo "  mint-svc/.env rendered (client ${MINT_CID:0:10}...)"
+else
+  echo "  WARN: mint client not found in mas/config.yaml — re-run setup.sh (in-client minting disabled)"
+fi
+
 say "render gov-bot config (tokens injected — gitignored)"
 mkdir -p gov-bot
 cat > gov-bot/.env <<ENVEOF
@@ -177,12 +205,14 @@ GOV_BOT_TOKEN=$GOV_TOK
 SYS_TOKEN=$SYS_TOK
 REDNET_ACCESS_URL=http://synapse:8008
 VOUCH_JSONL_PATH=/data/vouch.jsonl
+MINT_SVC_URL=http://mint-svc:8090
+MINT_SVC_SECRET=$MINT_SVC_SECRET
 ENVEOF
 echo "  gov-bot/.env rendered (tokens ${GOV_TOK:0:8}... / ${SYS_TOK:0:8}...)"
 
-say "start gov-bot"
-docker compose --profile governance up -d gov-bot
-echo "  Gov bot starting..."
+say "start gov-bot + mint-svc"
+docker compose --profile governance up -d gov-bot mint-svc
+echo "  Gov bot + mint-svc starting..."
 
 say "VERIFY: bot synced and posted startup notice"
 LIVE=0
