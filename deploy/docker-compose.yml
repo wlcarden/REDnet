@@ -33,6 +33,12 @@ services:
     command: ["server", "--config", "/config.yaml"]
     volumes:
       - ./mas/config.yaml:/config.yaml:ro
+      # REDnet brand overlay: bind-mount ONE template file over the image's copy,
+      # leaving templates.path at its default so all other templates load from the
+      # image. MAS validates the FULL set is present, so we can't use a separate
+      # templates dir without forking all ~40 templates. Re-anchor base.html on MAS
+      # version bumps (auth branding — see mas/templates/base.html header).
+      - ./mas/templates/base.html:/usr/local/share/mas-cli/templates/base.html:ro
 
   synapse: # CORE — the homeserver (hardened config rendered into the volume by setup.sh)
     image: ghcr.io/element-hq/synapse@sha256:da325af40104051923899e5f5a2f1d537e6e3ccf2f0f38285689ae9bbfdb190a # Synapse 1.155.0

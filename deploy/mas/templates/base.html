@@ -1,0 +1,105 @@
+{#
+REDnet soft-fork of MAS base.html — pinned to MAS v1.19.0.
+Copied VERBATIM from templates/base.html at that tag, then augmented with a
+REDnet logo header + brand CSS so every auth page (login, register, token
+entry, consent, errors) inherits REDnet identity WITHOUT forking the form
+templates. The only additions are the <style> block and the .rednet-brand
+header; everything else — imports, include_asset() calls, blocks, footer — is
+unchanged and MUST stay byte-identical to upstream.
+
+⚠️ Re-anchor against templates/base.html when bumping the pinned MAS version
+(same discipline as element-web/integration.patch). If MAS's asset entrypoints
+or layout-container change, this override can break styling or (worse) drop the
+compiled CSS/JS the auth forms need.
+
+Logo is root-relative (/themes/...): MAS and Element are served same-origin
+behind the front, so it resolves on any domain and white-labels via that one svg.
+-#}
+
+{% set _ = translator(lang) %}
+
+{% import "components/button.html" as button %}
+{% import "components/field.html" as field %}
+{% import "components/back_to_client.html" as back_to_client %}
+{% import "components/logout.html" as logout %}
+{% import "components/errors.html" as errors %}
+{% import "components/icon.html" as icon %}
+{% import "components/scope.html" as scope %}
+{% import "components/captcha.html" as captcha %}
+
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}{{ _("app.name") }}{% endblock title %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{ include_asset('src/entrypoints/vendor.css') | indent(4) | safe }}
+    {{ include_asset('src/entrypoints/shared.css') | indent(4) | safe }}
+    {{ include_asset('src/entrypoints/templates.css') | indent(4) | safe }}
+    {{ include_asset('src/entrypoints/templates.ts') | indent(4) | safe }}
+    {{ captcha.head() }}
+    {# --- REDnet brand overlay (soft-fork addition; safe to re-anchor).
+         MAS serves these pages with no CSP header, so a plain inline <style>
+         is fine and needs no nonce. --- #}
+    <style>
+      :root {
+        /* REDnet palette (matches /join + Element theme) */
+        --rednet-accent: #E5484D;
+        --rednet-bg: #16181B;
+        --rednet-text: #ECEDEE;
+        /* Nudge Compound's primary action tokens toward the REDnet accent so
+           the "Continue" / primary buttons read as REDnet rather than default. */
+        --cpd-color-bg-action-primary-rest: #E5484D;
+        --cpd-color-bg-action-primary-hovered: #DC3D43;
+        --cpd-color-bg-action-primary-pressed: #C4353B;
+        --cpd-color-text-action-primary: #ECEDEE;
+        --cpd-color-text-primary: #ECEDEE;
+        --cpd-color-text-action-accent: #E5484D;
+      }
+      .rednet-brand {
+        display: flex;
+        justify-content: center;
+        padding: 8px 0 4px;
+      }
+      .rednet-brand img {
+        height: 40px;
+        width: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout-container{% if consent_page is defined %} consent{% endif %}">
+      <div class="rednet-brand">
+        <img src="/themes/element/img/logos/rednet.svg" alt="{{ _("app.name") }}">
+      </div>
+      {% block content %}{% endblock content %}
+      {% include "components/footer.html" %}
+    </div>
+    {# --- REDnet: reframe MAS's generic registration prompt for the invite-only
+         model. Kept here (the one forked template) instead of forking login.html
+         or MAS's full translation set. Purely cosmetic + degrades gracefully:
+         if MAS's markup changes on upgrade, the prompt just keeps its default
+         wording — nothing breaks. --- #}
+    <script>
+      (function () {
+        function reframe() {
+          document.querySelectorAll('a[href^="/register"]').forEach(function (a) {
+            if (/create account/i.test(a.textContent)) {
+              a.textContent = 'Redeem your invite';
+            }
+          });
+          document.querySelectorAll('p').forEach(function (p) {
+            if (/have an account yet/i.test(p.textContent)) {
+              p.textContent = 'Have an invite?';
+            }
+          });
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', reframe);
+        } else {
+          reframe();
+        }
+      })();
+    </script>
+  </body>
+</html>
