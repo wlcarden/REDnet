@@ -68,3 +68,6 @@ gov-bot/.hypothesis/
 synapse-modules/.hypothesis/
 gov-bot/.pytest_cache/
 synapse-modules/.pytest_cache/
+
+# Python bytecode (render-invite-card.py etc.)
+__pycache__/
