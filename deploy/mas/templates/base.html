@@ -65,6 +65,11 @@ behind the front, so it resolves on any domain and white-labels via that one svg
         height: 40px;
         width: auto;
       }
+      /* The REDnet logo above is the brand anchor, so hide MAS's generic
+         per-page account icon on login/register. The token step keeps its key
+         icon (a useful cue) — the reframe script below only adds this class when
+         there is no invite-token field on the page. */
+      .rednet-hide-heading-icon .page-heading > .icon { display: none; }
     </style>
   </head>
   <body>
@@ -82,7 +87,10 @@ behind the front, so it resolves on any domain and white-labels via that one svg
          wording — nothing breaks. --- #}
     <script>
       (function () {
-        function reframe() {
+        function enhance() {
+          var tokenField = document.querySelector('input[name="token"]');
+
+          // 1. Reframe MAS's generic registration prompt for the invite-only model.
           document.querySelectorAll('a[href^="/register"]').forEach(function (a) {
             if (/create account/i.test(a.textContent)) {
               a.textContent = 'Redeem your invite';
@@ -93,11 +101,29 @@ behind the front, so it resolves on any domain and white-labels via that one svg
               p.textContent = 'Have an invite?';
             }
           });
+
+          // 2. Hide the redundant account icon everywhere EXCEPT the token step
+          //    (which shows a meaningful key icon).
+          if (!tokenField) {
+            document.documentElement.classList.add('rednet-hide-heading-icon');
+          }
+
+          // 3. Pre-fill the invite token stashed by /join (same-origin), so the
+          //    user never manually pastes it. Only fills an empty field; leaves
+          //    the value in sessionStorage so a validation error can re-fill.
+          if (tokenField && !tokenField.value) {
+            var stashed = null;
+            try { stashed = sessionStorage.getItem('rednet_invite_token'); } catch (e) {}
+            if (stashed) {
+              tokenField.value = stashed;
+              tokenField.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }
         }
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', reframe);
+          document.addEventListener('DOMContentLoaded', enhance);
         } else {
-          reframe();
+          enhance();
         }
       })();
     </script>
