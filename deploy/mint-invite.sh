@@ -26,7 +26,6 @@ cd "$(dirname "$0")" || exit 1
 
 . ./lib-access.sh
 ACCESS="$API_URL"
-JOIN_URL_BASE="${REDNET_PUBLIC_BASE}/join"
 OUTDIR="invites"
 mkdir -p "$OUTDIR"
 
@@ -46,7 +45,8 @@ get_vouch_log_id(){
 }
 
 mas_mint(){
-  mas issue-user-registration-token --config /config.yaml 2>&1 \
+  # Single-use (MAS default) + expiring, so an unused leaked token goes inert.
+  mas issue-user-registration-token --expires-in "$EXPIRES_IN" --config /config.yaml 2>&1 \
     | grep -oP '(?<=token: )\S+'
 }
 
@@ -89,79 +89,16 @@ append_local_index(){
 
 generate_card(){
   local TOKEN="$1" VOUCHER="$2" LABEL="$3"
-  local JOIN_URL="${JOIN_URL_BASE}#${TOKEN}"
-  local QR_SVG
-  local OUTFILE="${OUTDIR}/invite-${TOKEN}.html"
-
-  QR_SVG=$(qrencode -t SVG -o - -l M "$JOIN_URL" 2>/dev/null)
-  [ -n "$QR_SVG" ] || { echo "ERR: qrencode failed" >&2; return 1; }
-  QR_SVG=$(echo "$QR_SVG" | sed '1,/^<svg/{ /^<svg/!d }')
-
-  cat > "$OUTFILE" <<CARD_EOF
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>${REDNET_BRAND} Invite</title>
-<style>
-  @media print {
-    @page { size: 3.5in 2.25in; margin: 0; }
-    body { margin: 0; }
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    background: #111316;
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 24px;
-  }
-  .card {
-    width: 3.5in; height: 2.25in; background: #16181B;
-    border-radius: 12px; padding: 16px 20px;
-    border: 1px solid rgba(255,255,255,0.06);
-    display: flex; gap: 16px; align-items: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    overflow: hidden;
-  }
-  .card-left { flex: 0 0 auto; text-align: center; }
-  .qr-wrapper { background: #fff; padding: 6px; border-radius: 6px; display: inline-block; }
-  .qr-wrapper svg { width: 88px; height: 88px; display: block; }
-  .card-right { flex: 1; min-width: 0; }
-  .brand { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
-  .brand-red { color: #E5484D; }
-  .brand-gray { color: #8B8D98; }
-  .instruction { font-size: 10px; color: #8B8D98; line-height: 1.4; margin-bottom: 8px; }
-  .token-label { font-size: 8px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #62646C; margin-bottom: 2px; }
-  .token-value { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 9px; color: #ECEDEE; letter-spacing: 0.3px; word-break: break-all; }
-  .url { font-size: 8px; color: #62646C; margin-top: 6px; word-break: break-all; }
-  .vouch { font-size: 8px; color: #62646C; margin-top: 4px; font-style: italic; }
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="card-left">
-    <div class="qr-wrapper">
-      ${QR_SVG}
-    </div>
-  </div>
-  <div class="card-right">
-    <div class="brand">
-      <span class="brand-red">RED</span><span class="brand-gray">net</span>
-    </div>
-    <div class="instruction">
-      Scan the QR code or visit the URL below.
-      Read the setup guide before creating your account.
-      Single-use invite — do not share.
-    </div>
-    <div class="token-label">Token</div>
-    <div class="token-value">${TOKEN}</div>
-    <div class="url">${JOIN_URL}</div>
-  </div>
-</div>
-</body>
-</html>
-CARD_EOF
+  local ext="html"; [ "$FORMAT" = "plain" ] && ext="txt"
+  local OUTFILE="${OUTDIR}/invite-${TOKEN}.${ext}"
+  # Shared renderer (also used by the in-client minting endpoint) so both paths
+  # emit identical cards. Token reaches only this local file, never Matrix.
+  python3 "$(dirname "$0")/render-invite-card.py" --format "$FORMAT" \
+    --token "$TOKEN" --domain "$REDNET_DOMAIN" --brand "$REDNET_BRAND" \
+    --label "$LABEL" --voucher "$VOUCHER" --expires "$EXPIRES_DATE" \
+    --public-base "$REDNET_PUBLIC_BASE" > "$OUTFILE" || { echo "ERR: card render failed" >&2; return 1; }
   echo "$OUTFILE"
+  return 0
 }
 
 # --- CLI ---
@@ -170,6 +107,8 @@ LABEL=""
 TOKEN=""
 BATCH=0
 COMPARTMENT=""
+FORMAT="print-card"
+EXPIRES_IN=$((7 * 24 * 3600))   # 7 days — an unused leaked token goes inert
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -178,9 +117,16 @@ while [ $# -gt 0 ]; do
     --token)       TOKEN="$2"; shift 2 ;;
     --batch)       BATCH="$2"; shift 2 ;;
     --compartment) COMPARTMENT="$2"; shift 2 ;;
-    *) echo "Usage: $0 --voucher @user --label \"description\" [--batch N] [--token TOKEN] [--compartment NAME]" >&2; exit 1 ;;
+    --format)      FORMAT="$2"; shift 2 ;;
+    --expires-in)  EXPIRES_IN="$2"; shift 2 ;;
+    *) echo "Usage: $0 --voucher @user --label \"description\" [--batch N] [--token TOKEN] [--compartment NAME] [--format print-card|wallet|half-sheet|plain] [--expires-in SECONDS]" >&2; exit 1 ;;
   esac
 done
+
+case "$FORMAT" in print-card|wallet|half-sheet|plain) ;; *)
+  echo "ERR: --format must be one of: print-card, wallet, half-sheet, plain" >&2; exit 1 ;; esac
+# Human date shown on the card. --token (pre-existing) has an unknown/other expiry, so omit it there.
+if [ -n "$TOKEN" ]; then EXPIRES_DATE=""; else EXPIRES_DATE=$(date -u -d "+${EXPIRES_IN} seconds" +%Y-%m-%d 2>/dev/null || echo ""); fi
 
 if [ -z "$VOUCHER" ]; then
   VOUCHER="${REDNET_OPERATOR:-}"
