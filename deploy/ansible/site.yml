@@ -98,7 +98,12 @@
           REDNET_RETENTION_DAYS={{ rednet_retention_days | default(7) }}
           REDNET_MEDIA_RETENTION_DAYS={{ rednet_media_retention_days | default(7) }}
           REDNET_BRAND={{ rednet_brand | default('REDnet') }}
-          REDNET_AUTO_UPDATE=true
+          # Unattended auto-update is OFF by default: an enabled 15-min pull+rebuild
+          # of the dark CORE is remote code execution if the git remote is pushed to,
+          # MITM'd, or subpoenaed. Opt in with REDNET_AUTO_UPDATE=true, and only with
+          # signed commits + an allowed-signers file so verification below can pass.
+          REDNET_AUTO_UPDATE=false
+          REDNET_VERIFY_SIGNATURES=true
           REDNET_UPDATE_REMOTE=origin
           REDNET_UPDATE_BRANCH={{ rednet_git_branch | default('main') }}
     - name: Render the WG port-publishing override

@@ -45,9 +45,12 @@ registration creates no account). The append-only list of minted tokens is the *
 Mint a **single-use** registration token (organizer action):
 
 ```bash
-docker compose exec mas mas-cli manage issue-user-registration-token --config /config.yaml
-#   -> Created user registration token: ZF0PNzXZaXy3   (single-use by default)
-# options: --usage-limit N  ·  --unlimited  ·  --expires-in <seconds>  ·  --token <specific-string>
+# --usage-limit 1 is REQUIRED for single-use: omit it and MAS issues an
+# UNLIMITED-use token, so one leaked/coerced card can register many accounts
+# under a single vouch hash. mint-invite.sh (below) always passes it for you.
+docker compose exec mas mas-cli manage issue-user-registration-token \
+  --usage-limit 1 --expires-in 604800 --config /config.yaml
+#   -> Created user registration token: ZF0PNzXZaXy3
 ```
 
 Give that token to the invitee. They can register via the MAS registration page at the front, or use

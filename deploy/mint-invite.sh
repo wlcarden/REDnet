@@ -45,8 +45,12 @@ get_vouch_log_id(){
 }
 
 mas_mint(){
-  # Single-use (MAS default) + expiring, so an unused leaked token goes inert.
-  mas issue-user-registration-token --expires-in "$EXPIRES_IN" --config /config.yaml 2>&1 \
+  # Single-use (--usage-limit 1) + expiring, so a leaked token can be redeemed
+  # once and then goes inert. MAS defaults usage_limit to UNLIMITED when the flag
+  # is omitted — one leaked/coerced card could then register many accounts against
+  # a single vouch hash, collapsing the coercion canary. Must match the in-client
+  # mint-svc, which sets usage_limit:1 (mint-svc/mint_svc.py).
+  mas issue-user-registration-token --usage-limit 1 --expires-in "$EXPIRES_IN" --config /config.yaml 2>&1 \
     | grep -oP '(?<=token: )\S+'
 }
 
@@ -130,6 +134,31 @@ done
 
 case "$FORMAT" in print-card|wallet|half-sheet|plain) ;; *)
   echo "ERR: --format must be one of: print-card, wallet, half-sheet, plain" >&2; exit 1 ;; esac
+
+# Clamp expiry to the same [60s, 30d] window the in-client mint-svc enforces
+# (mint_svc.py MAX_EXPIRES_IN), so the CLI can't mint a near-permanent token that
+# defeats the "unused leaked token goes inert" property.
+MAX_EXPIRES_IN=$((30 * 24 * 3600))
+if ! printf '%s' "$EXPIRES_IN" | grep -qE '^[0-9]+$'; then
+  echo "ERR: --expires-in must be a positive integer (seconds)" >&2; exit 1
+fi
+[ "$EXPIRES_IN" -lt 60 ] && EXPIRES_IN=60
+[ "$EXPIRES_IN" -gt "$MAX_EXPIRES_IN" ] && EXPIRES_IN=$MAX_EXPIRES_IN
+
+# Cap batch to the same ceiling the in-client path enforces (mint_endpoint.py
+# MAX_BATCH=25) and reject non-numeric input, so the CLI isn't a weaker mass-mint
+# path than the dashboard. The cap is logged, never silently applied.
+MAX_BATCH=25
+if [ "$BATCH" != "0" ]; then
+  if ! printf '%s' "$BATCH" | grep -qE '^[0-9]+$'; then
+    echo "ERR: --batch must be a positive integer" >&2; exit 1
+  fi
+  if [ "$BATCH" -gt "$MAX_BATCH" ]; then
+    echo "WARN: --batch $BATCH exceeds the $MAX_BATCH cap (matches the in-client limit); minting $MAX_BATCH" >&2
+    BATCH=$MAX_BATCH
+  fi
+fi
+
 # Human date shown on the card. --token (pre-existing) has an unknown/other expiry, so omit it there.
 if [ -n "$TOKEN" ]; then EXPIRES_DATE=""; else EXPIRES_DATE=$(date -u -d "+${EXPIRES_IN} seconds" +%Y-%m-%d 2>/dev/null || echo ""); fi
 
