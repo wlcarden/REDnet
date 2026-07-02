@@ -70,6 +70,23 @@ behind the front, so it resolves on any domain and white-labels via that one svg
          icon (a useful cue) — the reframe script below only adds this class when
          there is no invite-token field on the page. */
       .rednet-hide-heading-icon .page-heading > .icon { display: none; }
+      /* Password guidance on the registration page. MAS scores passwords with
+         zxcvbn (rejects predictable patterns) but its "too weak" error gives no
+         hint — this nudges users to a passphrase before they hit the wall. */
+      .rednet-pw-hint {
+        font-size: 0.8125rem;
+        line-height: 1.45;
+        color: var(--cpd-color-text-secondary, #8B8D98);
+        background: rgba(229, 72, 77, 0.08);
+        border-left: 3px solid var(--rednet-accent);
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin: -4px 0 4px;
+      }
+      .rednet-pw-hint code {
+        color: var(--rednet-text, #ECEDEE);
+        font-size: 0.95em;
+      }
     </style>
   </head>
   <body>
@@ -117,6 +134,23 @@ behind the front, so it resolves on any domain and white-labels via that one svg
             if (stashed) {
               tokenField.value = stashed;
               tokenField.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }
+
+          // 4. Password guidance on the REGISTRATION page (has a confirm field;
+          //    login does not). MAS scores with zxcvbn and only says "too weak" —
+          //    tell users what actually passes so they don't get stuck.
+          var confirmField = document.querySelector('input[name="password_confirm"]');
+          if (confirmField && !document.querySelector('.rednet-pw-hint')) {
+            var group = confirmField.closest('.cpd-form-field') || confirmField.parentElement;
+            if (group && group.parentElement) {
+              var hint = document.createElement('p');
+              hint.className = 'rednet-pw-hint';
+              hint.innerHTML =
+                'Use <strong>four random words</strong> (e.g. <code>sparrow-quiet-cloud-42</code>) ' +
+                'or a password manager. A word plus numbers &mdash; like <code>Summer2024!</code> &mdash; ' +
+                'is rejected as too weak.';
+              group.parentElement.insertBefore(hint, group.nextSibling);
             }
           }
         }
