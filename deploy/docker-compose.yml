@@ -110,6 +110,19 @@ services:
     volumes:
       - ./vouch.jsonl:/data/vouch.jsonl
 
+  mint-svc: # CORE — the ONLY holder of MAS-admin power, behind one operation (mint a
+            # registration token). Internal network only — NOT proxied by Caddy. The gov-bot
+            # calls it after auth'ing the operator. bootstrap-gov-bot.sh renders mint-svc/.env.
+            # (Least-privilege invite minting — COMMUNITY-MANAGEMENT.md.)
+    build:
+      context: ./mint-svc
+    profiles: ["governance"]
+    restart: unless-stopped
+    depends_on:
+      mas:
+        condition: service_started
+    env_file: mint-svc/.env
+
   # --- Group calls (profile "calls"). LiveKit SFU + JWT auth service. DESIGN §8: this module
   # runs on a SEPARATE public-IP box in production (WebRTC needs direct UDP). Single-host dev
   # runs it here. bootstrap-calls.sh generates secrets and starts this profile. ---
