@@ -236,7 +236,11 @@ elif docker compose --profile web ps --format '{{.Name}}' 2>/dev/null | grep -q 
   ok "Element Web already running"
 else
   say "Element Web (soft-fork build — this takes 3-5 minutes)"
-  ./element-web/build.sh || { warn "Element Web build failed — web login unavailable. Use Element X on mobile."; }
+  # Pass the deploy's PUBLIC_BASE so Element's homeserver base_url matches where
+  # the stack is actually served. In dev that is http://localhost:$PORT; without
+  # this, build.sh defaults to https://$REDNET_DOMAIN (a placeholder that does not
+  # resolve locally) and the client shows "Cannot reach homeserver".
+  REDNET_PUBLIC_BASE="$PUBLIC_BASE" ./element-web/build.sh || { warn "Element Web build failed — web login unavailable. Use Element X on mobile."; }
   docker compose --profile web up -d element 2>/dev/null
   # wait for element container to respond
   for _ in $(seq 1 30); do
