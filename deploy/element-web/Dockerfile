@@ -35,6 +35,13 @@ RUN git apply --whitespace=fix integration.patch \
       && echo "REDnet: onboarding patch APPLIED" \
    || echo "REDnet WARNING: integration.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (see README). Building WITHOUT silent onboarding."
 
+# 4) hide the native Create Room / Create Space / Explore UI. Room creation is
+#    locked server-side (synapse-modules/rednet_room_policy) — these stock buttons
+#    now dead-end in a 403, so a ComponentVisibility customisation removes them.
+#    customisations.json (repo root) overrides the default customisation module.
+COPY src/RednetComponentVisibility.ts ./src/customisations/RednetComponentVisibility.ts
+COPY customisations.json ./customisations.json
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -63,6 +70,15 @@ RUN if grep -rqlF 'Save your recovery passphrase' webapp/ 2>/dev/null; then \
       echo "REDNET_SILENT_ONBOARDING=off" > webapp/rednet-build.txt; \
       echo "REDnet XXX silent onboarding NOT in the bundle — recovery degraded to STOCK Element (breaks N=1 / new-device). Re-anchor integration.patch (see README)."; \
       [ "$REDNET_REQUIRE_SILENT_ONBOARDING" = "1" ] && exit 1 || true; \
+    fi
+
+# Verify the room/space-creation UI lockdown was actually bundled: our customisation
+# logs a distinctive line at module load, which webpack keeps only if customisations.json
+# wired it in. If it's missing, the Create Room/Space buttons are still visible.
+RUN if grep -rqlF 'native room/space creation hidden' webapp/ 2>/dev/null; then \
+      echo "REDnet: Create Room/Space UI hidden (ComponentVisibility customisation wired)"; \
+    else \
+      echo "REDnet WARNING: ComponentVisibility customisation NOT bundled — native Create Room/Space buttons still visible. Check customisations.json + the UIComponent path against ${ELEMENT_VERSION}."; \
     fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---

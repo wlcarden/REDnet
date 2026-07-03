@@ -43,6 +43,24 @@ breaks N=1 / new-device recovery). The Dockerfile's build-sentinel check makes t
 **Validate** after building: log in on a fresh account and confirm our REDnet dialog appears (not
 Element's), and cross-signing shows green.
 
+## Hiding native room/space creation (`customisations.json` + `RednetComponentVisibility.ts`)
+
+Room/space creation is locked **server-side** (`synapse-modules/rednet_room_policy.py`): the system
+accounts create rooms via the gov bot (`!gov room` / `!gov space`), members request them with
+`!gov request`. Stock Element still renders **Create Room / Create Space / Explore** buttons, which
+now dead-end in the module's `403` — and the space-creation flow _spins_ rather than surfacing it. A
+`ComponentVisibility` customisation hides them so the client matches the policy:
+
+- `src/RednetComponentVisibility.ts` (copied into `src/customisations/` by the Dockerfile) —
+  `shouldShowComponent()` returns `false` for `UIComponent.CreateRooms`, `CreateSpaces`, `ExploreRooms`.
+- `customisations.json` (repo root) maps the default `ComponentVisibility.ts` to our file; webpack
+  resolves it at build time.
+
+⚠️ **Re-anchor per release**, like `integration.patch`: the `UIComponent` values and the customisation
+path are pinned to `ELEMENT_VERSION` (and upstream deprecates customisations in favour of the module
+API, which doesn't yet expose component visibility). The Dockerfile greps the built bundle for a
+module-load marker and warns if the customisation wasn't wired.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member
