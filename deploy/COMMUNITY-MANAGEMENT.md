@@ -151,9 +151,9 @@ least-privilege split that makes it safe:
    exposing one operation, on the internal network only (not Caddy-proxied),
    gated by a shared secret. The gov-bot — the largest attack surface (Matrix
    sync + command parsing) — never holds MAS admin; if compromised it can only
-   *request a mint*.
+   _request a mint_.
 4. mint-svc does `client_credentials → urn:mas:admin → POST
-   /api/admin/v1/user-registration-tokens` (`usage_limit:1`, `expires_at`).
+/api/admin/v1/user-registration-tokens` (`usage_limit:1`, `expires_at`).
 5. The endpoint records the hash-only vouch, renders the card with the shared
    renderer, and returns it to the browser. The token is displayed/printed
    client-side.
@@ -162,3 +162,24 @@ Formats (both paths): `print-card`, `wallet`, `half-sheet` (QR + OPSEC
 guidance), `plain`. Provisioning: setup.sh exposes the MAS `adminapi` +
 registers the mint OAuth client + adds the `openid` Synapse resource;
 bootstrap-gov-bot.sh renders `mint-svc/.env` and the shared `MINT_SVC_SECRET`.
+
+## Secrets at rest on the CORE
+
+Three service accounts hold **standing, non-expiring** credentials rendered into
+files on the CORE:
+
+- `@rednet-gov` — `GOV_BOT_TOKEN` + a `SYS_TOKEN` that carries `urn:synapse:admin`
+  (in `gov-bot/.env`).
+- `@rednet-mod` (Draupnir) — a PL50 moderation access token (in
+  `draupnir/config/production.yaml`).
+- `mint-svc` — the `urn:mas:admin` OAuth client secret (in `mint-svc/.env`).
+
+These files are rendered `0600` (`umask 077` + explicit `chmod`, so a re-run that
+finds a looser mode still tightens it) and belong on the encrypted backup volume.
+They are **compatibility tokens with no expiry**: seizure of the running CORE, or
+read access to these files, yields live credentials. Treat any suspected CORE
+compromise as a full credential compromise — re-run the bootstrap scripts to
+re-issue all three tokens, and rotate `MINT_SVC_SECRET`. Moving these to
+short-lived tokens with a refresh path is tracked as future work (bootstrap audit
+F27); today the mitigation is least-privilege isolation (mint-svc), `0600` perms,
+and re-issue-on-compromise.

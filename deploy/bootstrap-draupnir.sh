@@ -4,6 +4,7 @@
 # re-renders config + restarts). Requires the stack up (./setup.sh first).
 set -uo pipefail
 cd "$(dirname "$0")" || exit 1
+umask 077  # production.yaml carries the Draupnir bot access token (F4)
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"; : "${REDNET_HTTP_PORT:=8080}"
 . ./lib-access.sh
@@ -82,6 +83,7 @@ say "render draupnir/config/production.yaml (token injected — gitignored)"
 sed -e "s#accessToken: .*#accessToken: \"$BOT_TOK\"#" \
     -e "s#managementRoom: .*#managementRoom: \"$MROOM\"#" \
     draupnir/production.yaml.example > draupnir/config/production.yaml
+chmod 600 draupnir/config/production.yaml  # re-run may have found it 664 (F4)
 echo "config rendered (token ${BOT_TOK:0:8}...)"
 
 say "wire bot into community rooms (PL 50 = kick/ban/redact, not admin)"
