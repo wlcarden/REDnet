@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Revoke a member or bulk-revoke all members vouched by a compromised organizer.
-# Deactivates the MAS account(s), kicks from all joined rooms, and logs to #vouch-log.
+# Locks the MAS account(s), bans from all known rooms, and logs to #vouch-log.
 #
 # Usage:
 #   ./revoke-member.sh @username --reason "compromised"
@@ -92,9 +92,9 @@ revoke_one(){
   # Lock the MAS account (prevents login)
   mas lock-user "$username" 2>&1 | sed 's/^/  /' || true
 
-  # Kick from all joined rooms
-  # Get the user's joined rooms via admin API (system account needs to be admin for this,
-  # fall back to kicking from known community rooms if admin API isn't available)
+  # BAN (not kick) from all known rooms — a ban blocks re-join even from a public
+  # room (F11). The MAS lock above is the terminal control; bans force-remove any
+  # live session and prevent re-entry in the rooms we can reach.
   local COMMUNITY_ROOMS
   COMMUNITY_ROOMS=(community welcome announcements reference general governance vouch-log)
 
@@ -105,18 +105,18 @@ revoke_one(){
     done < <(jq -r 'select(.type=="compartment") | .rooms[]' vouch.jsonl 2>/dev/null | sort -u)
   fi
 
-  local kicked=0
+  local banned=0
   for alias in "${COMMUNITY_ROOMS[@]}"; do
     RID=$(resolve_alias "$alias" 2>/dev/null)
     [ -n "$RID" ] || continue
-    RESP=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$RID")/kick" \
+    RESP=$(curl -s -XPOST "$ACCESS/_matrix/client/v3/rooms/$(enc "$RID")/ban" \
       -H "$AUTH" -H "Content-Type: application/json" \
       -d "$(jq -n --arg u "$user" --arg r "$REASON" '{user_id:$u, reason:$r}')")
     if echo "$RESP" | grep -qv "errcode"; then
-      kicked=$((kicked + 1))
+      banned=$((banned + 1))
     fi
   done
-  echo "  kicked from $kicked room(s), MAS account locked"
+  echo "  banned from $banned room(s), MAS account locked"
 
   # Log to #vouch-log
   if [ -n "$VOUCH_LOG_ID" ]; then
@@ -158,4 +158,4 @@ done
 echo "DONE: ${#USERS_TO_REVOKE[@]} member(s) revoked."
 echo "  Reason: $REASON"
 [ -n "$MINTED_BY" ] && echo "  Triggered by: voucher $MINTED_BY compromise"
-echo "  Accounts locked in MAS, kicked from known rooms, logged to #vouch-log."
+echo "  Accounts locked in MAS, banned from known rooms, logged to #vouch-log."
