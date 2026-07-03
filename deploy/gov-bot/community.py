@@ -743,6 +743,21 @@ def room_canaries():
         ):
             alerts.append(f"**UNENCRYPTED** {label} — {members} members, no E2EE")
 
+        # F28: the room-policy DM carve-out admits is_direct rooms without requiring
+        # encryption, and this sweep otherwise exempts DM-shaped rooms above. But a
+        # real Element DM IS E2EE, so an unencrypted 1:1 is an anomalous plaintext
+        # side-channel — flag it rather than let it hide behind the carve-out.
+        if (
+            not room.get("encryption")
+            and is_dm_shaped
+            and not is_space
+            and alias not in PLAINTEXT_ALLOWED_ALIASES
+        ):
+            alerts.append(
+                f"**UNENCRYPTED DM** {label} — 1:1 room with no E2EE. A real Element "
+                "DM is encrypted; this is a plaintext side-channel."
+            )
+
         if (
             not room.get("canonical_alias")
             and not is_space

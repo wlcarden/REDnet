@@ -70,7 +70,11 @@ services:
       - ./vouch.jsonl:/srv/governance-data/vouch.jsonl:ro
       - rednet_caddy:/data
     ports:
-      - "${REDNET_HTTP_PORT:-8080}:8080"
+      # Bind to loopback by DEFAULT (F10): single-host mode serves the vouch graph
+      # at /governance/data/vouch.jsonl, so a 0.0.0.0 bind exposed the whole trust
+      # graph to the LAN. localhost access still works. To expose on a LAN (e.g. a
+      # Raspberry Pi accessed from another device), set REDNET_BIND_IP=0.0.0.0.
+      - "${REDNET_BIND_IP:-127.0.0.1}:${REDNET_HTTP_PORT:-8080}:8080"
 
   element: # FRONT-served web client — the REDnet Element Web soft fork. Build: ./element-web/build.sh
            # `web` profile keeps the heavy webpack image out of the default `up`. The front Caddy

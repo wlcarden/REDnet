@@ -6,6 +6,25 @@
 set -uo pipefail
 umask 077   # the bundle holds crown jewels — write it 0600, never world-readable (security review R2)
 cd "$(dirname "$0")" || exit 1
+[ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
+
+# F7: do not write a cleartext crown-jewel bundle unless it will be encrypted
+# off-box (restic) OR the operator has explicitly accepted cleartext-at-rest. The
+# Ansible timer runs this hourly and unattended, so a silent cleartext default
+# would pile the MAS encryption key + both DBs + signing key onto the seizable
+# core every hour. Fail closed instead.
+if [ -z "${RESTIC_REPOSITORY:-}" ] || [ -z "${RESTIC_PASSWORD:-}" ]; then
+  if [ "${REDNET_ALLOW_CLEARTEXT_BACKUP:-}" != "true" ]; then
+    echo "REFUSING to back up: no encrypted off-box target is configured." >&2
+    echo "  A backup here leaves the MAS encryption key + both DBs + signing key as" >&2
+    echo "  CLEARTEXT on this core, regenerated hourly by the timer. Choose one:" >&2
+    echo "    • set RESTIC_REPOSITORY + RESTIC_PASSWORD (repo key held OFF the core), or" >&2
+    echo "    • set REDNET_ALLOW_CLEARTEXT_BACKUP=true to accept cleartext-at-rest (NOT for production)." >&2
+    exit 1
+  fi
+  echo "⚠️  REDNET_ALLOW_CLEARTEXT_BACKUP=true — writing a CLEARTEXT bundle with no off-box encryption." >&2
+fi
+
 OUT="backups/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$OUT"; chmod 700 "$OUT"
 say(){ printf '\n=== %s ===\n' "$*"; }

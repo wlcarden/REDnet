@@ -373,7 +373,9 @@ class TestRoomCanaries:
         with patch.object(community.http, "get", return_value=_sweep_response(rooms)):
             assert community.room_canaries() == []
 
-    def test_spaces_and_dms_pass_unencrypted(self):
+    def test_space_exempt_but_unencrypted_dm_flagged(self):
+        # Spaces are never E2EE, so they stay exempt; but the unencrypted 1:1 is no
+        # longer a silent pass — a real Element DM is encrypted, so it's flagged (F28).
         rooms = [
             {
                 "room_id": "!s:test",
@@ -392,7 +394,9 @@ class TestRoomCanaries:
             },
         ]
         with patch.object(community.http, "get", return_value=_sweep_response(rooms)):
-            assert community.room_canaries() == []
+            alerts = community.room_canaries()
+        assert len(alerts) == 1
+        assert "UNENCRYPTED DM" in alerts[0]
 
     def test_grown_dm_flagged_as_unmanaged(self):
         # The module's accepted residual risk: a spoofed "DM" that grew.
@@ -495,3 +499,39 @@ def test_bot_runs_as_script():
     )
     assert result.returncode == 0, result.stderr
     assert "imports ok" in result.stdout
+
+
+class TestUnencryptedDMSweep:
+    """The room-policy DM carve-out admits is_direct rooms without encryption, and
+    the sweep otherwise exempts DM-shaped rooms — but a real Element DM is E2EE, so
+    an unencrypted 1:1 is a plaintext side-channel the sweep must flag (F28)."""
+
+    def _sweep(self, room):
+        with patch.object(
+            community.admin_client,
+            "list_rooms",
+            return_value=(200, {"rooms": [room], "total_rooms": 1}),
+        ):
+            return community.room_canaries()
+
+    def test_flags_unencrypted_dm(self):
+        alerts = self._sweep(
+            {
+                "room_id": "!dm:test",
+                "joined_members": 2,
+                "canonical_alias": None,
+                "encryption": None,
+            }
+        )
+        assert any("UNENCRYPTED DM" in a for a in alerts)
+
+    def test_encrypted_dm_not_flagged(self):
+        alerts = self._sweep(
+            {
+                "room_id": "!dm:test",
+                "joined_members": 2,
+                "canonical_alias": None,
+                "encryption": "m.megolm.v1.aes-sha2",
+            }
+        )
+        assert not any("UNENCRYPTED" in a for a in alerts)
