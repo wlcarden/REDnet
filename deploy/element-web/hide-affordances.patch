@@ -1,0 +1,58 @@
+diff --git a/src/components/views/context_menus/MessageContextMenu.tsx b/src/components/views/context_menus/MessageContextMenu.tsx
+index d574965..00d5002 100644
+--- a/src/components/views/context_menus/MessageContextMenu.tsx
++++ b/src/components/views/context_menus/MessageContextMenu.tsx
+@@ -518,16 +518,10 @@ export default class MessageContextMenu extends React.Component<IProps, IState>
+             );
+         }
+ 
+-        let reportEventButton: JSX.Element | undefined;
+-        if (mxEvent.getSender() !== me) {
+-            reportEventButton = (
+-                <IconizedContextMenuOption
+-                    iconClassName="mx_MessageContextMenu_iconReport"
+-                    label={_t("timeline|context_menu|report")}
+-                    onClick={this.onReportEventClick}
+-                />
+-            );
+-        }
++        // REDnet: the native Report routes the message + reason to the homeserver
++        // admin — the party our threat model distrusts — competing with the
++        // coercion-aware !report -> #gov-bot flow. Suppress it: leave the button unset.
++        const reportEventButton: JSX.Element | undefined = undefined;
+ 
+         let copyLinkButton: JSX.Element | undefined;
+         if (link) {
+diff --git a/src/components/views/right_panel/RoomSummaryCard.tsx b/src/components/views/right_panel/RoomSummaryCard.tsx
+index 664977b..08155b6 100644
+--- a/src/components/views/right_panel/RoomSummaryCard.tsx
++++ b/src/components/views/right_panel/RoomSummaryCard.tsx
+@@ -408,11 +408,8 @@ const RoomSummaryCard: React.FC<IProps> = ({
+                             </div>
+                         </ReleaseAnnouncement>
+                         <MenuItem Icon={FilesIcon} label={_t("right_panel|files_button")} onSelect={onRoomFilesClick} />
+-                        <MenuItem
+-                            Icon={ExtensionsIcon}
+-                            label={_t("right_panel|extensions_button")}
+-                            onSelect={onRoomExtensionsClick}
+-                        />
++                        {/* REDnet: the integration manager is disabled (integrations_ui_url is empty),
++                            so the Add-extensions flow only dead-ends in a "no manager" dialog. Hidden. */}
+                     </>
+                 )}
+ 
+@@ -427,11 +424,9 @@ const RoomSummaryCard: React.FC<IProps> = ({
+                             label={_t("right_panel|polls_button")}
+                             onSelect={onRoomPollHistoryClick}
+                         />
+-                        <MenuItem
+-                            Icon={ExportArchiveIcon}
+-                            label={_t("export_chat|title")}
+-                            onSelect={onRoomExportClick}
+-                        />
++                        {/* REDnet: Export chat writes a room's FULL decrypted history to a file — a
++                            portable seizure/exfil artifact any member could produce, against the
++                            retention + anti-forensic posture. Removed. */}
+                     </>
+                 )}
+ 

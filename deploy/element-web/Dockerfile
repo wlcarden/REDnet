@@ -42,6 +42,17 @@ RUN git apply --whitespace=fix integration.patch \
 COPY src/RednetComponentVisibility.ts ./src/customisations/RednetComponentVisibility.ts
 COPY customisations.json ./customisations.json
 
+# 5) hide upstream affordances our security model makes leaky/broken: Export chat
+#    (one-click full decrypted-history exfil) and native Report (routes the message
+#    + reason to the homeserver admin — our threat surface), plus the dead-ending
+#    Add-extensions button. Unlike Create, these are hardcoded in the components, so
+#    a source patch is required. FATAL if it stops applying (unlike the onboarding
+#    patch): refuse to ship a client that still exposes these. Re-anchor per README.
+COPY hide-affordances.patch ./hide-affordances.patch
+RUN git apply --whitespace=fix hide-affordances.patch \
+      && echo "REDnet: hide-affordances patch APPLIED (Export + Report + Add-extensions removed)" \
+   || { echo "REDnet FATAL: hide-affordances.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Refusing to build a client that still exposes Export chat / native Report."; exit 1; }
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json

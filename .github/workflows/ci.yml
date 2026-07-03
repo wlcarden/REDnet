@@ -114,11 +114,12 @@ jobs:
           git clone --depth 1 --branch "${{ steps.ver.outputs.version }}" \
             https://github.com/element-hq/element-web.git /tmp/element-web
 
-      - name: Apply integration patch
+      - name: Apply patches (integration + hide-affordances)
         run: |
           cd /tmp/element-web
           git apply --check "${{ github.workspace }}/deploy/element-web/integration.patch"
-          echo "Patch applies cleanly to ${{ steps.ver.outputs.version }}"
+          git apply --check "${{ github.workspace }}/deploy/element-web/hide-affordances.patch"
+          echo "Both patches apply cleanly to ${{ steps.ver.outputs.version }}"
 
       - name: Verify module builds
         working-directory: deploy/element-web/rednet-module
