@@ -113,10 +113,10 @@ services:
       # baked, so both paths stay identical. qrencode is in the bot image.
       - ./render-invite-card.py:/app/render-invite-card.py:ro
 
-  mint-svc: # CORE — the ONLY holder of MAS-admin power, behind one operation (mint a
-            # registration token). Internal network only — NOT proxied by Caddy. The gov-bot
-            # calls it after auth'ing the operator. bootstrap-gov-bot.sh renders mint-svc/.env.
-            # (Least-privilege invite minting — COMMUNITY-MANAGEMENT.md.)
+  mint-svc: # CORE — the ONLY holder of MAS-admin power, behind two operations (mint a
+            # registration token; lock an account). Internal network only — NOT proxied by
+            # Caddy. The gov-bot calls it after auth'ing the operator. bootstrap-gov-bot.sh
+            # renders mint-svc/.env. (Least-privilege — COMMUNITY-MANAGEMENT.md.)
     build:
       context: ./mint-svc
     profiles: ["governance"]
@@ -125,6 +125,19 @@ services:
       mas:
         condition: service_started
     env_file: mint-svc/.env
+
+  synmin-svc: # CORE — the ONLY holder of Synapse-admin power (F2), behind purge-room /
+              # list-rooms / user-rooms. Internal network only — NOT proxied by Caddy. The
+              # gov-bot calls it instead of holding urn:synapse:admin itself.
+              # bootstrap-gov-bot.sh renders synmin-svc/.env.
+    build:
+      context: ./synmin-svc
+    profiles: ["governance"]
+    restart: unless-stopped
+    depends_on:
+      synapse:
+        condition: service_started
+    env_file: synmin-svc/.env
 
   # --- Group calls (profile "calls"). LiveKit SFU + JWT auth service. DESIGN §8: this module
   # runs on a SEPARATE public-IP box in production (WebRTC needs direct UDP). Single-host dev

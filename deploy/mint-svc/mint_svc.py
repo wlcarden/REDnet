@@ -2,10 +2,12 @@
 """REDnet mint service — the ONLY component that holds MAS-admin power.
 
 Least-privilege split (COMMUNITY-MANAGEMENT.md / invite minting): the gov-bot
-does operator auth + the vouch record, then calls this service for the one
-privileged step — creating a registration token. MAS admin is all-or-nothing
-(urn:mas:admin), so we isolate that credential here, behind a single operation,
-away from the gov-bot's larger attack surface (Matrix sync + command parsing).
+does operator auth + the vouch record, then calls this service for the two
+privileged MAS-admin steps it needs — creating a registration token (minting an
+invite) and locking an account (terminal revoke, F11). MAS admin is
+all-or-nothing (urn:mas:admin), so we isolate that credential here, behind these
+two operations, away from the gov-bot's larger attack surface (Matrix sync +
+command parsing).
 
 Reachability is defence-in-depth:
   - only on the internal docker network (NOT proxied by Caddy), and
@@ -13,9 +15,11 @@ Reachability is defence-in-depth:
 
 Dependency-free (stdlib only) to keep this powerful surface small and auditable.
 
-Endpoint:
-  POST /mint   X-Mint-Secret: <secret>   {"expires_in": 604800}
+Endpoints (both require X-Mint-Secret):
+  POST /mint   {"expires_in": 604800}
     -> 200 {"token": "...", "expires_at": "2026-07-09T...Z"}
+  POST /lock   {"user": "@alice:dom"}   (MXID or bare username)
+    -> 200 {"locked": true, "user_id": "01K..."}
 
 Env:
   MINT_SVC_SECRET     shared secret the gov-bot must present (required)
@@ -96,6 +100,45 @@ def mint(expires_in):
     return token, attrs.get("expires_at", expires_at)
 
 
+def lock_user(user):
+    """Lock a MAS account by MXID or username. Returns the MAS user id (ULID).
+
+    Terminal-revoke (F11) needs this and the bot can't run mas-cli, so it goes
+    through the MAS admin API — verified: POST /users/{id}/lock -> 200. Lock is
+    reversible and keeps the account + its data (unlike deactivate), so the
+    coercion-canary investigation retains its evidence. Resolves username -> ULID
+    by exact match first (search is a prefix/fuzzy filter).
+    """
+    username = user.lstrip("@").split(":")[0]
+    hdr = {
+        "Authorization": f"Bearer {admin_token()}",
+        "Content-Type": "application/json",
+    }
+    q = urllib.parse.urlencode({"filter[search]": username})
+    req = urllib.request.Request(
+        f"{MAS_BASE}/api/admin/v1/users?{q}", headers=hdr, method="GET"
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        found = json.loads(r.read().decode())
+    uid = next(
+        (
+            u["id"]
+            for u in found.get("data", [])
+            if u.get("attributes", {}).get("username") == username
+        ),
+        None,
+    )
+    if not uid:
+        raise RuntimeError(f"user not found: {username}")
+    req = urllib.request.Request(
+        f"{MAS_BASE}/api/admin/v1/users/{uid}/lock", headers=hdr, method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        if r.status != 200:
+            raise RuntimeError(f"lock failed: HTTP {r.status}")
+    return uid
+
+
 class Handler(BaseHTTPRequestHandler):
     def _json(self, code, obj):
         payload = json.dumps(obj).encode()
@@ -115,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {"error": "not_found"})
 
     def do_POST(self):
-        if self.path != "/mint":
+        if self.path not in ("/mint", "/lock"):
             return self._json(404, {"error": "not_found"})
         # constant-time secret check — hmac.compare_digest avoids leaking the
         # secret's length/prefix through byte-by-byte `!=` short-circuit timing.
@@ -131,6 +174,18 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length) or b"{}") if length else {}
         except (ValueError, json.JSONDecodeError):
             return self._json(400, {"error": "bad_request"})
+
+        if self.path == "/lock":
+            user = body.get("user", "")
+            if not user:
+                return self._json(400, {"error": "user required"})
+            try:
+                uid = lock_user(user)
+            except Exception as e:  # never leak internals to the caller
+                sys.stderr.write(f"mint-svc ERROR: {e}\n")
+                return self._json(502, {"error": "lock_failed"})
+            return self._json(200, {"locked": True, "user_id": uid})
+
         try:
             token, expires_at = mint(body.get("expires_in"))
         except Exception as e:  # never leak internals to the caller

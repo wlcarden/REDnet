@@ -34,6 +34,7 @@ import sys
 
 import requests as http
 
+import admin_client
 import bot
 
 VISIBILITIES = ("open", "knock", "private")
@@ -494,18 +495,13 @@ def cmd_delete(room_id, sender, args):
         bot.reply(room_id, "Refusing to delete a core system room.")
         return
 
-    r = http.delete(
-        f"{bot.ACCESS}/_synapse/admin/v2/rooms/{bot.enc(target_rid)}",
-        headers=bot.SYS_HEADERS,
-        json={"block": True, "purge": True},
-        timeout=30,
-    )
-    data = r.json()
+    # Synapse-admin op — routed through synmin-svc (the gov-bot holds no admin).
+    _st, data = admin_client.purge_room(target_rid)
     if "delete_id" not in data:
         bot.reply(
             room_id,
             f"Delete failed: {data.get('error', data.get('errcode', 'unknown'))} "
-            f"(is rednet-system a Synapse admin?)",
+            f"(synmin-svc / Synapse admin issue)",
         )
         return
     bot.append_vouch_jsonl(
@@ -715,22 +711,17 @@ def room_canaries():
     is not a member of. Returns alert strings for cmd_audit.
     """
     alerts = []
+    # Synapse-admin op — routed through synmin-svc (the gov-bot holds no admin).
     try:
-        r = http.get(
-            f"{bot.ACCESS}/_synapse/admin/v1/rooms",
-            headers=bot.SYS_HEADERS,
-            params={"limit": 500},
-            timeout=30,
-        )
+        st, data = admin_client.list_rooms(500)
     except Exception as e:
         return [f"**SWEEP SKIPPED** room sweep unreachable: {e}"]
-    if r.status_code != 200:
+    if st != 200:
         alerts.append(
             "**SWEEP SKIPPED** room sweep needs the admin API "
-            f"(HTTP {r.status_code}) — is rednet-system a Synapse admin?"
+            f"(HTTP {st}) — synmin-svc / Synapse admin issue"
         )
         return alerts
-    data = r.json()
     rooms = data.get("rooms", [])
     if data.get("total_rooms", 0) > len(rooms):
         alerts.append(

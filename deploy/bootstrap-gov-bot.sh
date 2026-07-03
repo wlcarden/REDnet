@@ -37,10 +37,21 @@ say "system token (Synapse-admin scoped — !gov delete + audit sweep use the ad
 mas promote-admin rednet-system 2>&1 | grep -qi 'promoted\|already' \
   && echo "  rednet-system is admin-capable in MAS" \
   || echo "  WARN: promote-admin failed — !gov delete + room sweep will be disabled"
-SYS_TOK=$(mas issue-compatibility-token rednet-system GOVSYS2 --yes-i-want-to-grant-synapse-admin-privileges \
+# The gov-bot's SYS_TOKEN is PL100 but NO LONGER carries synapse-admin (F2): a
+# compromise of the network-facing bot must not yield full homeserver admin. The
+# two admin ops it needs (room purge, room sweep) + revoke's per-user room
+# enumeration move to the isolated synmin-svc, which gets its own admin token.
+SYS_TOK=$(mas issue-compatibility-token rednet-system GOVSYS2 \
   | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 [ -n "${SYS_TOK:-}" ] || { echo "ERR: no system token — run bootstrap-rooms.sh first"; exit 1; }
 SAUTH="Authorization: Bearer $SYS_TOK"
+
+# synmin-svc's token DOES carry urn:synapse:admin — held ONLY by that isolated,
+# internal-only, secret-gated service (same account, a separate token). This is
+# the one credential that can reach /_synapse/admin.
+SYNMIN_TOK=$(mas issue-compatibility-token rednet-system SYNMIN --yes-i-want-to-grant-synapse-admin-privileges \
+  | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
+[ -n "${SYNMIN_TOK:-}" ] || echo "  WARN: no synapse-admin token — !gov delete + room sweep + revoke enumeration will be degraded"
 
 say "#gov-bot (NON-E2EE command channel — same pattern as #rednet-mod)"
 GOV_BOT_ROOM=$(curl -s -H "$GAUTH" "$ACCESS/_matrix/client/v3/directory/room/%23gov-bot%3A$REDNET_DOMAIN" | roomid_of)
@@ -175,6 +186,7 @@ say "render mint-svc config (isolated MAS-admin holder — gitignored)"
 # policy.data.admin_clients). Read it back so mint-svc can obtain urn:mas:admin tokens. The shared
 # MINT_SVC_SECRET gates the gov-bot -> mint-svc call. (COMMUNITY-MANAGEMENT.md invite minting.)
 MINT_SVC_SECRET=$(python3 -c "import secrets;print(secrets.token_urlsafe(32))")
+SYNMIN_SVC_SECRET=$(python3 -c "import secrets;print(secrets.token_urlsafe(32))")  # gates gov-bot -> synmin-svc (F2)
 read -r MINT_CID MINT_CSEC <<EOF2
 $(python3 -c "
 import yaml
@@ -199,6 +211,21 @@ else
   echo "  WARN: mint client not found in mas/config.yaml — re-run setup.sh (in-client minting disabled)"
 fi
 
+say "render synmin-svc config (isolated Synapse-admin holder — gitignored)"
+if [ -n "${SYNMIN_TOK:-}" ]; then
+  mkdir -p synmin-svc
+  cat > synmin-svc/.env <<ENVEOF
+SYNMIN_SVC_SECRET=$SYNMIN_SVC_SECRET
+SYNMIN_TOKEN=$SYNMIN_TOK
+SYNAPSE_BASE=http://synapse:8008
+SYNMIN_BIND=0.0.0.0:8092
+ENVEOF
+  chmod 600 synmin-svc/.env  # holds the synapse-admin token (F2/F4)
+  echo "  synmin-svc/.env rendered (token ${SYNMIN_TOK:0:8}...)"
+else
+  echo "  WARN: no synapse-admin token — synmin-svc disabled (delete/sweep/revoke degraded)"
+fi
+
 say "render gov-bot config (tokens injected — gitignored)"
 mkdir -p gov-bot
 cat > gov-bot/.env <<ENVEOF
@@ -211,12 +238,14 @@ REDNET_ACCESS_URL=http://synapse:8008
 VOUCH_JSONL_PATH=/data/vouch.jsonl
 MINT_SVC_URL=http://mint-svc:8090
 MINT_SVC_SECRET=$MINT_SVC_SECRET
+SYNMIN_SVC_URL=http://synmin-svc:8092
+SYNMIN_SVC_SECRET=$SYNMIN_SVC_SECRET
 ENVEOF
-chmod 600 gov-bot/.env  # holds SYS_TOKEN (synapse-admin) + MINT_SVC_SECRET (F4)
+chmod 600 gov-bot/.env  # holds SYS_TOKEN (PL100, no admin) + service secrets (F4)
 echo "  gov-bot/.env rendered (tokens ${GOV_TOK:0:8}... / ${SYS_TOK:0:8}...)"
 
-say "start gov-bot + mint-svc"
-docker compose --profile governance up -d gov-bot mint-svc
+say "start gov-bot + mint-svc + synmin-svc"
+docker compose --profile governance up -d gov-bot mint-svc synmin-svc
 echo "  Gov bot + mint-svc starting..."
 
 say "VERIFY: bot synced and posted startup notice"
