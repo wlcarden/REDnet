@@ -7,5 +7,5 @@ WORKDIR /app
 RUN apk add --no-cache libqrencode-tools
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY bot.py community.py mint_endpoint.py .
+COPY bot.py community.py mint_endpoint.py admin_client.py .
 CMD ["python3", "-u", "bot.py"]
