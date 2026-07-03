@@ -61,6 +61,28 @@ path are pinned to `ELEMENT_VERSION` (and upstream deprecates customisations in 
 API, which doesn't yet expose component visibility). The Dockerfile greps the built bundle for a
 module-load marker and warns if the customisation wasn't wired.
 
+## Hiding leaky/broken affordances (`hide-affordances.patch`)
+
+Verified against `v1.11.86`: some stock affordances our security model breaks are **hardcoded** in
+their components — neither `config.json` nor the `ComponentVisibility` customisation can hide them, so
+a source patch drops them:
+
+- **Export chat** (`RoomSummaryCard.tsx`) — any member could export a room's **full decrypted history**
+  to a file in one click; a portable seizure/exfil artifact against the retention posture.
+- **Native message Report** (`MessageContextMenu.tsx`) — routes the event + reason to the **homeserver
+  admin** (the party our threat model distrusts) by default; use the coercion-aware `!report` → #gov-bot
+  flow instead.
+- **Add-extensions button** (`RoomSummaryCard.tsx`) — `integrations_ui_url` is empty, so it only
+  dead-ends in a "no manager configured" dialog.
+
+Unlike `integration.patch`, this apply is **FATAL** in the Dockerfile: if it stops applying, the build
+**refuses** rather than silently shipping a client that still exposes Export/Report. CI (`element-build`)
+also `git apply --check`s it against the pinned tag.
+
+⚠️ **Re-anchor per release**: regenerate the diff against the new `ELEMENT_VERSION` (edit the three
+JSX sites, `git diff > hide-affordances.patch`). Not yet covered: the 1:1 header call buttons — hiding
+those must be gated on whether the calls profile is enabled, so they're a separate change.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member
