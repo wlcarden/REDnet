@@ -269,16 +269,77 @@ fi
 # ════════════════════════════════════════════════════════════════════════════════
 say "operator account: ${OPERATOR_USERNAME}"
 
-OPERATOR_PW=$(genpw)
-
-# Register via MAS (deploy.sh controls the password so it can write to credentials file)
-REG_RESULT=$(mas register-user "$OPERATOR_USERNAME" --password "$OPERATOR_PW" --yes --ignore-password-complexity 2>&1)
-if echo "$REG_RESULT" | grep -qi "already exists"; then
-  warn "account already exists — generating a new password"
-  # Set a new password for the existing account
-  mas set-password "$OPERATOR_USERNAME" --password "$OPERATOR_PW" --yes 2>&1 | tail -1
+# The operator sets their OWN password, so no system-generated secret ever has to
+# be written to disk or echoed back — there is nothing to recover from the seizable
+# CORE (bootstrap audit F6). Precedence: REDNET_OPERATOR_PASSWORD env (automation)
+# → interactive prompt → generated fallback (only when non-interactive with no env,
+# e.g. dev/CI, where it is written to the 0600 credentials file as before).
+OPERATOR_PW=""
+PW_SOURCE=""
+if [ -n "${REDNET_OPERATOR_PASSWORD:-}" ]; then
+  OPERATOR_PW="$REDNET_OPERATOR_PASSWORD"; PW_SOURCE="env"
+elif [ -t 0 ]; then
+  echo
+  printf "  ${CYAN}Set a password for your admin account.${NC}\n"
+  printf "  ${DIM}You log in with it. It is never written to disk or shown again.${NC}\n"
+  echo
+  while :; do
+    printf "  Password: "; read -rs OPERATOR_PW; echo
+    printf "  Confirm:  "; read -rs _PW2; echo
+    [ -z "$OPERATOR_PW" ] && { warn "empty password — try again"; continue; }
+    [ "$OPERATOR_PW" != "$_PW2" ] && { warn "passwords didn't match — try again"; continue; }
+    break
+  done
+  unset _PW2
+  PW_SOURCE="operator"
 else
+  OPERATOR_PW=$(genpw); PW_SOURCE="generated"
+  warn "no TTY and no REDNET_OPERATOR_PASSWORD — generated a password (dev/CI only)"
+fi
+
+# An operator-chosen password is complexity-checked (drop --ignore-password-complexity)
+# so a weak choice is caught here, not silently accepted; a generated one keeps the
+# bypass since genpw is already high-entropy.
+register_operator(){
+  if [ "$PW_SOURCE" = operator ]; then
+    mas register-user "$OPERATOR_USERNAME" --password "$OPERATOR_PW" --yes 2>&1
+  else
+    mas register-user "$OPERATOR_USERNAME" --password "$OPERATOR_PW" --yes --ignore-password-complexity 2>&1
+  fi
+}
+set_operator_password(){
+  if [ "$PW_SOURCE" = operator ]; then
+    mas set-password "$OPERATOR_USERNAME" --password "$OPERATOR_PW" --yes 2>&1 | tail -1
+  else
+    mas set-password "$OPERATOR_USERNAME" --password "$OPERATOR_PW" --yes --ignore-password-complexity 2>&1 | tail -1
+  fi
+}
+
+REG_RESULT=$(register_operator)
+# Re-prompt while MAS rejects an operator-chosen password (most often: too weak).
+PW_TRIES=0
+while [ "$PW_SOURCE" = operator ] && ! echo "$REG_RESULT" | grep -qiE 'registered|already exists'; do
+  PW_TRIES=$((PW_TRIES + 1))
+  [ "$PW_TRIES" -ge 5 ] && die "operator registration kept failing — last response: $(echo "$REG_RESULT" | tail -1)"
+  warn "MAS rejected that password (usually too weak for policy):"
+  echo "$REG_RESULT" | tail -2 | sed 's/^/    /'
+  printf "  ${DIM}Use a long passphrase — 4+ random words, or 16+ mixed characters.${NC}\n"
+  while :; do
+    printf "  Password: "; read -rs OPERATOR_PW; echo
+    printf "  Confirm:  "; read -rs _PW2; echo
+    [ -n "$OPERATOR_PW" ] && [ "$OPERATOR_PW" = "$_PW2" ] && break
+    warn "empty or mismatch — try again"
+  done
+  unset _PW2
+  REG_RESULT=$(register_operator)
+done
+if echo "$REG_RESULT" | grep -qi "already exists"; then
+  warn "account exists — setting its password to the one you provided"
+  set_operator_password
+elif echo "$REG_RESULT" | grep -qi "registered"; then
   ok "account created"
+else
+  warn "unexpected MAS response:"; echo "$REG_RESULT" | tail -2 | sed 's/^/    /'
 fi
 
 # Invite to rooms + set power levels via bootstrap-operator.sh
@@ -523,14 +584,18 @@ LOGIN_URL="$PUBLIC_BASE"
 [ "$ROLE" = "single" ] && LOGIN_URL="$ACCESS"
 
 CRED_FILE=".first-run-credentials"
-cat > "$CRED_FILE" <<CREDS
-REDnet first-run credentials
+if [ "$PW_SOURCE" = generated ]; then
+  # Dev/CI fallback only (no TTY, no env password): record the generated one so
+  # the automated run can retrieve it. Interactive/production deploys never hit
+  # this branch, so no operator-chosen secret is ever written to disk.
+  cat > "$CRED_FILE" <<CREDS
+REDnet first-run credentials (dev/CI fallback)
 Generated: $(now_iso)
 DELETE THIS FILE after your first login.
 
 Username:  ${OPERATOR_USERNAME}
 User ID:   ${OPERATOR_ID}
-Password:  ${OPERATOR_PW}
+Password:  ${OPERATOR_PW}   (auto-generated — no operator was at the keyboard)
 Login URL: ${LOGIN_URL}
 
 After login:
@@ -545,8 +610,37 @@ Guides:
   Member guide:            ${PUBLIC_BASE}/member-guide
   Moderator guide:         ${PUBLIC_BASE}/moderator-guide
 CREDS
-chmod 600 "$CRED_FILE"
-ok "credentials → ${CRED_FILE}"
+  chmod 600 "$CRED_FILE"
+  warn "credentials → ${CRED_FILE} — holds a generated password; delete after first login"
+else
+  # Operator set their own password: nothing secret to persist. The file is only
+  # a pointer, so no plaintext credential rests on the seizable CORE (F6).
+  cat > "$CRED_FILE" <<CREDS
+REDnet first-run info
+Generated: $(now_iso)
+
+Username:  ${OPERATOR_USERNAME}
+User ID:   ${OPERATOR_ID}
+Login URL: ${LOGIN_URL}
+Password:  the one you set during deploy — not stored anywhere.
+           Forgot it? Reset it from the CORE:
+           docker compose exec mas mas-cli manage set-password ${OPERATOR_USERNAME}
+
+After login:
+  - Element will show a RECOVERY PASSPHRASE — write it down separately
+  - Your password proves your identity (can be changed later)
+  - The passphrase unlocks your message history (cannot be changed)
+  - You need BOTH
+
+Guides:
+  Operator guide:          ${PUBLIC_BASE}/operator-guide
+  Governance dashboard:    ${PUBLIC_BASE}/governance/
+  Member guide:            ${PUBLIC_BASE}/member-guide
+  Moderator guide:         ${PUBLIC_BASE}/moderator-guide
+CREDS
+  chmod 600 "$CRED_FILE"
+  ok "first-run info → ${CRED_FILE} (no password stored)"
+fi
 
 # ════════════════════════════════════════════════════════════════════════════════
 # POST-DEPLOY SMOKE TEST
@@ -661,16 +755,29 @@ else
   printf "  Login:     ${CYAN}${LOGIN_URL}${NC}\n"
 fi
 printf "  Account:   ${BOLD}${OPERATOR_ID}${NC}  (PL100 admin)\n"
-printf "  Password:  ${BOLD}${OPERATOR_PW}${NC}\n"
+if [ "$PW_SOURCE" = generated ]; then
+  printf "  Password:  ${BOLD}${OPERATOR_PW}${NC}  ${DIM}(generated — dev/CI)${NC}\n"
+elif [ "$PW_SOURCE" = env ]; then
+  printf "  Password:  ${DIM}the one supplied via REDNET_OPERATOR_PASSWORD${NC}\n"
+else
+  printf "  Password:  ${DIM}the one you just set — not stored anywhere${NC}\n"
+fi
 echo
 printf "  ${YELLOW}⚠ TWO SECRETS TO SAVE:${NC}\n"
-printf "    ${BOLD}1.${NC} The password above — log in with it now\n"
+if [ "$PW_SOURCE" = generated ]; then
+  printf "    ${BOLD}1.${NC} The generated password above — log in with it now\n"
+else
+  printf "    ${BOLD}1.${NC} Your password — the one you set (only you know it)\n"
+fi
 printf "    ${BOLD}2.${NC} A ${BOLD}RECOVERY PASSPHRASE${NC} — Element shows it\n"
 printf "       on first login. Write it on paper or put\n"
 printf "       it in a password manager.\n"
 echo
-printf "  Credentials saved to: ${DIM}${CRED_FILE}${NC}\n"
-printf "  ${DIM}(delete after first login)${NC}\n"
+if [ "$PW_SOURCE" = generated ]; then
+  printf "  Credentials saved to: ${DIM}${CRED_FILE}${NC} ${DIM}(delete after first login)${NC}\n"
+else
+  printf "  First-run info: ${DIM}${CRED_FILE}${NC} ${DIM}(no password stored)${NC}\n"
+fi
 echo
 printf "  ${BOLD}NEXT:${NC}\n"
 if $WEB_UNAVAILABLE; then
@@ -696,6 +803,13 @@ if [ "$ROLE" = "core" ]; then
     printf "      ansible-playbook -i inventory.ini site.yml --limit front\n"
     printf "    If already deployed, verify WireGuard + Caddy on the front host.\n"
   fi
+  echo
+fi
+if [ "$ROLE" = "single" ]; then
+  printf "  ${YELLOW}⚠ Single-host mode is NOT production-hardened.${NC}\n"
+  printf "    MAS metadata scrubbing + off-box backups run only on the two-host\n"
+  printf "    Ansible deploy. On this box, account-creation IPs accumulate in MAS\n"
+  printf "    unbounded (F33). For a real at-risk community, deploy two-host.\n"
   echo
 fi
 printf "${BOLD}════════════════════════════════════════════════════${NC}\n"

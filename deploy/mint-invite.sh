@@ -99,7 +99,10 @@ append_local_index(){
 generate_card(){
   local TOKEN="$1" VOUCHER="$2" LABEL="$3"
   local ext="html"; [ "$FORMAT" = "plain" ] && ext="txt"
-  local OUTFILE="${OUTDIR}/invite-${TOKEN}.${ext}"
+  # Name the file by the token HASH, not the token: the filename is not a secret,
+  # so `ls invites/` and any printed path no longer leak a live token (F26).
+  local id; id=$(sha256 "$TOKEN"); id=${id:0:16}
+  local OUTFILE="${OUTDIR}/invite-${id}.${ext}"
   # Shared renderer (also used by the in-client minting endpoint) so both paths
   # emit identical cards. Token reaches only this local file, never Matrix.
   python3 "$(dirname "$0")/render-invite-card.py" --format "$FORMAT" \
@@ -196,13 +199,17 @@ mint_and_record(){
   local card
   card=$(generate_card "$token" "$VOUCHER" "$LABEL")
 
+  # Don't echo the raw token: it lives in the card the operator hands off, so a
+  # stdout copy is redundant residue in scrollback / tmux / CI logs (F34). The
+  # hash prefix is enough to correlate with #vouch-log.
   if $minted; then
-    echo "  minted: $token"
+    echo "  minted: single-use invite (${hash:0:12}…)"
   else
-    echo "  token:  $token (pre-existing)"
+    echo "  token:  pre-existing (${hash:0:12}…)"
   fi
-  echo "  vouch:  $VOUCHER → \"$LABEL\" (${hash:0:12}...)"
+  echo "  vouch:  $VOUCHER → \"$LABEL\""
   echo "  card:   $card"
+  echo "          ⚠ contains a LIVE token — after handing it off: shred -u \"$card\"  (F26)"
   if ! $vouch_ok; then
     echo "  ⚠ PROVENANCE NOT RECORDED: the #vouch-log event did not post." >&2
     echo "    Recorded locally in vouch.jsonl only — the room-visible coercion canary is blind to this invite." >&2

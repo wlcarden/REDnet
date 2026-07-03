@@ -11,6 +11,7 @@
 # Idempotent. Requires ./setup.sh + ./bootstrap-rooms.sh + ./bootstrap-governance.sh first.
 set -uo pipefail
 cd "$(dirname "$0")" || exit 1
+umask 077  # rendered .env files carry live tokens + the MAS-admin secret (F4)
 [ -f rednet.env ] && { set -a; . ./rednet.env; set +a; }
 : "${REDNET_DOMAIN:?}"; : "${REDNET_HTTP_PORT:=8080}"; : "${REDNET_BRAND:=REDnet}"
 . ./lib-access.sh
@@ -192,6 +193,7 @@ MINT_CLIENT_ID=$MINT_CID
 MINT_CLIENT_SECRET=$MINT_CSEC
 MINT_BIND=0.0.0.0:8090
 ENVEOF
+  chmod 600 mint-svc/.env  # re-run may have found it 664; force owner-only (F4)
   echo "  mint-svc/.env rendered (client ${MINT_CID:0:10}...)"
 else
   echo "  WARN: mint client not found in mas/config.yaml — re-run setup.sh (in-client minting disabled)"
@@ -210,6 +212,7 @@ VOUCH_JSONL_PATH=/data/vouch.jsonl
 MINT_SVC_URL=http://mint-svc:8090
 MINT_SVC_SECRET=$MINT_SVC_SECRET
 ENVEOF
+chmod 600 gov-bot/.env  # holds SYS_TOKEN (synapse-admin) + MINT_SVC_SECRET (F4)
 echo "  gov-bot/.env rendered (tokens ${GOV_TOK:0:8}... / ${SYS_TOK:0:8}...)"
 
 say "start gov-bot + mint-svc"
