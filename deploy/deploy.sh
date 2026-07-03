@@ -526,6 +526,47 @@ Covers messaging, encryption, privacy practices, device setup, and what to do if
         || warn "#welcome — member guide message failed"
     fi
 
+    # ── #reference: pinned community guides + how to create rooms/spaces ──
+    # The native Create Room/Space UI is hidden (server-locked), so the request
+    # commands need a durable, always-visible home. Best-effort like the other
+    # informational notices — the guides are also linked in #welcome + the guide.
+    REFERENCE_ID=$(resolve_room reference)
+    if [ -n "$REFERENCE_ID" ]; then
+      GUIDE_BODY="Community guides
+
+▸ Member guide (messaging, encryption, privacy, devices): ${PUBLIC_BASE}/member-guide
+▸ Moderator guide: ${PUBLIC_BASE}/moderator-guide
+▸ Operator guide: ${PUBLIC_BASE}/operator-guide
+
+Rooms & spaces: there is no Create button — every room is set up encrypted and
+linked into the community by an organizer. Request one in your DM with @rednet-gov:
+    !gov request room \"Name\" --why \"purpose\"
+    !gov request space \"Name\" --why \"purpose\"
+Organizers create them directly with !gov room / !gov space."
+
+      GUIDE_HTML="<h3>Community guides</h3>
+<ul>
+<li><a href=\"${PUBLIC_BASE}/member-guide\">Member guide</a> — messaging, encryption, privacy, device setup</li>
+<li><a href=\"${PUBLIC_BASE}/moderator-guide\">Moderator guide</a></li>
+<li><a href=\"${PUBLIC_BASE}/operator-guide\">Operator guide</a></li>
+</ul>
+<p><strong>Rooms &amp; spaces:</strong> there is no Create button — every room is set up encrypted and linked into the community by an organizer. Request one in your DM with <strong>@rednet-gov</strong>:</p>
+<pre>!gov request room \"Name\" --why \"purpose\"
+!gov request space \"Name\" --why \"purpose\"</pre>
+<p>Organizers create them directly with <code>!gov room</code> / <code>!gov space</code>.</p>"
+
+      GUIDE_EID=$(send_msg "$REFERENCE_ID" "m.notice" "$GUIDE_BODY" "$GUIDE_HTML" | jq -r '.event_id // empty' 2>/dev/null)
+      if [ -n "$GUIDE_EID" ]; then
+        curl -s -XPUT "$API_URL/_matrix/client/v3/rooms/$(enc "$REFERENCE_ID")/state/m.room.pinned_events/" \
+          -H "$SAUTH" -H "Content-Type: application/json" \
+          -d "$(jq -n --arg eid "$GUIDE_EID" '{pinned:[$eid]}')" >/dev/null 2>&1 \
+          && ok "#reference — community guides (pinned)" \
+          || ok "#reference — community guides posted (pin failed)"
+      else
+        warn "#reference — guides message send failed"
+      fi
+    fi
+
     # ── update room topics with links ──
 
     COMMUNITY_ID=$(resolve_room community)
