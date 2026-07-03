@@ -51,6 +51,8 @@ from urllib.parse import quote
 
 import requests as http
 
+import admin_client  # leaf module (no bot dependency): calls the isolated admin services
+
 # When run as a script (python3 bot.py) this module is named __main__, so
 # community.py's `import bot` would re-execute this file as a SECOND module
 # and deadlock on the circular import. Alias ourselves under the module name
@@ -177,6 +179,23 @@ def kick_user(room_id, user_id, reason=""):
         timeout=10,
     )
     return "errcode" not in resp.json()
+
+
+def ban_user(room_id, user_id, reason=""):
+    """Ban (not just kick): a ban blocks re-join even from a public room, so a
+    revoked member can't walk straight back in (F11). Best-effort per room — the
+    real terminal control is the MAS account lock; a ban that fails where the bot
+    lacks PL is non-fatal because a locked account can't authenticate anyway."""
+    try:
+        resp = http.post(
+            f"{ACCESS}/_matrix/client/v3/rooms/{enc(room_id)}/ban",
+            headers=SYS_HEADERS,
+            json={"user_id": user_id, "reason": reason},
+            timeout=10,
+        )
+        return "errcode" not in resp.json()
+    except Exception:
+        return False
 
 
 def _md_to_html(text):
@@ -776,17 +795,26 @@ def cmd_revoke(room_id, sender, args):
 
     username = target.split(":")[0].lstrip("@")
 
-    kicked = 0
-    all_rooms = list(ROOM_IDS.values())
-    for rid in all_rooms:
-        if kick_user(rid, target, reason):
-            kicked += 1
+    # Enumerate EVERY room the target is in, not just the static ROOM_IDS (F12).
+    # Authoritative source is the admin API via synmin-svc; union it with the
+    # bot's known rooms + the target's report DM so a dynamically-created room or
+    # the 1:1 report channel isn't left behind even if the admin call is degraded.
+    rooms = set(admin_client.user_rooms(target))
+    rooms.update(ROOM_IDS.values())
+    if target in REPORT_DMS:
+        rooms.add(REPORT_DMS[target])
 
-    # Lock via MAS — the bot can't call mas-cli directly, so we set PL to -1
-    # in all rooms (prevents messaging even if the session persists) and
-    # log the event. Full MAS account lock requires CLI access.
-    for rid in all_rooms:
-        set_power_level(rid, target, -1)
+    # BAN, not kick (F11): a ban blocks re-join even from a public room, so a
+    # coerced/compromised member can't walk straight back into #general.
+    banned = 0
+    for rid in rooms:
+        if ban_user(rid, target, reason):
+            banned += 1
+
+    # Lock the MAS account via mint-svc (F11) — the terminal control: a locked
+    # account cannot authenticate to ANY room, automatically, with no "run
+    # mas-cli by hand" note for the operator to miss.
+    locked = admin_client.lock_account(target)
 
     ts = now_iso()
     revoke_event = {
@@ -796,6 +824,8 @@ def cmd_revoke(room_id, sender, args):
             "account": target,
             "reason": reason,
             "revoked_by": sender,
+            "rooms_banned": banned,
+            "account_locked": locked,
             "timestamp": ts,
         },
     }
@@ -808,16 +838,23 @@ def cmd_revoke(room_id, sender, args):
             "account": target,
             "reason": reason,
             "triggered_by": sender,
+            "rooms_banned": banned,
+            "account_locked": locked,
             "timestamp": ts,
         }
     )
 
+    if locked:
+        lock_line = "MAS account **locked** — login blocked."
+    else:
+        lock_line = (
+            "⚠ **MAS account lock FAILED** — the account can still log in. Retry "
+            f"`!gov revoke`, or lock manually: `mas-cli manage lock-user {username}`."
+        )
     reply(
         room_id,
-        f"**Revoked** `{target}`: kicked from {kicked} room(s), PL set to -1.\n"
-        f"Reason: {reason}\n\n"
-        f"**Note:** Full MAS account lock requires CLI: "
-        f"`docker compose exec -T mas mas-cli manage lock-user {username}`",
+        f"**Revoked** `{target}`: banned from {banned} room(s). {lock_line}\n"
+        f"Reason: {reason}",
     )
 
 

@@ -33,7 +33,10 @@ create_room(){
   if alias_exists "$alias"; then get_alias_id "$alias"; return; fi
   local d="{\"room_alias_name\":\"$alias\",\"name\":\"$name\",\"topic\":\"$topic\",\"preset\":\"public_chat\",\"visibility\":\"private\""
   [ -n "$plover" ] && d="$d,\"power_level_content_override\":$plover"
-  d="$d,\"initial_state\":[{\"type\":\"m.room.encryption\",\"state_key\":\"\",\"content\":{\"algorithm\":\"m.megolm.v1.aes-sha2\"}}$extra]}"
+  # join_rule=knock (F11): overrides the preset's public rule so no one self-joins
+  # by alias. Members are force-joined server-side by auto_join_rooms regardless,
+  # and organizers are invited — both bypass knock, so onboarding is unaffected.
+  d="$d,\"initial_state\":[{\"type\":\"m.room.encryption\",\"state_key\":\"\",\"content\":{\"algorithm\":\"m.megolm.v1.aes-sha2\"}},{\"type\":\"m.room.join_rules\",\"state_key\":\"\",\"content\":{\"join_rule\":\"knock\"}}$extra]}"
   curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$AUTH" -d "$d" | jqpy "d.get('room_id','')"
 }
 # create_room_plain ALIAS NAME TOPIC PL_OVERRIDE_JSON -> echoes room_id (idempotent, NOT encrypted at creation)
@@ -42,7 +45,8 @@ create_room_plain(){
   if alias_exists "$alias"; then get_alias_id "$alias"; return; fi
   local d="{\"room_alias_name\":\"$alias\",\"name\":\"$name\",\"topic\":\"$topic\",\"preset\":\"public_chat\",\"visibility\":\"private\""
   [ -n "$plover" ] && d="$d,\"power_level_content_override\":$plover"
-  d="$d}"
+  # join_rule=knock (F11) — see create_room.
+  d="$d,\"initial_state\":[{\"type\":\"m.room.join_rules\",\"state_key\":\"\",\"content\":{\"join_rule\":\"knock\"}}]}"
   curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$AUTH" -d "$d" | jqpy "d.get('room_id','')"
 }
 enable_e2ee(){  # ROOM_ID : turn on encryption (irreversible)
@@ -59,7 +63,8 @@ create_space(){
   if alias_exists "$1"; then get_alias_id "$1"; return; fi
   curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$AUTH" -d "{
     \"room_alias_name\":\"$1\",\"name\":\"$2\",\"topic\":\"$3\",\"preset\":\"public_chat\",\"visibility\":\"private\",
-    \"creation_content\":{\"type\":\"m.space\"},\"power_level_content_override\":{\"events_default\":50,\"invite\":50}
+    \"creation_content\":{\"type\":\"m.space\"},\"power_level_content_override\":{\"events_default\":50,\"invite\":50},
+    \"initial_state\":[{\"type\":\"m.room.join_rules\",\"state_key\":\"\",\"content\":{\"join_rule\":\"knock\"}}]
   }" | jqpy "d.get('room_id','')"
 }
 link_child(){  # SPACE_ID CHILD_ID [ORDER [SUGGESTED]] : two-way m.space.child / m.space.parent

@@ -328,3 +328,53 @@ class TestInputValidation:
         bot.handle_command("!room:test", "@org:test", "!gov role @user organizer")
         mock_reply.assert_called_once()
         assert "admin" in mock_reply.call_args[0][1].lower()
+
+
+class TestRevokeIsTerminal:
+    """cmd_revoke must ban (not kick) every room the target is in — from the
+    admin API, not just the static set — and lock the MAS account (F11/F12)."""
+
+    def setup_method(self):
+        bot.ROOM_IDS.clear()
+        bot.ROOM_IDS.update({"general": "!g:test", "welcome": "!w:test"})
+        bot.REPORT_DMS.clear()
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot, "ban_user", return_value=True)
+    @patch.object(bot.admin_client, "lock_account", return_value=True)
+    @patch.object(bot.admin_client, "user_rooms", return_value=["!dyn:test", "!g:test"])
+    def test_bans_union_of_rooms_and_locks(
+        self, _ur, m_lock, m_ban, m_append, _send, _reply
+    ):
+        bot.REPORT_DMS["@mole:test"] = "!dm:test"
+        bot.cmd_revoke(
+            "!gov:test", "@op:test", ["@mole:test", "--reason", "compromised"]
+        )
+        # UNION: admin-enumerated (!dyn, !g) + static ROOM_IDS (!g, !w) + report DM (!dm)
+        banned = {c.args[0] for c in m_ban.call_args_list}
+        assert banned == {"!dyn:test", "!g:test", "!w:test", "!dm:test"}
+        m_lock.assert_called_once_with("@mole:test")
+        rec = m_append.call_args[0][0]
+        assert rec["type"] == "revoked"
+        assert rec["account_locked"] is True
+        assert rec["rooms_banned"] == 4
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot, "ban_user", return_value=True)
+    @patch.object(bot.admin_client, "lock_account", return_value=False)
+    @patch.object(bot.admin_client, "user_rooms", return_value=[])
+    def test_lock_failure_is_surfaced_not_hidden(
+        self, _ur, _lock, _ban, m_append, _send, m_reply
+    ):
+        bot.cmd_revoke("!gov:test", "@op:test", ["@mole:test", "--reason", "x"])
+        assert "FAILED" in m_reply.call_args[0][1]
+        assert m_append.call_args[0][0]["account_locked"] is False
+
+    @patch.object(bot, "reply")
+    def test_reason_required(self, m_reply):
+        bot.cmd_revoke("!gov:test", "@op:test", ["@mole:test"])
+        assert "reason" in m_reply.call_args[0][1].lower()
