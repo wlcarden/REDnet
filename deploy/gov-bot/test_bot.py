@@ -378,3 +378,37 @@ class TestRevokeIsTerminal:
     def test_reason_required(self, m_reply):
         bot.cmd_revoke("!gov:test", "@op:test", ["@mole:test"])
         assert "reason" in m_reply.call_args[0][1].lower()
+
+
+class TestRoleManagedRoomsOnly:
+    """cmd_role must not set power levels in rooms outside the managed set — a
+    PL75 organizer could otherwise grant moderator PL server-wide via --rooms (F32)."""
+
+    def setup_method(self):
+        bot.ROOM_IDS.clear()
+        bot.ROOM_IDS.update({"general": "!g:test"})
+
+    @patch.object(
+        bot,
+        "read_vouch_jsonl",
+        return_value=[
+            {"type": "room", "room_id": "!dyn:test"},
+            {"type": "vouch", "token_hash": "x"},
+        ],
+    )
+    def test_managed_set_is_static_plus_created(self, _rv):
+        assert bot.managed_room_ids() == {"!g:test", "!dyn:test"}
+
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot, "invite_user", return_value=True)
+    @patch.object(bot, "set_power_level", return_value=True)
+    @patch.object(bot, "resolve_alias", return_value="!evil:test")
+    @patch.object(bot, "get_power_level", return_value=100)
+    @patch.object(bot, "read_vouch_jsonl", return_value=[])
+    @patch.object(bot, "reply")
+    def test_role_rejects_unmanaged_room(self, m_reply, _rv, _pl, _ra, m_spl, _iv, _av):
+        bot.cmd_role(
+            "!gov:test", "@admin:test", ["@u:test", "moderator", "--rooms", "#evil"]
+        )
+        m_spl.assert_not_called()  # never touched the unmanaged room
+        assert "unmanaged" in m_reply.call_args[0][1].lower()

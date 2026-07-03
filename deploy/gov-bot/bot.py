@@ -250,6 +250,18 @@ def read_vouch_jsonl():
     return records
 
 
+def managed_room_ids():
+    """Room ids the bot governs: the static bootstrap set + every room/space it
+    created (recorded in vouch.jsonl). cmd_role restricts to this so a PL75
+    organizer can't set power levels in arbitrary server rooms resolved from an
+    attacker-supplied alias (F32)."""
+    ids = set(ROOM_IDS.values())
+    for r in read_vouch_jsonl():
+        if r.get("type") in ("room", "space") and r.get("room_id"):
+            ids.add(r["room_id"])
+    return ids
+
+
 def append_vouch_jsonl(record):
     with open(VOUCH_PATH, "a") as f:
         f.write(json.dumps(record, separators=(",", ":")) + "\n")
@@ -753,6 +765,22 @@ def cmd_role(room_id, sender, args):
             rid = ROOM_IDS.get(alias)
             if rid:
                 target_rooms.append((alias, rid))
+
+    # F32: only touch REDnet-managed rooms. --rooms/--space resolve arbitrary
+    # server aliases, so without this a PL75 organizer could grant moderator PL in
+    # any room on the server. The no-flag path already uses the managed set.
+    managed = managed_room_ids()
+    rejected = [a for (a, rid) in target_rooms if rid not in managed]
+    target_rooms = [(a, rid) for (a, rid) in target_rooms if rid in managed]
+    if rejected:
+        reply(
+            room_id,
+            "Refusing to set power levels in unmanaged room(s): "
+            + ", ".join(f"`{a}`" for a in rejected)
+            + ". Role changes are limited to REDnet-managed rooms.",
+        )
+        if not target_rooms:
+            return
 
     ok = 0
     fail = 0
