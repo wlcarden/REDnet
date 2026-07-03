@@ -64,6 +64,15 @@ RUN git apply --whitespace=fix request-room-button.patch \
       && echo "REDnet: request-room-button patch APPLIED" \
    || echo "REDnet WARNING: request-room-button.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the Request button (members use !gov request)."
 
+# 7) gate the 1:1 header call buttons on the calls profile (feature_group_calls).
+#    They render regardless of any config in stock Element, but REDnet has no legacy
+#    1:1 VoIP path (P2P off, no TURN), so with calls off (default) they only dead-end.
+#    Graceful: a non-applying patch just leaves the (inert) buttons visible.
+COPY gate-call-buttons.patch ./gate-call-buttons.patch
+RUN git apply --whitespace=fix gate-call-buttons.patch \
+      && echo "REDnet: gate-call-buttons patch APPLIED" \
+   || echo "REDnet WARNING: gate-call-buttons.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT call-button gating."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json

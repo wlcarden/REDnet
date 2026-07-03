@@ -80,8 +80,17 @@ Unlike `integration.patch`, this apply is **FATAL** in the Dockerfile: if it sto
 also `git apply --check`s it against the pinned tag.
 
 ⚠️ **Re-anchor per release**: regenerate the diff against the new `ELEMENT_VERSION` (edit the three
-JSX sites, `git diff > hide-affordances.patch`). Not yet covered: the 1:1 header call buttons — hiding
-those must be gated on whether the calls profile is enabled, so they're a separate change.
+JSX sites, `git diff > hide-affordances.patch`).
+
+### `gate-call-buttons.patch`
+
+Separate from `hide-affordances` because it's a _conditional_ gate, not a removal. In stock Element the
+1:1 header voice/video buttons render for ≤2-member rooms regardless of any config (the group/video
+feature flags and `UIFeature.voip` don't gate them — `voip` only gates the incoming-call listener).
+REDnet has no legacy 1:1 VoIP path (P2P disabled to prevent IP leak, no TURN), so with calls off
+(default) they only dead-end. This patch wraps the buttons in `RoomHeader.tsx` in the already-present
+`groupCallsEnabled` (`feature_group_calls`), so they hide when calls are off and show when the `calls`
+profile enables them (Element Call). **Graceful** apply; re-anchor per release.
 
 ## Request a room/space button (`RednetRequestRoomDialog.tsx` + `request-room-button.patch`)
 

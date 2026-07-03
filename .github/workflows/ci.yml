@@ -114,12 +114,13 @@ jobs:
           git clone --depth 1 --branch "${{ steps.ver.outputs.version }}" \
             https://github.com/element-hq/element-web.git /tmp/element-web
 
-      - name: Apply patches (integration + hide-affordances + request-room-button)
+      - name: Apply patches (all REDnet soft-fork patches)
         run: |
           cd /tmp/element-web
           git apply --check "${{ github.workspace }}/deploy/element-web/integration.patch"
           git apply --check "${{ github.workspace }}/deploy/element-web/hide-affordances.patch"
           git apply --check "${{ github.workspace }}/deploy/element-web/request-room-button.patch"
+          git apply --check "${{ github.workspace }}/deploy/element-web/gate-call-buttons.patch"
           echo "All patches apply cleanly to ${{ steps.ver.outputs.version }}"
 
       - name: Verify module builds
