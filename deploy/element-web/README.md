@@ -83,6 +83,28 @@ also `git apply --check`s it against the pinned tag.
 JSX sites, `git diff > hide-affordances.patch`). Not yet covered: the 1:1 header call buttons — hiding
 those must be gated on whether the calls profile is enabled, so they're a separate change.
 
+## Request a room/space button (`RednetRequestRoomDialog.tsx` + `request-room-button.patch`)
+
+The **positive** affordance replacing the hidden native creation. A member clicks **Request a room
+or space** in the room-list `+` menu → a dialog collects a name + optional reason + room/space
+choice → the client sends `!gov request room|space "NAME" --why "REASON"` to their DM with
+`@rednet-gov` (the gov bot's `handle_dm_gov` queues it for organizer review). Nothing is created
+client-side; it's a request.
+
+- `src/RednetRequestRoomDialog.tsx` (copied into `src/components/views/dialogs/` by the Dockerfile) —
+  self-contained: `ensureDMExists(@rednet-gov)` + `sendTextMessage`, then an `InfoDialog` confirmation.
+  Hardcoded English (fork ships en only), which also sidesteps Element's compile-time `_t()` key gate.
+- `request-room-button.patch` (RoomListHeader.tsx) — adds the menu item to **both** plus-menu branches
+  (Home tab + active space) and forces `canShowPlusMenu = true` (hiding native creation would otherwise
+  leave the Home menu empty and drop the `+` entirely).
+
+**Graceful** (unlike `hide-affordances.patch`): if the patch stops applying, the build warns and ships
+a working client — members request via the `!gov request` command, which the guides + the pinned
+#reference message document. The Dockerfile greps the bundle for the button label to confirm it wired.
+
+⚠️ **Re-anchor per release**: the `RoomListHeader` plus-menu structure + the dialog's SDK imports
+(`ensureDMExists`, `sendTextMessage`, `Field`) are pinned to `ELEMENT_VERSION`.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member

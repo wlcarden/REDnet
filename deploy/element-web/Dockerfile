@@ -53,6 +53,17 @@ RUN git apply --whitespace=fix hide-affordances.patch \
       && echo "REDnet: hide-affordances patch APPLIED (Export + Report + Add-extensions removed)" \
    || { echo "REDnet FATAL: hide-affordances.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Refusing to build a client that still exposes Export chat / native Report."; exit 1; }
 
+# 6) the POSITIVE affordance replacing native creation: a "Request a room or space"
+#    plus-menu item that opens a dialog and sends `!gov request` to the @rednet-gov DM
+#    (organizer-reviewed). A dialog component + a patch to RoomListHeader. Graceful: if
+#    the patch stops applying, the client still works (members request via the command,
+#    which the guides document) — so warn, don't fail.
+COPY src/RednetRequestRoomDialog.tsx ./src/components/views/dialogs/RednetRequestRoomDialog.tsx
+COPY request-room-button.patch ./request-room-button.patch
+RUN git apply --whitespace=fix request-room-button.patch \
+      && echo "REDnet: request-room-button patch APPLIED" \
+   || echo "REDnet WARNING: request-room-button.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the Request button (members use !gov request)."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -90,6 +101,15 @@ RUN if grep -rqlF 'native room/space creation hidden' webapp/ 2>/dev/null; then 
       echo "REDnet: Create Room/Space UI hidden (ComponentVisibility customisation wired)"; \
     else \
       echo "REDnet WARNING: ComponentVisibility customisation NOT bundled — native Create Room/Space buttons still visible. Check customisations.json + the UIComponent path against ${ELEMENT_VERSION}."; \
+    fi
+
+# Verify the "Request a room or space" affordance bundled — the label is a distinctive
+# hardcoded string webpack keeps only if the patch wired the menu item in (the dialog is
+# tree-shaken out otherwise). If missing, the plus-menu has no Request item.
+RUN if grep -rqlF 'Request a room or space' webapp/ 2>/dev/null; then \
+      echo "REDnet: Request-a-room button bundled"; \
+    else \
+      echo "REDnet WARNING: Request-a-room button NOT bundled — re-anchor request-room-button.patch + check RednetRequestRoomDialog imports against ${ELEMENT_VERSION}."; \
     fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---

@@ -1,0 +1,64 @@
+diff --git a/src/components/views/rooms/RoomListHeader.tsx b/src/components/views/rooms/RoomListHeader.tsx
+index 9ce1d75..d34c49e 100644
+--- a/src/components/views/rooms/RoomListHeader.tsx
++++ b/src/components/views/rooms/RoomListHeader.tsx
+@@ -20,6 +20,8 @@ import { useEventEmitterState, useTypedEventEmitter, useTypedEventEmitterState }
+ import { useFeatureEnabled } from "../../../hooks/useSettings";
+ import { _t } from "../../../languageHandler";
+ import PosthogTrackers from "../../../PosthogTrackers";
++import Modal from "../../../Modal";
++import RednetRequestRoomDialog from "../dialogs/RednetRequestRoomDialog";
+ import { UIComponent } from "../../../settings/UIFeature";
+ import {
+     getMetaSpaceName,
+@@ -150,10 +152,10 @@ const RoomListHeader: React.FC<IProps> = ({ onVisibilityChange }) => {
+     const canAddSubRooms = hasPermissionToAddSpaceChild && canCreateRooms;
+     const canAddSubSpaces = hasPermissionToAddSpaceChild && canCreateSpaces;
+ 
+-    // If the user can't do anything on the plus menu, don't show it. This aims to target the
+-    // plus menu shown on the Home tab primarily: the user has options to use the menu for
+-    // communities and spaces, but is at risk of no options on the Home tab.
+-    const canShowPlusMenu = canCreateRooms || canExploreRooms || canCreateSpaces || activeSpace;
++    // REDnet: native room/space creation is hidden (rednet_room_policy + ComponentVisibility),
++    // which would leave the Home-tab plus-menu empty and hide the "+" entirely. But the
++    // "Request a room or space" item below is ALWAYS available, so force the menu to render.
++    const canShowPlusMenu = true;
+ 
+     let contextMenu: JSX.Element | undefined;
+     if (mainMenuDisplayed && mainMenuHandle.current) {
+@@ -277,6 +279,17 @@ const RoomListHeader: React.FC<IProps> = ({ onVisibilityChange }) => {
+                             <BetaPill />
+                         </IconizedContextMenuOption>
+                     )}
++                    {/* REDnet: the positive affordance replacing native creation. */}
++                    <IconizedContextMenuOption
++                        label="Request a room or space"
++                        iconClassName="mx_RoomListHeader_iconNewRoom"
++                        onClick={(e) => {
++                            e.preventDefault();
++                            e.stopPropagation();
++                            Modal.createDialog(RednetRequestRoomDialog, {});
++                            closePlusMenu();
++                        }}
++                    />
+                 </IconizedContextMenuOptionList>
+             </IconizedContextMenu>
+         );
+@@ -354,6 +367,17 @@ const RoomListHeader: React.FC<IProps> = ({ onVisibilityChange }) => {
+                 <IconizedContextMenuOptionList first>
+                     {newRoomOpts}
+                     {joinRoomOpt}
++                    {/* REDnet: the positive affordance replacing native creation. */}
++                    <IconizedContextMenuOption
++                        label="Request a room or space"
++                        iconClassName="mx_RoomListHeader_iconNewRoom"
++                        onClick={(e) => {
++                            e.preventDefault();
++                            e.stopPropagation();
++                            Modal.createDialog(RednetRequestRoomDialog, {});
++                            closePlusMenu();
++                        }}
++                    />
+                 </IconizedContextMenuOptionList>
+             </IconizedContextMenu>
+         );
