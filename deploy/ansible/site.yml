@@ -52,11 +52,11 @@
     # (proven: an INPUT deny left a published :5432 reachable from the front). Allow ONLY the 4 proxy ports —
     # matched on the ORIGINAL pre-DNAT dport via conntrack so it survives the port rewrite — from the front,
     # and drop all other wg0->container forwarding. A future stray 'wg_core_ip:5432:5432' then fails closed.
-    - name: "DOCKER-USER — scope the wg0 aperture to the 4 proxy ports (the control ufw/INPUT can't provide)"
+    - name: "DOCKER-USER — scope the wg0 aperture to the 5 proxy ports (the control ufw/INPUT can't provide)"
       ansible.builtin.shell: |
         set -e
         iptables -C DOCKER-USER -i wg0 -j DROP 2>/dev/null || iptables -I DOCKER-USER -i wg0 -j DROP
-        for p in 9091 8088 8080 8008; do
+        for p in 9091 8091 8088 8080 8008; do
           iptables -C DOCKER-USER -i wg0 -p tcp -m conntrack --ctorigdstport "$p" -s {{ wg_front_ip }} -j RETURN 2>/dev/null \
             || iptables -I DOCKER-USER -i wg0 -p tcp -m conntrack --ctorigdstport "$p" -s {{ wg_front_ip }} -j RETURN
         done
@@ -71,9 +71,9 @@
     # These ufw INPUT-chain rules scope wg0 traffic destined to the CORE HOST ITSELF (host-bound listeners).
     # Container/proxy ports are DNAT'd (FORWARD) and are governed by the DOCKER-USER aperture above, NOT here —
     # see validate/validate-wg-aperture.sh. Kept as defense-in-depth for any non-container service on wg0.
-    - name: WG-inbound (host) — allow only the 4 proxy ports from the front
+    - name: WG-inbound (host) — allow only the 5 proxy ports from the front
       community.general.ufw: { rule: allow, direction: in, interface: wg0, proto: tcp, from_ip: "{{ wg_front_ip }}", to_port: "{{ item }}" }
-      loop: ["8008", "8080", "8088", "9091"]
+      loop: ["8008", "8080", "8088", "8091", "9091"]
     - name: WG-inbound (host) — deny everything else on wg0
       community.general.ufw: { rule: deny, direction: in, interface: wg0 }
 

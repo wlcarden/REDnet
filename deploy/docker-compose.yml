@@ -150,6 +150,10 @@ services:
     volumes:
       - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
       - ./livekit/livekit.secrets.yaml:/etc/livekit.secrets.yaml:ro
+    # ⚠ These media ports bind 0.0.0.0 BY NECESSITY — WebRTC needs direct public
+    # UDP, so they cannot be loopback-bound (F36). Only enable the `calls` profile
+    # on a DEDICATED public-IP box, never a shared/single-host CORE: while this
+    # profile runs, ~201 UDP + 1 TCP port are internet-reachable and scannable.
     ports:
       - "7881:7881/tcp"
       - "50000-50200:50000-50200/udp"

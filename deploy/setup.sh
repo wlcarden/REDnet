@@ -21,7 +21,18 @@ ACCESS="http://localhost:${REDNET_HTTP_PORT}"   # LOCAL url for the self-check c
 # Advertised PUBLIC base — MAS issuer/public_base + Synapse public_baseurl + the client well-known. MUST be the
 # real https://<domain> in a two-host/production deploy (OIDC issuer + cookie Secure flag); localhost in dev. R2.
 PUBLIC_BASE="${REDNET_PUBLIC_BASE:-$ACCESS}"
-case "$PUBLIC_BASE" in https://*) : ;; *) [ "${REDNET_ROLE:-single}" = core ] && echo "⚠️  REDNET_PUBLIC_BASE is not https:// — set REDNET_PUBLIC_BASE=https://<domain> for production (OIDC/cookie security)";; esac
+# In core (production) mode a non-https PUBLIC_BASE is a hard error, not a warning
+# (F29): it becomes the OIDC issuer + cookie origin, so http:// there ships an
+# insecure auth surface. Dev/single mode keeps the localhost fallback.
+case "$PUBLIC_BASE" in
+  https://*) : ;;
+  *) if [ "${REDNET_ROLE:-single}" = core ]; then
+       echo "REFUSING: REDNET_PUBLIC_BASE='$PUBLIC_BASE' is not https:// in core mode." >&2
+       echo "It is the OIDC issuer + cookie origin — http:// weakens the whole auth surface." >&2
+       echo "Set REDNET_PUBLIC_BASE=https://<domain> in rednet.env and re-run." >&2
+       exit 1
+     fi ;;
+esac
 mkdir -p mas initdb caddy
 
 # Guard destructive re-runs. REDNET_DOMAIN (Synapse server_name, MAS issuer) and
@@ -87,6 +98,9 @@ acct=c.setdefault("account",{})
 acct["password_registration_enabled"]=True
 acct["password_registration_email_required"]=False  # no PII (SPEC §5)
 acct["password_registration_token_required"]=True    # ★ invite-token gate: closed, attributable entry (SPEC §5).
+pw=c.setdefault("passwords",{})
+pw["enabled"]=True
+pw["minimum_complexity"]=3  # ★ pin the zxcvbn strength floor (F37): a MAS default change can't silently weaken it (nor resurrect the "rejected as too weak" UX base.html works around).
 # Organizers mint registration tokens via the MAS admin API / `mas-cli manage`; the append-only mint log is
 # the coercion canary (DESIGN §7/§11). Without this, anyone reaching the front can self-register.
 # Auth branding: the VISUAL rebrand (logo + REDnet accent + reframed "Redeem your invite") is the
@@ -252,6 +266,7 @@ PASS=1
 [ "$WHO" = "@rednetcheck:${REDNET_DOMAIN}" ] || { PASS=0; echo "FAIL: MAS delegation through the front not working"; }
 [ "${EMAILS:-1}" = "0" ] || { PASS=0; echo "FAIL: a PII email exists in MAS (${EMAILS})"; }
 grep -q 'password_registration_token_required: true' mas/config.yaml || { PASS=0; echo "FAIL: OPEN REGISTRATION — invite-token gate not set (SPEC §5); anyone reaching the front could self-register"; }
+grep -q 'minimum_complexity: 3' mas/config.yaml || { PASS=0; echo "FAIL: password strength floor not pinned (F37) — minimum_complexity should be 3"; }
 # behavioral: drive a token-less registration through the front; it must create NO account (SPEC §5 gate).
 # MAS registration is multi-step + CSRF-protected; the token is enforced before account creation, so a
 # token-less attempt cannot complete. (Parallel to the no-PII email assertion above.)
