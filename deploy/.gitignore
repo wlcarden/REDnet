@@ -4,6 +4,10 @@ rednet.env
 rednet.secrets
 mas/config.yaml
 
+# Deploy-state sentinel: records the domain of the first deploy so a re-run with a
+# changed REDNET_DOMAIN is refused (immutable). Local state, not committed.
+.deployed-domain
+
 # Element Web build context is COMMITTED (Dockerfile, template, src/, patch, build.sh, README);
 # only the rendered config (carries the deploy's domain) is generated.
 element-web/config.json

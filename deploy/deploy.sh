@@ -10,8 +10,11 @@
 #   ./deploy.sh --dev --operator alice  # non-interactive dev mode
 #   ./deploy.sh --skip-element       # skip Element Web build (use Element X mobile instead)
 #
-# This is a FRESH-DEPLOY script. setup.sh renders configs and starts the stack from
-# scratch. Do not run against an existing deployment you want to keep.
+# This orchestrates a first deploy, but it is idempotent-ish, NOT a wipe: setup.sh
+# reuses any existing volumes rather than destroying them. REDNET_DOMAIN and the DB
+# password become immutable once the postgres volume exists (a changed re-run is
+# refused with instructions). To start completely fresh, wipe first:
+#   docker compose down -v && rm -f deploy/.env deploy/.deployed-domain
 #
 # Two-host (production) is the default. Single-host requires --dev.
 # You can also set REDNET_ROLE=core in rednet.env for explicit two-host mode.

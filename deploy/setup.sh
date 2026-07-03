@@ -24,15 +24,49 @@ PUBLIC_BASE="${REDNET_PUBLIC_BASE:-$ACCESS}"
 case "$PUBLIC_BASE" in https://*) : ;; *) [ "${REDNET_ROLE:-single}" = core ] && echo "⚠️  REDNET_PUBLIC_BASE is not https:// — set REDNET_PUBLIC_BASE=https://<domain> for production (OIDC/cookie security)";; esac
 mkdir -p mas initdb caddy
 
+# Guard destructive re-runs. REDNET_DOMAIN (Synapse server_name, MAS issuer) and
+# the DB password are baked into the persisted volumes at first deploy and cannot
+# change afterward without wiping. The postgres volume is the "committed" signal:
+# only once it exists do we treat domain + password as immutable. Before it exists
+# (incl. a retry after a failed first run) changing them is still fine.
+PG_VOLUME_EXISTS=false
+docker volume ls --format '{{.Name}}' 2>/dev/null | grep -qE '(^|_)rednet_postgres$' && PG_VOLUME_EXISTS=true
+if $PG_VOLUME_EXISTS && [ -f .deployed-domain ]; then
+  PRIOR_DOMAIN=$(head -1 .deployed-domain)
+  if [ -n "$PRIOR_DOMAIN" ] && [ "$PRIOR_DOMAIN" != "$REDNET_DOMAIN" ]; then
+    echo "REFUSING to re-render: this stack was first deployed as '$PRIOR_DOMAIN'," >&2
+    echo "but rednet.env now says '$REDNET_DOMAIN'. The domain is baked into the" >&2
+    echo "persisted volumes and is immutable (F18). To keep the deployment, restore" >&2
+    echo "REDNET_DOMAIN=$PRIOR_DOMAIN in rednet.env. To start over as '$REDNET_DOMAIN'," >&2
+    echo "wipe first:  docker compose down -v && rm -f .env .deployed-domain   (DESTROYS ALL DATA)" >&2
+    exit 1
+  fi
+fi
+
 say "secrets (.env)"
 PGPW=""; [ -f .env ] && PGPW=$(grep -E '^POSTGRES_PASSWORD=' .env | head -1 | cut -d= -f2-)
-[ -z "$PGPW" ] && PGPW=$(genpw)
+if [ -z "$PGPW" ]; then
+  # The DB password is baked into rednet_postgres at first init. If the volume
+  # exists but .env's password is gone, minting a new one desyncs and Postgres
+  # auth fails with an opaque error (F19). Refuse rather than create a mismatch.
+  if $PG_VOLUME_EXISTS; then
+    echo "rednet_postgres volume exists but POSTGRES_PASSWORD is missing from .env." >&2
+    echo "The volume was initialized with a password that is now unreadable, so a new" >&2
+    echo "one would not match and Postgres auth would fail (F19). Recover the old .env," >&2
+    echo "or wipe and start over:  docker compose down -v && rm -f .env .deployed-domain" >&2
+    exit 1
+  fi
+  PGPW=$(genpw)
+fi
 cat > .env <<EOF
 POSTGRES_PASSWORD=${PGPW}
 REDNET_DOMAIN=${REDNET_DOMAIN}
 REDNET_HTTP_PORT=${REDNET_HTTP_PORT}
 EOF
 chmod 600 .env 2>/dev/null || true
+# Record the domain so a later re-run with a changed REDNET_DOMAIN is caught above.
+printf '%s\n' "$REDNET_DOMAIN" > .deployed-domain
+chmod 600 .deployed-domain 2>/dev/null || true
 echo "POSTGRES_PASSWORD set; REDNET_DOMAIN=${REDNET_DOMAIN}"
 
 say "render MAS config (no-PII, delegated)"
