@@ -448,6 +448,91 @@ def handle_report(room_id, sender, body):
     )
 
 
+def handle_duress(room_id, sender, body):
+    """Handle a `!duress` panic signal arriving in a member's DM room.
+
+    The client's panic control sends this (plaintext) as it wipes the local
+    device; a member can also type it by hand. SELF-LOCK ONLY: it locks the
+    *sender's own* account and nothing else — never a target parsed from the
+    body — so a spoofed or misfired signal can never be turned against another
+    member. The lock is REVERSIBLE (an admin unlocks with `mas-cli manage
+    unlock-user`), unlike `!gov revoke`: duress is a coerced victim to protect,
+    not a compromised account to ban. We deliberately do NOT ban the sender
+    from rooms — a MAS lock already kills every session server-side (all tokens
+    invalidated), which is the actual protection, and preserving the sender's
+    memberships keeps recovery simple once they're safe.
+    """
+    if sender == BOT_USER:
+        return
+    # Route on the `!duress` prefix but fire only on the bare command (mirrors
+    # handle_report's exact-token re-check). A near-miss like "!duressed" no-ops.
+    parts = parse_args(body)
+    if not parts or parts[0] != "!duress":
+        return
+
+    # Lock the SENDER's own account — never a target from the message body.
+    locked = admin_client.lock_account(sender)
+    ts = now_iso()
+
+    # Durable, append-only evidence FIRST: the coercion canary survives even if
+    # the Matrix sends below fail.
+    append_vouch_jsonl(
+        {
+            "type": "duress",
+            "account": sender,
+            "account_locked": locked,
+            "timestamp": ts,
+        }
+    )
+
+    # Alert organizers in #gov-bot with a distinct msgtype so it reads apart from
+    # a compromised-member report — this is a self-triggered panic, not an
+    # accusation. On lock failure, hand organizers the manual fallback (as
+    # cmd_revoke does) so a human can lock the account immediately.
+    if GOV_BOT_ROOM_ID:
+        if locked:
+            alert_line = (
+                f"🚨 DURESS: {sender} triggered the panic control — "
+                f"account LOCKED at {ts}."
+            )
+        else:
+            username = sender.split(":")[0].lstrip("@")
+            alert_line = (
+                f"🚨 DURESS: {sender} triggered the panic control at {ts}, but the "
+                f"automatic lock FAILED — lock manually NOW: "
+                f"`mas-cli manage lock-user {username}`."
+            )
+        alert_body = {
+            "msgtype": "org.rednet.alert.duress",
+            "body": alert_line,
+            "org.rednet.alert.duress": {
+                "account": sender,
+                "account_locked": locked,
+                "timestamp": ts,
+            },
+        }
+        send_message(GOV_BOT_ROOM_ID, alert_line, extra=alert_body, headers=BOT_HEADERS)
+
+    # Best-effort DM reply. Under a full panic the sender's sessions are already
+    # dead (locked) and the device is wiping, so this may never render — but a
+    # by-hand `!duress` with no client wipe should still get calm confirmation.
+    if locked:
+        reply(
+            room_id,
+            "Panic acknowledged. Your account is **locked** and every session has "
+            "been signed out. Organizers have been alerted.\n\n"
+            "When you're safe, an organizer can restore access — your rooms and "
+            "history are preserved.",
+        )
+    else:
+        reply(
+            room_id,
+            "Panic received and organizers alerted, but the automatic account lock "
+            "did not go through — an organizer will lock it manually. If you can, "
+            "sign out of your other sessions from a safe device.",
+        )
+
+
 def parse_args(text):
     try:
         return shlex.split(text)
@@ -1083,6 +1168,15 @@ def sync_loop():
                     sender = event.get("sender", "")
                     if rid == GOV_BOT_ROOM_ID and body.startswith("!gov"):
                         handle_command(rid, sender, body)
+                    elif (
+                        body.startswith("!duress")
+                        and sender != BOT_USER
+                        and rid in REPORT_DMS.values()
+                    ):
+                        # Panic control: a member's own !duress in their DM
+                        # self-locks their account + alerts organizers. DM-only
+                        # + self-lock so it can't be weaponized (duress-control).
+                        handle_duress(rid, sender, body)
                     elif body.startswith("!report"):
                         handle_report(rid, sender, body)
                     elif (

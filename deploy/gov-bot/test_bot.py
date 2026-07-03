@@ -380,6 +380,85 @@ class TestRevokeIsTerminal:
         assert "reason" in m_reply.call_args[0][1].lower()
 
 
+class TestDuress:
+    """handle_duress: a member's own !duress panic self-locks their account,
+    alerts organizers with a distinct msgtype, writes a durable canary record,
+    and is honest when the lock fails — and can NEVER lock anyone but the
+    sender, no matter what the message body says (duress-control)."""
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot, "GOV_BOT_ROOM_ID", "!gov:test")
+    @patch.object(bot.admin_client, "lock_account", return_value=True)
+    def test_locks_sender_alerts_and_logs(self, m_lock, m_append, m_send, m_reply):
+        bot.handle_duress("!dm:test", "@alice:test", "!duress")
+        # locks the SENDER's own account
+        m_lock.assert_called_once_with("@alice:test")
+        # alerts organizers in #gov-bot with the distinct duress msgtype
+        assert m_send.call_args.args[0] == "!gov:test"
+        extra = m_send.call_args.kwargs["extra"]
+        assert extra["msgtype"] == "org.rednet.alert.duress"
+        assert extra["org.rednet.alert.duress"]["account"] == "@alice:test"
+        assert extra["org.rednet.alert.duress"]["account_locked"] is True
+        # durable, append-only evidence record
+        rec = m_append.call_args[0][0]
+        assert rec["type"] == "duress"
+        assert rec["account"] == "@alice:test"
+        assert rec["account_locked"] is True
+        # calm confirmation to the DM
+        assert "locked" in m_reply.call_args[0][1].lower()
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot, "GOV_BOT_ROOM_ID", "!gov:test")
+    @patch.object(bot.admin_client, "lock_account", return_value=True)
+    def test_self_lock_only_ignores_body_target(self, m_lock, *_):
+        # Even if the body names another user, only the SENDER is ever locked.
+        # This is the anti-weaponization invariant: a spoofed/misfired signal
+        # can lock nobody but whoever sent it.
+        bot.handle_duress("!dm:test", "@alice:test", "!duress @victim:test")
+        m_lock.assert_called_once_with("@alice:test")
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot, "GOV_BOT_ROOM_ID", "!gov:test")
+    @patch.object(bot.admin_client, "lock_account", return_value=False)
+    def test_lock_failure_surfaced_with_manual_fallback(
+        self, _lock, m_append, m_send, m_reply
+    ):
+        bot.handle_duress("!dm:test", "@bob:test", "!duress")
+        # the organizer alert carries the manual mas-cli fallback, not a false OK
+        alert = m_send.call_args.args[1]
+        assert "FAILED" in alert
+        assert "mas-cli manage lock-user bob" in alert
+        # the canary record is honest about the failure
+        assert m_append.call_args[0][0]["account_locked"] is False
+        # the DM reply doesn't falsely claim the account is locked
+        assert "did not go through" in m_reply.call_args[0][1]
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot.admin_client, "lock_account")
+    def test_ignores_bot_own_message(self, m_lock, m_append, m_send, m_reply):
+        bot.handle_duress("!dm:test", bot.BOT_USER, "!duress")
+        m_lock.assert_not_called()
+        m_append.assert_not_called()
+
+    @patch.object(bot, "reply")
+    @patch.object(bot, "send_message")
+    @patch.object(bot, "append_vouch_jsonl")
+    @patch.object(bot.admin_client, "lock_account")
+    def test_near_miss_token_no_op(self, m_lock, m_append, m_send, m_reply):
+        # "!duressed" routes on the prefix but must NOT fire the self-lock.
+        bot.handle_duress("!dm:test", "@alice:test", "!duressed by accident")
+        m_lock.assert_not_called()
+        m_append.assert_not_called()
+
+
 class TestRoleManagedRoomsOnly:
     """cmd_role must not set power levels in rooms outside the managed set — a
     PL75 organizer could otherwise grant moderator PL server-wide via --rooms (F32)."""
