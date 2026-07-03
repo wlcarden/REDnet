@@ -127,6 +127,44 @@ PL75 because it's reversible in spirit (nothing is destroyed); `delete` is
 PL100 because purge is forensic-relevant — on seizure, an archived room is
 evidence, a purged one is not (client-side copies notwithstanding).
 
+## Duress / panic control (`!duress`)
+
+For the coercion threat model — a member's device is seized, they're forced to
+unlock it, or they're pressured to hand over their account. One action both
+protects them and signals the community.
+
+**Wire signal.** The client's panic control (a confirm-gated "wipe this device"
+item; the client side ships separately) sends `!duress` as plaintext to the
+member's bot DM — the same non-E2EE channel as `!report`, so the bot can read
+it — then wipes the local device. A member can also type `!duress` by hand.
+
+**Self-lock is the invariant.** `handle_duress` locks the **sender's own**
+account and nothing else — never a target parsed from the message — and only
+fires in a member's bot DM. So a spoofed or misfired signal can lock nobody but
+whoever sent it; it can't be aimed at another member.
+
+**What the bot does**, in order (durable evidence first, so the canary survives
+even if the Matrix sends fail):
+
+1. Locks the account via `mint-svc` (`admin_client.lock_account`) — the same
+   reversible MAS lock as revoke, which kills **every** session server-side the
+   moment it lands. Unlike revoke it does **not** ban the member from rooms:
+   they're a victim to protect, not a compromised account to purge, and keeping
+   their memberships intact makes recovery trivial once they're safe.
+2. Appends `{type:"duress", account, account_locked, timestamp}` to
+   `vouch.jsonl` — the append-only coercion-canary record.
+3. Posts an `org.rednet.alert.duress` message into `#gov-bot`. If the automatic
+   lock **failed**, the alert says so and carries the manual fallback
+   (`mas-cli manage lock-user <username>`) — it never claims a lock that didn't
+   happen.
+
+**Recovery.** The lock is reversible: once the member is safe, an organizer runs
+`mas-cli manage unlock-user <username>` and they log back in with their password
+
+- recovery passphrase — rooms and history preserved. (This is why duress locks
+  rather than deactivates: mistakes made under coercion must be undoable, and the
+  locked account retains its evidence.)
+
 ## Invite minting (in-client + CLI)
 
 Two paths mint attributed, single-use, 7-day invite tokens; both preserve the
