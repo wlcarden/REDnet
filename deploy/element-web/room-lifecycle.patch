@@ -1,0 +1,21 @@
+diff --git a/src/components/views/context_menus/RoomGeneralContextMenu.tsx b/src/components/views/context_menus/RoomGeneralContextMenu.tsx
+index 714f97e..ca3cd86 100644
+--- a/src/components/views/context_menus/RoomGeneralContextMenu.tsx
++++ b/src/components/views/context_menus/RoomGeneralContextMenu.tsx
+@@ -33,6 +33,7 @@ import { ButtonEvent } from "../elements/AccessibleButton";
+ import { shouldShowComponent } from "../../../customisations/helpers/UIComponents";
+ import { UIComponent } from "../../../settings/UIFeature";
+ import { DeveloperToolsOption } from "./DeveloperToolsOption";
++import RednetRoomLifecycleOptions from "./RednetRoomLifecycleOptions";
+ import { useSettingValue } from "../../../hooks/useSettings";
+ 
+ export interface RoomGeneralContextMenuProps extends IContextMenuProps {
+@@ -303,6 +304,8 @@ export const RoomGeneralContextMenu: React.FC<RoomGeneralContextMenuProps> = ({
+                 {developerToolsOption}
+             </IconizedContextMenuOptionList>
+             <IconizedContextMenuOptionList red>{leaveOption}</IconizedContextMenuOptionList>
++            {/* REDnet: organizer/admin room lifecycle (archive/delete). */}
++            <RednetRoomLifecycleOptions room={room} onFinished={onFinished} />
+         </IconizedContextMenu>
+     );
+ };
