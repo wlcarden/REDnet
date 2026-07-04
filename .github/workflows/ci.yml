@@ -185,12 +185,19 @@ jobs:
       - name: Build the Element image (applies patches, compiles components, runs sentinels)
         run: |
           set -o pipefail
-          docker build -t rednet-element-ci . 2>&1 | tee /tmp/element-build.log
+          docker build --progress=plain -t rednet-element-ci . 2>&1 | tee /tmp/element-build.log
 
       - name: Fail on any unbundled REDnet patch or component
         run: |
-          if grep -E "REDnet WARNING|REDnet XXX|REDnet FATAL" /tmp/element-build.log; then
-            echo "::error::A REDnet soft-fork patch or component did not apply/bundle (see matches above)."
+          # A compile error already fails the build step above (pipefail). This catches the
+          # graceful cases: a patch that applied-but-didn't-bundle echoes "REDnet WARNING/XXX".
+          # But buildkit also prints each RUN's command TEXT, which contains those strings as
+          # literals in the un-taken else-branches — so match only echoed OUTPUT by excluding the
+          # command-definition lines (they carry `RUN `, `echo "`, or `||`).
+          hits=$(grep -E "REDnet (WARNING|XXX)" /tmp/element-build.log | grep -vE 'RUN |echo "|\|\|' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::A REDnet soft-fork patch or component did not apply/bundle:"
+            echo "$hits"
             exit 1
           fi
           echo "All REDnet patches applied and all soft-fork components bundled."
