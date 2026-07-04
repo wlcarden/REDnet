@@ -236,6 +236,9 @@ RUN if grep -rqlF 'keeps you safer here' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Vouched by' webapp/ 2>/dev/null; then \
       echo "REDnet: vouch provenance bundled"; \
     else echo "REDnet WARNING: vouch provenance NOT bundled — re-anchor vouch-provenance.patch + check RednetVouchProvenance imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Confirm vouch' webapp/ 2>/dev/null; then \
+      echo "REDnet: confirm-vouch action bundled"; \
+    else echo "REDnet WARNING: confirm-vouch NOT bundled — check RednetMemberGovDialog + RednetVouchProvenance edits against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4
