@@ -101,6 +101,9 @@ COPY src/RednetGovernanceButton.tsx ./src/components/views/spaces/RednetGovernan
 COPY src/RednetRequestsDialog.tsx ./src/components/views/dialogs/RednetRequestsDialog.tsx
 # ...and the invite dialog it can open from the same governance menu.
 COPY src/RednetInviteDialog.tsx ./src/components/views/dialogs/RednetInviteDialog.tsx
+# ...plus the organizer create-room/space + add-member-to-room dialogs (same menu).
+COPY src/RednetCreateRoomDialog.tsx ./src/components/views/dialogs/RednetCreateRoomDialog.tsx
+COPY src/RednetInviteToRoomDialog.tsx ./src/components/views/dialogs/RednetInviteToRoomDialog.tsx
 COPY role-labels.patch ./role-labels.patch
 COPY retention-indicator.patch ./retention-indicator.patch
 COPY governance-nav.patch ./governance-nav.patch
@@ -243,6 +246,12 @@ RUN if grep -rqlF 'Pending requests' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Invite someone' webapp/ 2>/dev/null; then \
       echo "REDnet: invite dialog bundled"; \
     else echo "REDnet WARNING: invite dialog NOT bundled — check RednetInviteDialog + RednetGovernanceButton menu against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Create a room or space' webapp/ 2>/dev/null; then \
+      echo "REDnet: create-room dialog bundled"; \
+    else echo "REDnet WARNING: create-room dialog NOT bundled — check RednetCreateRoomDialog + RednetGovernanceButton menu against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Add a member to a room' webapp/ 2>/dev/null; then \
+      echo "REDnet: invite-to-room dialog bundled"; \
+    else echo "REDnet WARNING: invite-to-room dialog NOT bundled — check RednetInviteToRoomDialog + RednetGovernanceButton menu against ${ELEMENT_VERSION}."; fi
 RUN if grep -rqlF 'Governance dashboard' webapp/ 2>/dev/null; then \
       echo "REDnet: governance nav button bundled"; \
     else echo "REDnet WARNING: governance button NOT bundled — re-anchor governance-nav.patch + check RednetGovernanceButton imports against ${ELEMENT_VERSION}."; fi

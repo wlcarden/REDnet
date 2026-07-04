@@ -29,6 +29,8 @@ import Modal from "../../../Modal";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
 import RednetRequestsDialog from "../dialogs/RednetRequestsDialog";
 import RednetInviteDialog from "../dialogs/RednetInviteDialog";
+import RednetCreateRoomDialog from "../dialogs/RednetCreateRoomDialog";
+import RednetInviteToRoomDialog from "../dialogs/RednetInviteToRoomDialog";
 
 function isOrganizer(): boolean {
   const cli = MatrixClientPeg.get();
@@ -84,6 +86,24 @@ export default function RednetGovernanceButton(): JSX.Element | null {
               e.stopPropagation();
               closeMenu();
               Modal.createDialog(RednetInviteDialog, {});
+            }}
+          />
+          <IconizedContextMenuOption
+            label="Create room or space"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+              Modal.createDialog(RednetCreateRoomDialog, {});
+            }}
+          />
+          <IconizedContextMenuOption
+            label="Add a member to a room"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+              Modal.createDialog(RednetInviteToRoomDialog, {});
             }}
           />
         </IconizedContextMenuOptionList>
