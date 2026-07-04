@@ -1,0 +1,21 @@
+diff --git a/src/components/views/rooms/RoomHeader.tsx b/src/components/views/rooms/RoomHeader.tsx
+index c2642ea..be01deb 100644
+--- a/src/components/views/rooms/RoomHeader.tsx
++++ b/src/components/views/rooms/RoomHeader.tsx
+@@ -31,6 +31,7 @@ import { getPlatformCallTypeProps, useRoomCall } from "../../../hooks/room/useRo
+ import { useRoomThreadNotifications } from "../../../hooks/room/useRoomThreadNotifications";
+ import { useGlobalNotificationState } from "../../../hooks/useGlobalNotificationState";
+ import SdkConfig from "../../../SdkConfig";
++import RednetRetentionPill from "./RednetRetentionPill";
+ import { useFeatureEnabled } from "../../../hooks/useSettings";
+ import { useEncryptionStatus } from "../../../hooks/useEncryptionStatus";
+ import { E2EStatus } from "../../../utils/ShieldUtils";
+@@ -307,6 +308,8 @@ export default function RoomHeader({
+                                     />
+                                 </Tooltip>
+                             )}
++                            {/* REDnet: retention window - how long messages last here. */}
++                            <RednetRetentionPill room={room} />
+                         </BodyText>
+                     </Box>
+                 </button>
