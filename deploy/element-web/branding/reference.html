@@ -19,7 +19,6 @@
   .lede { color: #8B8D98; font-size: 15px; max-width: 60ch; }
   .section { background: #16181B; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px 24px; margin-top: 18px; }
   .section-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 12px; }
-  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #62646C; margin: 18px 0 8px; }
   p { margin-bottom: 12px; }
   ul { list-style: none; }
   li { padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
@@ -30,8 +29,8 @@
   code { font-family: 'SF Mono','Fira Code','JetBrains Mono',monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 6px; color: #ECEDEE; }
   .callout { border-radius: 0 10px 10px 0; padding: 14px 16px; margin: 14px 0; color: #C4C7C9; font-size: 14px; }
   .callout strong { color: #ECEDEE; font-weight: 600; }
-  .callout-green { background: rgba(48,164,108,0.08); border-left: 3px solid #30A46C; }
   .callout-amber { background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; }
+  .callout-red { background: rgba(229,72,77,0.10); border-left: 3px solid #E5484D; }
   .callout-blue { background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; }
   .placeholder { color: #62646C; font-style: italic; }
   footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); color: #62646C; font-size: 12px; }
@@ -43,74 +42,73 @@
     <div class="brand"><b>RED</b>net</div>
     <h1>Reference</h1>
     <p class="lede">
-      Durable information that must outlast chat. Messages in rooms auto-delete;
-      this page does not — it's the one place to keep hotlines, safety plans,
-      meeting points, and trusted contacts.
+      Durable, public-safe information — crisis lines, legal and mutual-aid
+      resources, and general guidance. This page does not auto-delete, so it's the
+      place for things worth keeping that are safe for anyone to see.
     </p>
   </header>
 
-  <div class="callout callout-green">
-    <strong>This page is permanent.</strong> Unlike chat rooms — which delete
-    messages after a few days, and can hold nothing longer than 30 days by design —
-    this reference stays until an organizer changes it. Bookmark it.
+  <div class="callout callout-amber">
+    <strong>This page is public.</strong> Anyone with the link can read it — it is
+    not encrypted and not members-only. Put only durable information that is
+    <strong>safe to be public</strong> here. Keep anything sensitive — exact meeting
+    points, individual contacts, your community's specific plans — in chat instead,
+    where it's members-only and auto-deletes.
   </div>
 
   <!-- ============================================================
        OPERATORS: edit this file to fill in your community's details.
-       It lives at deploy/element-web/branding/reference.html and is served
-       live at /reference — no rebuild needed, just edit and save.
-       Replace every "Add ..." placeholder below. Keep it short and current.
+       It lives at deploy/element-web/branding/reference.html and is served live at
+       /reference — no rebuild needed, just edit and save.
+       RULE OF THUMB: if it would help an adversary who found this URL, it does NOT
+       belong here — put it in chat. Public hotlines, org links, and generic guidance
+       are fine. Exact locations, personal contacts, and operational plans are not.
        ============================================================ -->
 
   <div class="section">
-    <div class="section-title">Emergency hotlines</div>
+    <div class="section-title">Crisis &amp; support lines</div>
+    <p class="v">Public, always-available lines. Safe to list here because they're already public.</p>
     <ul>
-      <li><span class="k">Add a 24/7 crisis or safety line</span> — <span class="v placeholder">name + number</span></li>
-      <li><span class="k">Add a legal-aid or bail line</span> — <span class="v placeholder">name + number</span></li>
-      <li><span class="k">Add a medical / harm-reduction line</span> — <span class="v placeholder">name + number</span></li>
+      <li><span class="k">Add a public crisis / safety line</span> — <span class="v placeholder">name + number</span></li>
+      <li><span class="k">Add a legal-aid or bail line</span> — <span class="v placeholder">org name + number</span></li>
+      <li><span class="k">Add a medical / harm-reduction line</span> — <span class="v placeholder">org name + number</span></li>
     </ul>
   </div>
 
   <div class="section">
-    <div class="section-title">Safety plans</div>
+    <div class="section-title">Legal &amp; mutual-aid resources</div>
+    <ul>
+      <li><span class="k">Add a legal-observer / know-your-rights org</span> — <span class="v placeholder">name + link</span></li>
+      <li><span class="k">Add local mutual-aid / clinics / shelters</span> — <span class="v placeholder">public orgs + links</span></li>
+      <li><span class="k">Add a press / documentation resource</span> — <span class="v placeholder">org + link</span></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">General safety guidance</div>
     <p class="placeholder">
-      Add your community's agreed plans: what to do if someone is detained, if a
-      device is seized, if a meeting is compromised, or if someone goes missing.
-      Keep each plan to a few clear steps.
+      Add durable, non-specific guidance that's safe to be public — e.g. general
+      know-your-rights basics, what to do if stopped, how to reach a legal observer.
+      Keep it generic; anything specific to your community goes in chat.
     </p>
-    <div class="callout callout-amber">
+    <div class="callout callout-red">
       <strong>Under duress?</strong> Your avatar menu has <strong>Panic — wipe this
       device</strong>: it wipes this device and locks your account (reversible). See
       the <a href="/safety">safety guide</a>.
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Meeting points</div>
-    <ul>
-      <li><span class="k">Add a primary meeting point</span> — <span class="v placeholder">where + when</span></li>
-      <li><span class="k">Add a fallback / regroup point</span> — <span class="v placeholder">where + when</span></li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Trusted contacts &amp; resources</div>
-    <ul>
-      <li><span class="k">Add a legal observer / lawyer</span> — <span class="v placeholder">name + how to reach</span></li>
-      <li><span class="k">Add a press / documentation contact</span> — <span class="v placeholder">name + how to reach</span></li>
-      <li><span class="k">Add local resources</span> — <span class="v placeholder">clinics, shelters, mutual aid</span></li>
-    </ul>
-  </div>
-
   <div class="callout callout-blue">
-    Something here out of date, or need to add a resource? Ask an organizer — they
-    keep this page current. Day-to-day discussion still happens in the chat rooms;
-    only durable, must-not-be-lost information belongs here.
+    <strong>Where do meeting points and plans go?</strong> In chat — your community's
+    rooms are members-only and encrypted. Sensitive, operational details are meant to
+    roll off after a few days (that's the point: a seized server reveals little). Share
+    them in the relevant room and re-share when they change. This page is only for the
+    durable, public-safe things above.
   </div>
 
   <footer>
-    RED<b style="color:#E5484D">net</b> · Reference · This page is served from a file
-    your organizers maintain; it is not chat and does not auto-delete.
+    RED<b style="color:#E5484D">net</b> · Reference · Public, permanent, organizer-maintained.
+    Not chat, not private — keep sensitive details out.
   </footer>
 </div>
 </body>
