@@ -1,0 +1,29 @@
+diff --git a/src/components/structures/UserMenu.tsx b/src/components/structures/UserMenu.tsx
+--- a/src/components/structures/UserMenu.tsx
++++ b/src/components/structures/UserMenu.tsx
+@@ -20,6 +20,7 @@
+ import FeedbackDialog from "../views/dialogs/FeedbackDialog";
+ import Modal from "../../Modal";
+ import LogoutDialog, { shouldShowLogoutDialog } from "../views/dialogs/LogoutDialog";
++import RednetPanicDialog from "../views/dialogs/RednetPanicDialog";
+ import SettingsStore from "../../settings/SettingsStore";
+ import { findHighContrastTheme, getCustomTheme, isHighContrastTheme } from "../../theme";
+ import { RovingAccessibleButton } from "../../accessibility/RovingTabIndex";
+@@ -367,5 +368,17 @@
+                     label={_t("action|sign_out")}
+                     onClick={this.onSignOutClick}
+                 />
++                {/* REDnet: coercion/duress control — see RednetPanicDialog (!duress -> self-lock + wipe). */}
++                <IconizedContextMenuOption
++                    className="mx_IconizedContextMenu_option_red"
++                    iconClassName="mx_UserMenu_iconSignOut"
++                    label="Panic — wipe this device"
++                    onClick={(e) => {
++                        e.preventDefault();
++                        e.stopPropagation();
++                        Modal.createDialog(RednetPanicDialog, {});
++                        this.setState({ contextMenuPosition: null });
++                    }}
++                />
+             </IconizedContextMenuOptionList>
+         );

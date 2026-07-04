@@ -121,6 +121,7 @@ jobs:
           git apply --check "${{ github.workspace }}/deploy/element-web/hide-affordances.patch"
           git apply --check "${{ github.workspace }}/deploy/element-web/request-room-button.patch"
           git apply --check "${{ github.workspace }}/deploy/element-web/gate-call-buttons.patch"
+          git apply --check "${{ github.workspace }}/deploy/element-web/panic-button.patch"
           echo "All patches apply cleanly to ${{ steps.ver.outputs.version }}"
 
       - name: Verify module builds
