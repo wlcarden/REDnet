@@ -73,6 +73,19 @@ RUN git apply --whitespace=fix gate-call-buttons.patch \
       && echo "REDnet: gate-call-buttons patch APPLIED" \
    || echo "REDnet WARNING: gate-call-buttons.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT call-button gating."
 
+# 8) the coercion/duress control: a confirm-gated "Panic — wipe this device" item
+#    in the user menu that sends `!duress` to the @rednet-gov DM (the gov bot
+#    self-locks the sender's account + alerts organizers) and then fully signs out
+#    and clears the local store (crypto keys + session). A dialog component + a
+#    patch to UserMenu. Graceful: if the patch stops applying, the client still
+#    works — a member can type `!duress` in their gov-bot DM by hand — so warn,
+#    don't fail.
+COPY src/RednetPanicDialog.tsx ./src/components/views/dialogs/RednetPanicDialog.tsx
+COPY panic-button.patch ./panic-button.patch
+RUN git apply --whitespace=fix panic-button.patch \
+      && echo "REDnet: panic-button patch APPLIED" \
+   || echo "REDnet WARNING: panic-button.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the panic menu item (members use !duress by hand)."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -119,6 +132,16 @@ RUN if grep -rqlF 'Request a room or space' webapp/ 2>/dev/null; then \
       echo "REDnet: Request-a-room button bundled"; \
     else \
       echo "REDnet WARNING: Request-a-room button NOT bundled — re-anchor request-room-button.patch + check RednetRequestRoomDialog imports against ${ELEMENT_VERSION}."; \
+    fi
+
+# Verify the panic/duress control bundled — 'wipe this device' is a distinctive
+# hardcoded string (ASCII, so no em-dash re-encoding risk) that webpack keeps only
+# if the patch wired the menu item in (the dialog is tree-shaken out otherwise).
+# If missing, the user menu has no Panic item (members fall back to typing !duress).
+RUN if grep -rqlF 'wipe this device' webapp/ 2>/dev/null; then \
+      echo "REDnet: Panic/duress control bundled"; \
+    else \
+      echo "REDnet WARNING: Panic control NOT bundled — re-anchor panic-button.patch + check RednetPanicDialog imports against ${ELEMENT_VERSION}."; \
     fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---

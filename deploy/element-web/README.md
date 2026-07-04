@@ -114,6 +114,34 @@ a working client — members request via the `!gov request` command, which the g
 ⚠️ **Re-anchor per release**: the `RoomListHeader` plus-menu structure + the dialog's SDK imports
 (`ensureDMExists`, `sendTextMessage`, `Field`) are pinned to `ELEMENT_VERSION`.
 
+## Duress / panic control (`RednetPanicDialog.tsx` + `panic-button.patch`)
+
+The coercion control (server side is COMMUNITY-MANAGEMENT.md "Duress / panic control"). A
+member whose device is seized, force-unlocked, or who is pressured to hand over their
+account hits one confirm-gated **Panic — wipe this device** item in the user menu, which:
+
+1. sends `!duress` (plaintext) to their `@rednet-gov` DM — the gov bot's `handle_duress`
+   self-locks the **sender's own** account (a reversible MAS lock that kills every session)
+   and alerts organizers; then
+2. dispatches Element's `logout`, which runs `onLoggedOut()` →
+   `clearStorage({ deleteEverything: true })`: the crypto store (`clearStores`),
+   `localStorage`, `sessionStorage` and the session token are all wiped, returning the device
+   to a blank login.
+
+- `src/RednetPanicDialog.tsx` (copied into `src/components/views/dialogs/`) — self-contained.
+  **The wipe must not be gated on the signal**: under duress the network may be cut, so the
+  send is best-effort and time-bounded (`SIGNAL_TIMEOUT_MS`), and the logout always runs. It
+  dispatches `logout` **directly** to skip Element's "back up your keys first" warning — a
+  panic wipe wants the data gone, not preserved.
+- `panic-button.patch` (`UserMenu.tsx`) — adds the red menu item next to Sign out and imports
+  the dialog. **Graceful** apply: if it stops applying, the client still works (a member can
+  type `!duress` in their gov-bot DM by hand, which the guides document). The Dockerfile greps
+  the built bundle for `wipe this device` to confirm it wired.
+
+⚠️ **Re-anchor per release**: the `UserMenu` option list + the dialog's SDK imports
+(`ensureDMExists`, `sendTextMessage`, `defaultDispatcher`, and the `logout` action's
+`clearStorage` behaviour) are pinned to `ELEMENT_VERSION`.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member

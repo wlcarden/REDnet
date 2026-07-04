@@ -490,6 +490,31 @@
       periodic scan creates one automatically.
     </p>
 
+    <div class="section-label">Duress / panic alerts</div>
+    <p>
+      If a member triggers the panic control (avatar menu &rarr;
+      <strong>Panic &mdash; wipe this device</strong>, or <code>!duress</code>
+      in their bot DM), the bot posts an <code>org.rednet.alert.duress</code>
+      message to <code>#gov-bot</code> and <strong>auto-locks that member's own
+      account</strong> &mdash; every session is signed out server-side. It is
+      self-triggered, not an accusation: assume the member is under coercion
+      (device seized, or being forced to unlock it).
+    </p>
+    <p>
+      <strong>Responding:</strong> reach the member out-of-band, through the
+      channel the person who invited them used (text, call, in person) &mdash;
+      not over Matrix, which they may no longer control. Once you have confirmed
+      they are safe, restore access:
+    </p>
+    <div class="cmd"><span class="comment"># Reverse a duress/panic lock once the member is safe:</span>
+mas-cli manage unlock-user <span class="string">username</span></div>
+    <p>
+      The lock is reversible and keeps the account, its rooms and history &mdash;
+      the member just logs back in with their password and recovery passphrase.
+      If the alert says the automatic lock <strong>FAILED</strong>, run the
+      <code>mas-cli manage lock-user</code> command it prints, immediately.
+    </p>
+
     <div class="section-label">Dashboard integration</div>
     <p>
       The <a href="/governance/" style="color:#3E93DE;">governance dashboard</a>
