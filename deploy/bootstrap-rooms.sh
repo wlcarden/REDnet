@@ -49,6 +49,16 @@ create_room_plain(){
   d="$d,\"initial_state\":[{\"type\":\"m.room.join_rules\",\"state_key\":\"\",\"content\":{\"join_rule\":\"knock\"}}]}"
   curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$AUTH" -d "$d" | jqpy "d.get('room_id','')"
 }
+# ensure_retention ROOM_ID DAYS : set a per-room m.room.retention max_lifetime. Idempotent (PUT),
+# so re-running the bootstrap fixes ALREADY-created rooms. A room with NO policy inherits the
+# server default (REDNET_RETENTION_DAYS, ~7d) and gets purged — durable rooms need this to reach
+# the server's allowed_lifetime_max ceiling (30d). Nothing persists past that ceiling by design.
+ensure_retention(){
+  [ -n "$1" ] || return 0
+  local ms=$(( $2 * 86400000 ))
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.room.retention/" \
+    -H "$AUTH" -H "Content-Type: application/json" -d "{\"max_lifetime\":$ms}" >/dev/null
+}
 enable_e2ee(){  # ROOM_ID : turn on encryption (irreversible)
   curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.room.encryption/" \
     -H "$AUTH" -d '{"algorithm":"m.megolm.v1.aes-sha2"}' >/dev/null
@@ -107,6 +117,9 @@ ANNOUNCE=$(create_room announcements "Announcements" "Organizer updates. Read-on
 REFERENCE=$(create_room reference   "Reference"     "Durable info that outlasts chat retention: hotlines, safety plans, meeting points, contacts. Pin anything worth keeping."  '{"events_default":50}' "")
 GENERAL=$(create_room general       "General"       "Open discussion. Auto-deletes after retention window — move anything durable to #reference."  ""  "")
 for r in WELCOME ANNOUNCE REFERENCE GENERAL; do printf '  #%s -> %s\n' "$(echo "$r" | tr A-Z a-z)" "${!r:-ERR}"; done
+# #welcome holds the pinned security primer — keep it the full 30d (the server ceiling), not the
+# ~7d chat default, so the primer doesn't roll off. (It also lives in home.html + the guides.)
+ensure_retention "$WELCOME" 30
 
 say "lock widget registration to admin-only (PL 100)"
 # Widgets are enabled in config.json but only the system account (PL 100) should be able

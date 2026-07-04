@@ -44,15 +44,28 @@ create_private_room(){
   curl -s -XPOST "$ACCESS/_matrix/client/v3/createRoom" -H "$AUTH" -H "Content-Type: application/json" -d "$body" | jqpy "d.get('room_id','')"
 }
 
+# ensure_retention ROOM_ID DAYS : set a per-room m.room.retention max_lifetime (idempotent PUT,
+# fixes existing rooms on re-run). Durable rooms need this to reach the server's 30d ceiling;
+# without a policy they inherit the ~7d default and purge. Permanent audit trail is vouch.jsonl.
+ensure_retention(){
+  [ -n "$1" ] || return 0
+  local ms=$(( $2 * 86400000 ))
+  curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.room.retention/" \
+    -H "$AUTH" -H "Content-Type: application/json" -d "{\"max_lifetime\":$ms}" >/dev/null
+}
+
 say "#vouch-log (append-only audit trail)"
 # events_default:50 = only organizers (PL50+) can post; invite:50 = only organizers can invite.
-# No retention override — vouch records must persist indefinitely.
+# The canonical PERMANENT audit trail is vouch.jsonl (an on-disk file, immune to Matrix
+# retention). This room is a human-readable mirror; it's kept at the server's max window (30d,
+# set below) — the anti-forensic ceiling means no room can persist longer than that.
 VOUCH_LOG=$(create_private_room vouch-log \
   "${REDNET_BRAND} — Vouch Log" \
-  "Append-only audit trail: vouches, claims, role changes, revocations. Retention-exempt — do not delete events." \
+  "Human-readable mirror of the audit trail (vouches, claims, role changes, revocations). The permanent record is vouch.jsonl; this room keeps ~30 days." \
   '{"events_default":50,"invite":50,"kick":50,"ban":50,"state_default":50}' \
   "")
 echo "  #vouch-log -> ${VOUCH_LOG:-ERR}"
+ensure_retention "$VOUCH_LOG" 30
 
 say "#governance (organizer coordination)"
 GOVERNANCE=$(create_private_room governance \
@@ -61,6 +74,7 @@ GOVERNANCE=$(create_private_room governance \
   '{"invite":50,"kick":50,"ban":50,"state_default":50}' \
   "")
 echo "  #governance -> ${GOVERNANCE:-ERR}"
+ensure_retention "$GOVERNANCE" 30
 
 say "lock widget registration to admin-only (PL 100)"
 lock_widget_pl(){
