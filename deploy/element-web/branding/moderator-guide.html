@@ -82,6 +82,20 @@
     background: rgba(48,164,108,0.08); border-left: 3px solid #30A46C; color: #C4C7C9;
   }
 
+  /* --- Command blocks --- */
+  .cmd {
+    background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px 14px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12px; line-height: 1.7; color: #ECEDEE;
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow-x: auto; margin-bottom: 12px;
+    white-space: pre; word-break: break-all;
+  }
+  .cmd:last-child { margin-bottom: 0; }
+  .cmd .comment { color: #62646C; }
+  .cmd .flag { color: #3E93DE; }
+  .cmd .string { color: #E5A536; }
+
   /* --- Inline code --- */
   code {
     font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;

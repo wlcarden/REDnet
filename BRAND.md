@@ -47,11 +47,16 @@ The wordmark splits the name: **RED** in `#E5484D`, **net** in `#8B8D98` (dark) 
 
 ### Semantic
 
-| Token    | Value     | Use                        |
-| -------- | --------- | -------------------------- |
-| Secure   | `#30A46C` | Verified, encryption OK    |
-| Caution  | `#E5A536` | Warnings, exposure notices |
-| Critical | `#FF6369` | Errors, failed states      |
+| Token    | Value     | Use                                                      |
+| -------- | --------- | -------------------------------------------------------- |
+| Secure   | `#30A46C` | Verified, encryption OK                                  |
+| Caution  | `#E5A536` | Warnings, exposure notices                               |
+| Critical | `#FF6369` | Errors, failed states                                    |
+| Info     | `#3E93DE` | Neutral informational callouts, doc links, command flags |
+
+Info is a **non-alarming** accent — used for "good to know" callouts and doc
+cross-links, distinct from the semantic alarms (critical/caution) and from brand
+red. Keep it low-saturation in use (tinted backgrounds + left borders, not fills).
 
 ## Typography
 
@@ -85,7 +90,8 @@ Monospace stack for passphrases and code: `'SF Mono', 'Fira Code', 'Cascadia Cod
    shadows, rounded illustrations, or decorative textures.
 
 2. **Calm until it matters.** Neutral surfaces dominate. Red appears for brand, actions,
-   and real danger. Green for verified state. Amber for exposure warnings.
+   and real danger. Green for verified state. Amber for exposure warnings. Blue for
+   neutral informational notes (never for alarm).
 
 3. **Two steps to the room list.** Every screen earns its existence. No wizards,
    intermediate states, or confirmation chains between login and the conversation.
