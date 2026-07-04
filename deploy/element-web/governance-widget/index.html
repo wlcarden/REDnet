@@ -509,7 +509,7 @@
     <div class="header-brand"><span class="r">RED</span><span class="g">net</span></div>
     <div class="header-sub">Governance</div>
     <div class="header-spacer"></div>
-    <a class="header-help" href="/operator-guide#governance" title="Bot commands go in #gov-bot. Full reference in the operator guide.">Guide ↗</a>
+    <a class="header-help" href="/operator-guide#governance" title="Most actions are one-click in the app — Manage member, right-click Report, the Governance menu. #gov-bot commands are the fallback. Full reference in the operator guide.">Guide ↗</a>
   </div>
 
   <div class="status-bar" id="status-bar">
@@ -635,11 +635,12 @@
     <div class="action-bar">
       <button class="action-btn" onclick="copyCmd('!gov audit')">Run full audit</button>
       <button class="action-btn warn" onclick="copyCmd('!gov report @USER --detail &quot;REASON&quot;')">Report compromised</button>
-      <button class="action-btn confirm" onclick="copyCmd('!gov confirm @USER')">Confirm vouch</button>
     </div>
     <div style="font-size:10px;color:var(--text-dim);margin-top:6px">
-      Copies command to clipboard — paste in <strong>#gov-bot</strong> to execute.
-      Replace @USER with the actual username.
+      These copy a governance command to paste in <strong>#gov-bot</strong> — a fallback.
+      Confirming vouches, setting roles, and revoking are now one click on a member's
+      profile (<strong>Manage member</strong>), and messages report via right-click →
+      <strong>Report to organizers</strong> in the app.
     </div>
   </div>
 
