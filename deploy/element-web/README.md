@@ -224,6 +224,26 @@ lowest-priority Part-B item.
 
 **Graceful** apply. ⚠️ **Re-anchor per release** with `RoomAdminToolsContainer`'s render block.
 
+## First-run onboarding checklist (`RednetOnboardingDialog.tsx` + `onboarding-checklist.patch`)
+
+The safety basics a new member needs — save your passphrase, kill lock-screen previews, keep
+your identity out of chat, know the retention window — as a one-time in-app modal after login,
+instead of only a gov-bot chat message that scrolls away.
+
+- `RednetOnboardingDialog.tsx` copied into `src/components/views/dialogs/`; the patch adds a
+  trigger at the end of `MatrixChat.onShowPostLoginScreen`, shown **once per device** via a
+  `rednet_onboarding_seen` localStorage flag (set before the modal opens, so a reload mid-dialog
+  can't re-show it).
+- **Deliberately SEPARATE from `integration.patch`** — that patch drives the recovery-critical
+  silent-onboarding crypto bootstrap (in `postLoginSetup`), where a re-anchor mistake breaks
+  N=1 / new-device recovery. This checklist patches a _different_ method (`onShowPostLoginScreen`)
+  with a non-overlapping import anchor (after `import Modal`, far from integration.patch's import
+  hunk), so it can never affect crypto setup. **Verified** to `git apply` cleanly to **both** the
+  pristine and the integration-patched tree.
+
+**Graceful** apply (onboarding is unaffected if it stops applying). ⚠️ **Re-anchor per release**
+with `onShowPostLoginScreen`.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member

@@ -131,6 +131,18 @@ RUN git apply --whitespace=fix member-gov-actions.patch \
       && echo "REDnet: member-gov-actions patch APPLIED" \
    || echo "REDnet WARNING: member-gov-actions.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the Manage-member button (organizers use !gov in #gov-bot)."
 
+# 12) first-run onboarding checklist: a one-time in-app safety modal after login
+#     (save passphrase, kill lock-screen previews, keep identity out of chat, know
+#     retention). A dialog + a MatrixChat patch on onShowPostLoginScreen (shown once
+#     via a localStorage flag). DELIBERATELY SEPARATE from integration.patch (the
+#     recovery-critical silent-onboarding hook) — verified to compose with it.
+#     Graceful: onboarding is unaffected if this patch stops applying.
+COPY src/RednetOnboardingDialog.tsx ./src/components/views/dialogs/RednetOnboardingDialog.tsx
+COPY onboarding-checklist.patch ./onboarding-checklist.patch
+RUN git apply --whitespace=fix onboarding-checklist.patch \
+      && echo "REDnet: onboarding-checklist patch APPLIED" \
+   || echo "REDnet WARNING: onboarding-checklist.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the first-run checklist."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -206,6 +218,9 @@ RUN if grep -rqlF 'Report to organizers' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Manage member' webapp/ 2>/dev/null; then \
       echo "REDnet: member-gov-actions bundled"; \
     else echo "REDnet WARNING: member-gov-actions NOT bundled — re-anchor member-gov-actions.patch + check RednetMemberGovDialog imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'keeps you safer here' webapp/ 2>/dev/null; then \
+      echo "REDnet: onboarding checklist bundled"; \
+    else echo "REDnet WARNING: onboarding checklist NOT bundled — re-anchor onboarding-checklist.patch + check RednetOnboardingDialog imports against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4

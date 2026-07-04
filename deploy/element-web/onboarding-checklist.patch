@@ -1,0 +1,27 @@
+diff --git a/src/components/structures/MatrixChat.tsx b/src/components/structures/MatrixChat.tsx
+index 80a648b..e51bad9 100644
+--- a/src/components/structures/MatrixChat.tsx
++++ b/src/components/structures/MatrixChat.tsx
+@@ -38,6 +38,7 @@ import SdkConfig, { ConfigOptions } from "../../SdkConfig";
+ import dis from "../../dispatcher/dispatcher";
+ import Notifier from "../../Notifier";
+ import Modal from "../../Modal";
++import RednetOnboardingDialog from "../views/dialogs/RednetOnboardingDialog";
+ import { showRoomInviteDialog, showStartChatInviteDialog } from "../../RoomInvite";
+ import * as Rooms from "../../Rooms";
+ import * as Lifecycle from "../../Lifecycle";
+@@ -1421,6 +1422,14 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
+                 });
+             }
+         }
++
++        // REDnet: first-run safety checklist, shown once per device as an in-app
++        // modal (instead of only a gov-bot chat message). Set the flag BEFORE opening
++        // so a reload mid-dialog can't re-show it. Separate from integration.patch.
++        if (!localStorage.getItem("rednet_onboarding_seen")) {
++            localStorage.setItem("rednet_onboarding_seen", "1");
++            Modal.createDialog(RednetOnboardingDialog, {});
++        }
+     }
+ 
+     private initPosthogAnalyticsToast(): void {
