@@ -1,0 +1,29 @@
+diff --git a/src/components/views/context_menus/MessageContextMenu.tsx b/src/components/views/context_menus/MessageContextMenu.tsx
+index d574965..59e7af9 100644
+--- a/src/components/views/context_menus/MessageContextMenu.tsx
++++ b/src/components/views/context_menus/MessageContextMenu.tsx
+@@ -25,6 +25,7 @@ import { MatrixClientPeg } from "../../../MatrixClientPeg";
+ import dis from "../../../dispatcher/dispatcher";
+ import { _t } from "../../../languageHandler";
+ import Modal from "../../../Modal";
++import RednetReportDialog from "../dialogs/RednetReportDialog";
+ import Resend from "../../../Resend";
+ import SettingsStore from "../../../settings/SettingsStore";
+ import { isUrlPermitted } from "../../../HtmlUtils";
+@@ -659,6 +660,16 @@ export default class MessageContextMenu extends React.Component<IProps, IState>
+                 {endPollButton}
+                 {forwardButton}
+                 {permalinkButton}
++                {/* REDnet: report this message to organizers (the coercion-aware
++                    !report -> #gov-bot flow that replaces the removed native Report). */}
++                <IconizedContextMenuOption
++                    iconClassName="mx_MessageContextMenu_iconReport"
++                    label="Report to organizers"
++                    onClick={() => {
++                        Modal.createDialog(RednetReportDialog, { mxEvent: this.props.mxEvent });
++                        this.closeMenu();
++                    }}
++                />
+                 {reportEventButton}
+                 {externalURLButton}
+                 {jumpToRelatedEventButton}

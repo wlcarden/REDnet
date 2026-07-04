@@ -187,6 +187,26 @@ it in `SpacePanel.tsx` next to `QuickSettingsButton`.
 (`SdkConfig`, `MatrixClientPeg`, `room.currentState.getStateEvents`) are pinned to
 `ELEMENT_VERSION`.
 
+## Report to organizers (`RednetReportDialog.tsx` + `report-to-organizers.patch`)
+
+The **positive counterpart** to removing native Report (`hide-affordances.patch`): native
+Report POSTs the event + reason to the homeserver admin — the party our threat model distrusts.
+This replaces it with a right-click **Report to organizers** on any message → a dialog (shows
+the sender + a reason field) that sends `!report @sender --detail "<reason> [message <id> in
+<room>]"` to the member's DM with `@rednet-gov` (the gov bot's `handle_report` alerts organizers
+in #gov-bot). Available to **every** member (unlike the organizer-only member actions) — it's
+the member safety tool; the reported user is never notified.
+
+- `RednetReportDialog.tsx` copied into `src/components/views/dialogs/`; the patch adds the
+  `MessageContextMenu.tsx` menu item.
+- **Composes with `hide-affordances.patch`**, which also edits `MessageContextMenu.tsx` (it
+  blanks the native Report _definition_; this adds an item to `commonItemsList`). The hunks
+  don't overlap — verified to `git apply` cleanly to **both** the pristine and the
+  hide-affordances-patched tree, so CI (independent per-patch `--check`) and the Dockerfile
+  (sequential apply, hide-affordances first) both work.
+
+**Graceful** apply. ⚠️ **Re-anchor per release** with the `MessageContextMenu` option list.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member
