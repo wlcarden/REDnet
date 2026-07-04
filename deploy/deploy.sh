@@ -526,12 +526,13 @@ Covers messaging, encryption, privacy practices, device setup, and what to do if
         || warn "#welcome — member guide message failed"
     fi
 
-    # ── #reference: pinned community guides + how to create rooms/spaces ──
+    # ── #welcome: pinned community guides + how to create rooms/spaces ──
     # The native Create Room/Space UI is hidden (server-locked), so the request
-    # commands need a durable, always-visible home. Best-effort like the other
-    # informational notices — the guides are also linked in #welcome + the guide.
-    REFERENCE_ID=$(resolve_room reference)
-    if [ -n "$REFERENCE_ID" ]; then
+    # commands need a durable, always-visible home. Pinned in #welcome (where members
+    # land) now that #reference is retired; the guides are also linked in #welcome's
+    # topic + the home page. Best-effort.
+    GUIDE_PIN_ID=$(resolve_room welcome)
+    if [ -n "$GUIDE_PIN_ID" ]; then
       GUIDE_BODY="Community guides
 
 ▸ Member guide (messaging, encryption, privacy, devices): ${PUBLIC_BASE}/member-guide
@@ -555,15 +556,15 @@ Organizers create them directly with !gov room / !gov space."
 !gov request space \"Name\" --why \"purpose\"</pre>
 <p>Organizers create them directly with <code>!gov room</code> / <code>!gov space</code>.</p>"
 
-      GUIDE_EID=$(send_msg "$REFERENCE_ID" "m.notice" "$GUIDE_BODY" "$GUIDE_HTML" | jq -r '.event_id // empty' 2>/dev/null)
+      GUIDE_EID=$(send_msg "$GUIDE_PIN_ID" "m.notice" "$GUIDE_BODY" "$GUIDE_HTML" | jq -r '.event_id // empty' 2>/dev/null)
       if [ -n "$GUIDE_EID" ]; then
-        curl -s -XPUT "$API_URL/_matrix/client/v3/rooms/$(enc "$REFERENCE_ID")/state/m.room.pinned_events/" \
+        curl -s -XPUT "$API_URL/_matrix/client/v3/rooms/$(enc "$GUIDE_PIN_ID")/state/m.room.pinned_events/" \
           -H "$SAUTH" -H "Content-Type: application/json" \
           -d "$(jq -n --arg eid "$GUIDE_EID" '{pinned:[$eid]}')" >/dev/null 2>&1 \
-          && ok "#reference — community guides (pinned)" \
-          || ok "#reference — community guides posted (pin failed)"
+          && ok "#welcome — community guides (pinned)" \
+          || ok "#welcome — community guides posted (pin failed)"
       else
-        warn "#reference — guides message send failed"
+        warn "#welcome — guides message send failed"
       fi
     fi
 
@@ -583,14 +584,9 @@ Organizers create them directly with !gov room / !gov space."
       "Organizer updates. Read-only for members — moderators and above can post." \
       && ok "#announcements topic updated"
 
-    REFERENCE_ID=$(resolve_room reference)
-    [ -n "$REFERENCE_ID" ] && update_topic "$REFERENCE_ID" \
-      "Durable info that outlasts chat retention: hotlines, safety plans, meeting points, contacts. Pin anything worth keeping." \
-      && ok "#reference topic updated"
-
     GENERAL_ID=$(resolve_room general)
     [ -n "$GENERAL_ID" ] && update_topic "$GENERAL_ID" \
-      "Open discussion. Auto-deletes after retention window — move anything durable to #reference." \
+      "Open discussion. Auto-deletes after the retention window — keep durable info on the /reference page." \
       && ok "#general topic updated"
 
     [ -n "$GOVERNANCE_ID" ] && update_topic "$GOVERNANCE_ID" \
@@ -741,7 +737,7 @@ op_room_check(){
 SMOKE_TOK=$(mas issue-compatibility-token rednet-system SMOKE 2>/dev/null | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 if [ -n "$SMOKE_TOK" ]; then
   SAUTH="Authorization: Bearer $SMOKE_TOK"
-  for room in community welcome announcements reference general governance vouch-log gov-bot; do
+  for room in community welcome announcements general governance vouch-log gov-bot; do
     smoke_check "#$room" "$room"
   done
 
@@ -764,7 +760,7 @@ if [ -n "$SMOKE_TOK" ]; then
   # Operator provisioning: the exact incident class the old check missed (operator
   # created but missing from rooms / lacking PL) now counts against the smoke test
   # instead of a single #community warn that always fired on a healthy deploy.
-  for room in community welcome announcements reference general governance vouch-log gov-bot; do
+  for room in community welcome announcements general governance vouch-log gov-bot; do
     op_room_check "$room"
   done
 

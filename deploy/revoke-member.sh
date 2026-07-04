@@ -96,7 +96,7 @@ revoke_one(){
   # room (F11). The MAS lock above is the terminal control; bans force-remove any
   # live session and prevent re-entry in the rooms we can reach.
   local COMMUNITY_ROOMS
-  COMMUNITY_ROOMS=(community welcome announcements reference general governance vouch-log)
+  COMMUNITY_ROOMS=(community welcome announcements general governance vouch-log)
 
   # Also check vouch.jsonl for compartment memberships
   if [ -f vouch.jsonl ]; then

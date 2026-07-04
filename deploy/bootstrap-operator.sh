@@ -137,7 +137,7 @@ fi
 
 # --- 2. Invite to community rooms ---
 say "invite to community rooms"
-COMMUNITY_ROOMS=(community welcome announcements reference general)
+COMMUNITY_ROOMS=(community welcome announcements general)
 for alias in "${COMMUNITY_ROOMS[@]}"; do
   rid=$(resolve_room "$alias")
   if [ -z "$rid" ]; then
@@ -168,7 +168,7 @@ done
 
 # --- 4. Set power levels ---
 say "set power levels (${ROLE} = PL${PL})"
-ALL_ROOMS=(community welcome announcements reference general organizing vouch-log governance gov-bot)
+ALL_ROOMS=(community welcome announcements general organizing vouch-log governance gov-bot)
 for alias in "${ALL_ROOMS[@]}"; do
   rid=$(resolve_room "$alias")
   if [ -z "$rid" ]; then

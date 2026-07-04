@@ -71,7 +71,7 @@ DRILL_DIR="/tmp/rednet-drill-$(date +%s)"
 mkdir -p "$DRILL_DIR"
 
 PRE_ROOMS=()
-for alias in community welcome announcements reference general governance vouch-log gov-bot; do
+for alias in community welcome announcements general governance vouch-log gov-bot; do
   RID=$(resolve_alias "$PRE_TOK" "$alias")
   if [ -n "$RID" ]; then
     PRE_ROOMS+=("$alias=$RID")
