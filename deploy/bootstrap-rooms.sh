@@ -102,7 +102,7 @@ set_topic(){  # ROOM_ID TEXT : python builds the JSON so emoji/quotes/newlines a
     | curl -s -XPUT "$ACCESS/_matrix/client/v3/rooms/$(enc "$1")/state/m.room.topic/" -H "$AUTH" -d @- >/dev/null
 }
 
-PRIMER="🔒 End-to-end encrypted — the server cannot read your messages. 👁 But it CAN see WHO you talk to and WHEN. Keep real names, locations, and plans out of chat. 🔑 Save your recovery passphrase somewhere safe and offline — it is the only way back in on a new device. 📵 Turn off lock screen notification previews (Settings > Notifications). 🧹 Chat auto-deletes after a few days; durable info lives in #reference."
+PRIMER="🔒 End-to-end encrypted — the server cannot read your messages. 👁 But it CAN see WHO you talk to and WHEN. Keep real names, locations, and plans out of chat. 🔑 Save your recovery passphrase somewhere safe and offline — it is the only way back in on a new device. 📵 Turn off lock screen notification previews (Settings > Notifications). 🧹 Chat auto-deletes after a few days; durable info lives on the /reference page."
 
 say "space: $REDNET_BRAND"
 SPACE_ID=$(create_space community "$REDNET_BRAND" "Encrypted organizing space.")
@@ -113,10 +113,10 @@ say "channels"
 # The notice stays readable forever (no key management); all subsequent messages are encrypted.
 WELCOME=$(create_room_plain welcome  "Welcome"       "Start here — read the pinned message, save your recovery passphrase."  "")
 ANNOUNCE=$(create_room announcements "Announcements" "Organizer updates. Read-only for members — moderators and above can post."  '{"events_default":50}' "")
-# Reference: write-locked, NO retention (genuinely durable — hotlines/safety-plans/meeting-points stay until redacted)
-REFERENCE=$(create_room reference   "Reference"     "Durable info that outlasts chat retention: hotlines, safety plans, meeting points, contacts. Pin anything worth keeping."  '{"events_default":50}' "")
-GENERAL=$(create_room general       "General"       "Open discussion. Auto-deletes after retention window — move anything durable to #reference."  ""  "")
-for r in WELCOME ANNOUNCE REFERENCE GENERAL; do printf '  #%s -> %s\n' "$(echo "$r" | tr A-Z a-z)" "${!r:-ERR}"; done
+# Durable reference (hotlines, safety plans, meeting points) is the permanent static /reference
+# page — served from a bind-mounted file (immune to Matrix retention), not a room. See caddy/Caddyfile.
+GENERAL=$(create_room general       "General"       "Open discussion. Auto-deletes after the retention window — keep durable info on the /reference page."  ""  "")
+for r in WELCOME ANNOUNCE GENERAL; do printf '  #%s -> %s\n' "$(echo "$r" | tr A-Z a-z)" "${!r:-ERR}"; done
 # #welcome holds the pinned security primer — keep it the full 30d (the server ceiling), not the
 # ~7d chat default, so the primer doesn't roll off. (It also lives in home.html + the guides.)
 ensure_retention "$WELCOME" 30
@@ -124,7 +124,7 @@ ensure_retention "$WELCOME" 30
 say "lock widget registration to admin-only (PL 100)"
 # Widgets are enabled in config.json but only the system account (PL 100) should be able
 # to register them. This prevents any moderator from adding arbitrary widget URLs.
-for c in "$SPACE_ID" "$WELCOME" "$ANNOUNCE" "$REFERENCE" "$GENERAL"; do
+for c in "$SPACE_ID" "$WELCOME" "$ANNOUNCE" "$GENERAL"; do
   [ -n "$c" ] && lock_widget_pl "$c"
 done
 echo "  im.vector.modular.widgets -> PL 100 in all rooms"
@@ -134,7 +134,6 @@ say "wire channels into the space (ordered) + put the security primer on #welcom
 [ -n "$WELCOME" ]   && link_child "$SPACE_ID" "$WELCOME"   "a" true
 [ -n "$GENERAL" ]   && link_child "$SPACE_ID" "$GENERAL"   "b" true
 [ -n "$ANNOUNCE" ]  && link_child "$SPACE_ID" "$ANNOUNCE"  "c" true
-[ -n "$REFERENCE" ] && link_child "$SPACE_ID" "$REFERENCE" "d" true
 if [ -n "$WELCOME" ]; then
   set_topic "$WELCOME" "$PRIMER" && echo "  #welcome topic = security primer"
   WELCOME_MSG="Welcome to ${REDNET_BRAND}. This is your community's secure space.
@@ -142,7 +141,7 @@ if [ -n "$WELCOME" ]; then
 🔒 Your messages are end-to-end encrypted — the server cannot read them.
 👁 The server CAN see who you talk to and when — keep real names and locations out of chat.
 🔑 Your recovery passphrase is the only way to get back in on a new device. Keep it safe and offline.
-🧹 Chat messages auto-delete after a few days. Durable info lives in #reference.
+🧹 Chat messages auto-delete after a few days. Durable info lives on the /reference page.
 
 PROTECT YOURSELF
 • Your username and display name are visible to everyone here — and to anyone who gains access to this server. Do not use your real name or a handle you use on other platforms.
@@ -153,7 +152,8 @@ PROTECT YOURSELF
 CHANNELS
   #general — open discussion
   #announcements — organizer posts (read-only)
-  #reference — durable info: hotlines, safety plans, meeting points (does not auto-delete)
+
+Durable info — hotlines, safety plans, meeting points — lives on the permanent /reference page (open it from your browser), not in chat.
 
 Head to #general to start chatting."
   send_notice "$WELCOME" "$WELCOME_MSG" && echo "  #welcome notice sent (plaintext, pre-E2EE)"
@@ -168,7 +168,7 @@ mas register-user joincheck --password "$(genpw)" --yes --ignore-password-comple
 bash "$(dirname "$0")/invite-to-community.sh" joincheck 2>&1 | sed 's/^/  /'
 JT=$(mas issue-compatibility-token joincheck JCDEV | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 # Accept the invites (simulates what the client does on login)
-for alias in community welcome announcements reference general; do
+for alias in community welcome announcements general; do
   curl -s -XPOST "$ACCESS/_matrix/client/v3/join/%23${alias}%3A${REDNET_DOMAIN}" \
     -H "Authorization: Bearer $JT" -d '{}' >/dev/null 2>&1
 done
@@ -179,7 +179,7 @@ echo "  after invite+join: $N room(s); space has $KIDS linked channel(s)"
 
 say "VERDICT"
 if [ "${KIDS:-0}" -ge 4 ]; then
-  echo "STRUCTURE PASS: space '$REDNET_BRAND' + #welcome/#general/#announcements/#reference (4 children, ordered); #welcome carries the security primer."
+  echo "STRUCTURE PASS: space '$REDNET_BRAND' + #welcome/#general/#announcements (3 children, ordered); #welcome carries the security primer."
 else
   echo "STRUCTURE FAIL: space has only ${KIDS:-0} linked channels (expected >= 4)."
 fi

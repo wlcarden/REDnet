@@ -105,6 +105,16 @@
 		}
 	}
 
+	# --- Permanent reference page (replaces the retired #reference room) ---
+	# Durable safety info (hotlines, safety plans, meeting points) that must outlast Matrix
+	# retention's 30d ceiling. Served from a host-mounted file so organizers edit it live —
+	# no image rebuild. The file is deploy/element-web/branding/reference.html.
+	handle /reference* {
+		root * /srv/reference
+		rewrite * /reference.html
+		file_server
+	}
+
 	# --- Element Web (the soft-fork build) — front proxies / to the element container ---
 	handle {
 		# Widget security: restrict iframe loading to same-origin only.

@@ -92,7 +92,7 @@ say "wire bot into community rooms (PL 50 = kick/ban/redact, not admin)"
 SYS_TOK=$(mas issue-compatibility-token rednet-system MODSYS | grep -oE '(mct_|syt_)[A-Za-z0-9_]+' | head -1)
 if [ -n "${SYS_TOK:-}" ]; then
   SAUTH="Authorization: Bearer $SYS_TOK"
-  COMMUNITY_ROOMS=(welcome announcements reference general)
+  COMMUNITY_ROOMS=(welcome announcements general)
   for alias in "${COMMUNITY_ROOMS[@]}"; do
     RID=$(curl -s -H "$SAUTH" "$ACCESS/_matrix/client/v3/directory/room/%23${alias}%3A$REDNET_DOMAIN" \
       | python3 -c "import sys,json;print(json.load(sys.stdin).get('room_id',''))" 2>/dev/null)

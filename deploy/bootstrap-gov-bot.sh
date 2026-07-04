@@ -157,7 +157,7 @@ print(json.dumps(d))
 done
 
 say "wire bot into community rooms (PL 100 — for kick/ban/PL operations)"
-COMMUNITY_ROOMS=(community welcome announcements reference general)
+COMMUNITY_ROOMS=(community welcome announcements general)
 for alias in "${COMMUNITY_ROOMS[@]}"; do
   RID=$(resolve_alias "$SAUTH" "$alias" 2>/dev/null)
   if [ -n "$RID" ]; then

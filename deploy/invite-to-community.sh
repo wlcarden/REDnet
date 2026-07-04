@@ -27,7 +27,7 @@ if [ -z "${SYS_TOK:-}" ]; then
 fi
 AUTH="Authorization: Bearer $SYS_TOK"
 
-ROOMS=(community welcome announcements reference general)
+ROOMS=(community welcome announcements general)
 OK=0
 FAIL=0
 for alias in "${ROOMS[@]}"; do

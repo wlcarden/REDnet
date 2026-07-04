@@ -190,7 +190,7 @@ c["rc_joins"]={"local":{"per_second":0.5,"burst_count":20},"remote":{"per_second
 c["default_room_version"]="12"
 # auto-join the system rooms (created by bootstrap-rooms.sh)
 _d=os.environ['DOMAIN']  # land members inside the space + its starter channels
-c["auto_join_rooms"]=[f"#{a}:{_d}" for a in ("community","welcome","announcements","reference","general")]
+c["auto_join_rooms"]=[f"#{a}:{_d}" for a in ("community","welcome","announcements","general")]
 c["auto_join_mxid_localpart"]="rednet-system"
 c["autocreate_auto_join_rooms"]=False
 # --- room-creation lockdown (COMMUNITY-MANAGEMENT.md): only system accounts create shared

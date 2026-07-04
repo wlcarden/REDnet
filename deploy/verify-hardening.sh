@@ -108,7 +108,7 @@ echo "=== Room Encryption ==="
 # #community is deliberately EXCLUDED: it is the top-level Space (m.space), and
 # Matrix spaces are always unencrypted state-only containers — never E2EE. It is
 # checked below as a space instead. The list here is the message-carrying rooms.
-for alias in welcome announcements reference general governance vouch-log; do
+for alias in welcome announcements general governance vouch-log; do
   RID=$(curl -sf -H "$AUTH" "${ACCESS}/_matrix/client/v3/directory/room/%23${alias}%3A${REDNET_DOMAIN}" 2>/dev/null \
     | jq -r '.room_id // empty' 2>/dev/null)
   if [ -z "$RID" ]; then

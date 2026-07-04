@@ -67,7 +67,7 @@
     </div>
     <div class="tip">
       <div class="tip-icon amber">&#x23f3;</div>
-      <div class="tip-text"><strong>Chat auto-deletes</strong> <span class="muted">after the retention window. Move anything worth keeping to #reference before it expires.</span></div>
+      <div class="tip-text"><strong>Chat auto-deletes</strong> <span class="muted">after the retention window. Durable info — hotlines, safety plans, meeting points — lives on the permanent <a href="/reference">reference page</a>.</span></div>
     </div>
     <div class="tip">
       <div class="tip-icon blue">&#x1f464;</div>
@@ -87,7 +87,7 @@
     <a href="#/room/#welcome:__REDNET_DOMAIN__">#welcome</a>
     <a href="#/room/#general:__REDNET_DOMAIN__">#general</a>
     <a href="#/room/#announcements:__REDNET_DOMAIN__">#announcements</a>
-    <a href="#/room/#reference:__REDNET_DOMAIN__">#reference</a>
+    <a href="/reference">Reference</a>
   </div>
 
   <div class="security">
