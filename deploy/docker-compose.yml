@@ -67,8 +67,11 @@ services:
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/well-known-client.json:/srv/well-known/client:ro
-      # Permanent /reference page — bind-mounted so organizers edit it live (no rebuild).
-      - ./element-web/branding/reference.html:/srv/reference/reference.html:ro
+      # Permanent /reference page — the branding DIR is mounted (not the single file) so
+      # organizers edit reference.html live, no rebuild: a directory mount survives an editor
+      # replacing the file's inode, which a single-file mount does not. Only reference.html is
+      # ever served (the Caddyfile rewrites every /reference* request to it).
+      - ./element-web/branding:/srv/reference:ro
       - rednet_caddy:/data
     ports:
       # Bind to loopback by DEFAULT (F10): /governance/data/vouch.jsonl now requires a
