@@ -207,6 +207,23 @@ the member safety tool; the reported user is never notified.
 
 **Graceful** apply. ⚠️ **Re-anchor per release** with the `MessageContextMenu` option list.
 
+## Member governance actions (`RednetMemberGovDialog.tsx` + `member-gov-actions.patch`)
+
+Organizer-only member actions from the UserInfo panel. A **Manage member** item appears in the
+admin-tools section only for a PL≥75 viewer (`RoomAdminToolsContainer`, gated on `me.powerLevel`
+and not self), opening a dialog that runs the SAME governance commands an organizer would type
+in #gov-bot — `!gov role @user moderator|organizer` and `!gov revoke @user --reason "…"` — sent
+to the #gov-bot room (resolved by alias; the organizer is a member there, and `handle_command`
+enforces the real PL authorization + writes the audit record). Nothing is authorized
+client-side; it's a convenience surface over the existing chat commands, which is why it's the
+lowest-priority Part-B item.
+
+- `RednetMemberGovDialog.tsx` copied into `src/components/views/dialogs/`; the patch adds the
+  `MenuItem` to `RoomAdminToolsContainer`, reusing UserInfo's already-imported `MenuItem`,
+  `Modal`, and `BlockIcon` (no new icon import to re-anchor).
+
+**Graceful** apply. ⚠️ **Re-anchor per release** with `RoomAdminToolsContainer`'s render block.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member

@@ -121,6 +121,16 @@ RUN git apply --whitespace=fix report-to-organizers.patch \
       && echo "REDnet: report-to-organizers patch APPLIED" \
    || echo "REDnet WARNING: report-to-organizers.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the Report-to-organizers item (members use !report by hand)."
 
+# 11) organizer-only member governance: a "Manage member" item in the UserInfo
+#     panel (PL>=75-gated) that runs the same !gov role / !gov revoke commands as
+#     #gov-bot, from a right-click. A dialog component + a UserInfo patch. Graceful:
+#     organizers still have the chat commands in #gov-bot.
+COPY src/RednetMemberGovDialog.tsx ./src/components/views/dialogs/RednetMemberGovDialog.tsx
+COPY member-gov-actions.patch ./member-gov-actions.patch
+RUN git apply --whitespace=fix member-gov-actions.patch \
+      && echo "REDnet: member-gov-actions patch APPLIED" \
+   || echo "REDnet WARNING: member-gov-actions.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the Manage-member button (organizers use !gov in #gov-bot)."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -193,6 +203,9 @@ RUN if grep -rqlF 'Governance dashboard' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Report to organizers' webapp/ 2>/dev/null; then \
       echo "REDnet: report-to-organizers bundled"; \
     else echo "REDnet WARNING: report-to-organizers NOT bundled — re-anchor report-to-organizers.patch + check RednetReportDialog imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Manage member' webapp/ 2>/dev/null; then \
+      echo "REDnet: member-gov-actions bundled"; \
+    else echo "REDnet WARNING: member-gov-actions NOT bundled — re-anchor member-gov-actions.patch + check RednetMemberGovDialog imports against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4

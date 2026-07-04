@@ -1,0 +1,45 @@
+diff --git a/src/components/views/right_panel/UserInfo.tsx b/src/components/views/right_panel/UserInfo.tsx
+index d07b356..e54f873 100644
+--- a/src/components/views/right_panel/UserInfo.tsx
++++ b/src/components/views/right_panel/UserInfo.tsx
+@@ -67,6 +67,7 @@ import ShareDialog from "../dialogs/ShareDialog";
+ import ErrorDialog from "../dialogs/ErrorDialog";
+ import QuestionDialog from "../dialogs/QuestionDialog";
+ import ConfirmUserActionDialog from "../dialogs/ConfirmUserActionDialog";
++import RednetMemberGovDialog from "../dialogs/RednetMemberGovDialog";
+ import { mediaFromMxc } from "../../../customisations/Media";
+ import { ComposerInsertPayload } from "../../../dispatcher/payloads/ComposerInsertPayload";
+ import ConfirmSpaceUserActionDialog from "../dialogs/ConfirmSpaceUserActionDialog";
+@@ -1131,13 +1132,31 @@ export const RoomAdminToolsContainer: React.FC<IBaseRoomProps> = ({
+         );
+     }
+ 
+-    if (kickButton || banButton || muteButton || redactButton || children) {
++    // REDnet: organizer-only member governance (PL>=75). Opens a dialog that runs the
++    // same !gov role / !gov revoke commands as #gov-bot, from a right-click.
++    let rednetGovButton;
++    if (!isMe && me.powerLevel >= 75) {
++        rednetGovButton = (
++            <MenuItem
++                role="button"
++                onSelect={(ev) => {
++                    ev.preventDefault();
++                    Modal.createDialog(RednetMemberGovDialog, { member });
++                }}
++                label="Manage member (roles / revoke)"
++                Icon={BlockIcon}
++            />
++        );
++    }
++
++    if (kickButton || banButton || muteButton || redactButton || rednetGovButton || children) {
+         return (
+             <Container>
+                 {muteButton}
+                 {redactButton}
+                 {kickButton}
+                 {banButton}
++                {rednetGovButton}
+                 {children}
+             </Container>
+         );
