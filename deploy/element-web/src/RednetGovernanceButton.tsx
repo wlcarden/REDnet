@@ -1,15 +1,14 @@
 /*
- * REDnet governance dashboard nav button (soft-fork UI).
+ * REDnet governance menu button (soft-fork UI).
  *
- * The governance dashboard (mint / vouch-graph / audit) is served at /governance/ and lives
- * today only as a widget inside #governance. This promotes it to a persistent button in the
- * space-panel footer so organizers reach it without hunting.
+ * A persistent organizer-only button in the space-panel footer that opens a small menu of the
+ * governance surfaces that otherwise live only in chat commands or the standalone dashboard:
+ *   - Governance dashboard -> opens /governance/ (mint / vouch-graph / audit)
+ *   - Pending requests      -> RednetRequestsDialog (approve/deny member room requests)
  *
- * Organizer-gated: members are not in #governance (it lives in the Organizing sub-space), so
- * the button renders ONLY for a user who is a PL>=75 member of #governance. A non-organizer
- * never sees a dashboard they can't use. The dashboard itself also auth-gates server-side
- * (mint_endpoint verifies PL via the Matrix OpenID token), so this is UX, not the security
- * boundary.
+ * Organizer-gated: members aren't in #governance, so the button renders ONLY for a PL>=75
+ * member of #governance. A non-organizer never sees governance they can't use; the underlying
+ * surfaces also auth-gate server-side, so this is UX, not the security boundary.
  *
  * Self-contained so the SpacePanel patch is a one-line insert. Copied into
  * src/components/views/spaces/ by the Dockerfile. English-only (the fork ships en only).
@@ -17,7 +16,18 @@
 import React from "react";
 
 import AccessibleButton from "../elements/AccessibleButton";
+import {
+  alwaysAboveRightOf,
+  ChevronFace,
+  useContextMenu,
+} from "../../structures/ContextMenu";
+import IconizedContextMenu, {
+  IconizedContextMenuOption,
+  IconizedContextMenuOptionList,
+} from "../context_menus/IconizedContextMenu";
+import Modal from "../../../Modal";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
+import RednetRequestsDialog from "../dialogs/RednetRequestsDialog";
 
 function isOrganizer(): boolean {
   const cli = MatrixClientPeg.get();
@@ -31,17 +41,58 @@ function isOrganizer(): boolean {
 }
 
 export default function RednetGovernanceButton(): JSX.Element | null {
+  const [menuDisplayed, handle, openMenu, closeMenu] =
+    useContextMenu<HTMLDivElement>();
   if (!isOrganizer()) return null;
+
+  let contextMenu: JSX.Element | undefined;
+  if (menuDisplayed && handle.current) {
+    contextMenu = (
+      <IconizedContextMenu
+        {...alwaysAboveRightOf(
+          handle.current.getBoundingClientRect(),
+          ChevronFace.None,
+          16,
+        )}
+        onFinished={closeMenu}
+        compact
+      >
+        <IconizedContextMenuOptionList first>
+          <IconizedContextMenuOption
+            label="Governance dashboard"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+              window.open("/governance/", "_blank", "noopener,noreferrer");
+            }}
+          />
+          <IconizedContextMenuOption
+            label="Pending requests"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+              Modal.createDialog(RednetRequestsDialog, {});
+            }}
+          />
+        </IconizedContextMenuOptionList>
+      </IconizedContextMenu>
+    );
+  }
+
   return (
-    <AccessibleButton
-      className="mx_RednetGovernanceButton"
-      onClick={() =>
-        window.open("/governance/", "_blank", "noopener,noreferrer")
-      }
-      title="Governance dashboard"
-      aria-label="Governance dashboard"
-    >
-      <span className="mx_RednetGovernanceButton_icon" aria-hidden="true" />
-    </AccessibleButton>
+    <>
+      <AccessibleButton
+        className="mx_RednetGovernanceButton"
+        onClick={openMenu}
+        ref={handle}
+        title="Governance"
+        aria-label="Governance"
+      >
+        <span className="mx_RednetGovernanceButton_icon" aria-hidden="true" />
+      </AccessibleButton>
+      {contextMenu}
+    </>
   );
 }
