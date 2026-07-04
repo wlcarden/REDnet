@@ -175,12 +175,25 @@ else the deploy default `org.rednet.retention.default_days`.
 
 ### Governance dashboard nav (`RednetGovernanceButton.tsx` + `governance-nav.patch`)
 
-Promotes the `/governance/` dashboard from a room widget to a persistent space-panel footer
-button — **organizer-only**: it renders only for a PL≥75 member of `#governance` (members
-aren't in that room), so a non-organizer never sees a dashboard they can't use. The dashboard
-also auth-gates server-side (`mint_endpoint` verifies PL via the Matrix OpenID token), so this
-is UX, not the security boundary. Copied into `src/components/views/spaces/`; the patch inserts
-it in `SpacePanel.tsx` next to `QuickSettingsButton`.
+A persistent, **organizer-only** button in the space-panel footer: it renders only for a PL≥75
+member of `#governance` (members aren't in that room), so a non-organizer never sees governance
+they can't use. Copied into `src/components/views/spaces/`; the patch inserts it in
+`SpacePanel.tsx` next to `QuickSettingsButton`.
+
+Clicking it opens a small upward menu (`useContextMenu` + `IconizedContextMenu`, mirroring
+`QuickSettingsButton`) of the governance surfaces that otherwise live only in chat or the
+standalone dashboard:
+
+- **Governance dashboard** → opens `/governance/` (mint / vouch-graph / audit).
+- **Pending requests** → `RednetRequestsDialog`: approve/deny member room requests, read from
+  the Wave-4 authed `/governance/data/vouch.jsonl` (no new endpoint) → `!gov approve|deny` to
+  #gov-bot.
+- **Invite someone** → `RednetInviteDialog`: a quick single invite over the existing
+  `/governance/mint` endpoint (`openid_token` in the body; the token reaches only the dialog,
+  never Matrix, shown once). The dashboard Mint tab keeps batch + print-card formats.
+
+Each surface also auth-gates server-side (`mint_endpoint` / `handle_command` verify PL), so the
+menu is UX, not the security boundary.
 
 ⚠️ **Re-anchor per release**: `Roles.ts`/`EntityTile`/`MemberTile` power-level shapes,
 `RoomHeader.tsx`'s heading block, `SpacePanel.tsx`'s footer, and the SDK imports

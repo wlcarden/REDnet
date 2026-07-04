@@ -28,6 +28,7 @@ import IconizedContextMenu, {
 import Modal from "../../../Modal";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
 import RednetRequestsDialog from "../dialogs/RednetRequestsDialog";
+import RednetInviteDialog from "../dialogs/RednetInviteDialog";
 
 function isOrganizer(): boolean {
   const cli = MatrixClientPeg.get();
@@ -74,6 +75,15 @@ export default function RednetGovernanceButton(): JSX.Element | null {
               e.stopPropagation();
               closeMenu();
               Modal.createDialog(RednetRequestsDialog, {});
+            }}
+          />
+          <IconizedContextMenuOption
+            label="Invite someone"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeMenu();
+              Modal.createDialog(RednetInviteDialog, {});
             }}
           />
         </IconizedContextMenuOptionList>
