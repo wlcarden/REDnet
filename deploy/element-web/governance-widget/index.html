@@ -17,10 +17,12 @@
     --red-dim: rgba(229,72,77,0.15);
     --amber: #E5A536;
     --amber-dim: rgba(229,165,54,0.15);
-    --green: #46A758;
-    --green-dim: rgba(70,167,88,0.15);
+    --green: #30A46C;
+    --green-dim: rgba(48,164,108,0.15);
     --blue: #3E93DE;
     --blue-dim: rgba(62,147,222,0.15);
+    --critical: #FF6369;
+    --critical-dim: rgba(255,99,105,0.15);
     --radius: 8px;
     --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
   }
@@ -92,7 +94,7 @@
     background: none;
   }
   .tab:hover { color: var(--text); background: var(--surface-hover); }
-  .tab.active { color: var(--text); background: var(--bg); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .tab.active { color: var(--text); background: var(--bg); }
 
   .panel { display: none; }
   .panel.active { display: block; }
@@ -255,7 +257,7 @@
     gap: 10px;
   }
   .alert-card.warn { border-left: 3px solid var(--amber); }
-  .alert-card.crit { border-left: 3px solid var(--red); }
+  .alert-card.crit { border-left: 3px solid var(--critical); }
   .alert-card.ok { border-left: 3px solid var(--green); }
   .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
   .alert-title { font-weight: 600; font-size: 13px; }
@@ -383,9 +385,7 @@
     font-size: 12px;
     pointer-events: auto;
     z-index: 10;
-    max-width: 240px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  }
+    max-width: 240px;  }
   .graph-tooltip .tt-actions {
     margin-top: 6px;
   }
@@ -461,9 +461,7 @@
     border-radius: 6px;
     padding: 8px 16px;
     font-size: 12px;
-    color: var(--green);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    z-index: 100;
+    color: var(--green);    z-index: 100;
     opacity: 0;
     transition: opacity 200ms;
     pointer-events: none;
@@ -599,7 +597,7 @@
       </div>
       <div class="graph-legend">
         <div class="graph-legend-item">
-          <div class="graph-legend-dot" style="background:#46A758"></div> Voucher
+          <div class="graph-legend-dot" style="background:#30A46C"></div> Voucher
         </div>
         <div class="graph-legend-item">
           <div class="graph-legend-dot" style="background:#3E93DE"></div> Member
@@ -1219,7 +1217,7 @@
       // a clean-looking card whose provenance the coercion canary never saw.
       if (inv.vouch_recorded === false) {
         var warnRow = document.createElement("div");
-        warnRow.style.cssText = "flex-basis:100%;color:#ff6b6b;font-size:11px;margin-top:6px;line-height:1.4";
+        warnRow.style.cssText = "flex-basis:100%;color:#FF6369;font-size:11px;margin-top:6px;line-height:1.4";
         warnRow.textContent = "⚠ Provenance not recorded — the #vouch-log entry did not post. This invite is unattributed; re-mint before distributing.";
         card.appendChild(warnRow);
       }
@@ -1733,7 +1731,7 @@
 
   function nodeColor(n) {
     switch (n.role) {
-      case "voucher": return "#46A758";
+      case "voucher": return "#30A46C";
       case "revoked": return "#E5484D";
       case "pending": return "#E5A536";
       default: return "#3E93DE";

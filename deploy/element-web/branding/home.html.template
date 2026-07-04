@@ -18,7 +18,7 @@
   .rednet-home .tip-icon.red { background: rgba(229,72,77,0.12); }
   .rednet-home .tip-icon.green { background: rgba(48,164,108,0.12); }
   .rednet-home .tip-icon.amber { background: rgba(229,165,54,0.12); }
-  .rednet-home .tip-icon.blue { background: rgba(62,99,221,0.12); }
+  .rednet-home .tip-icon.blue { background: rgba(62,147,222,0.12); }
   .rednet-home .tip-text { font-size: 13px; color: #ECEDEE; line-height: 1.5; }
   .rednet-home .tip-text strong { font-weight: 600; }
   .rednet-home .tip-text .muted { color: #8B8D98; }
