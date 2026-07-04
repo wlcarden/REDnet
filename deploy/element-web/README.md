@@ -244,6 +244,30 @@ instead of only a gov-bot chat message that scrolls away.
 **Graceful** apply (onboarding is unaffected if it stops applying). ⚠️ **Re-anchor per release**
 with `onShowPostLoginScreen`.
 
+## Vouch provenance + hardened data route (`RednetVouchProvenance.tsx` + `vouch-provenance.patch`)
+
+"Vouched by @x" in a member's UserInfo panel — the trust chain, from the gov-bot's vouch graph
+(`claimed` records, written by `!gov confirm`). Shown to all members; best-effort (renders nothing
+where there's no recorded voucher, which is common).
+
+**Hardened data route (security fix, done first).** The graph lives in `vouch.jsonl`, which Caddy
+previously `file_server`'d **unauthenticated** at `/governance/data/vouch.jsonl` — anyone reaching
+the front could pull the whole trust network (the Caddyfile + compose comments flagged it). Now the
+gov-bot serves it behind a **valid Matrix OpenID token** (`mint_endpoint._serve_vouch`, any member):
+Caddy `reverse_proxy`s the route to `gov-bot:8091` (with `import sanitize`, which keeps the
+`Authorization` header), and the `./vouch.jsonl:/srv/governance-data` Caddy mount is removed.
+Unauthenticated + bad-token requests now get **401** (live-verified). Embedded dashboards use the
+Widget API (unaffected); standalone dashboards have no token and fall back to manual paste.
+
+- `RednetVouchProvenance.tsx` (copied into `src/components/views/right_panel/`) fetches the route
+  with `Authorization: Bearer ${cli.getOpenIdToken().access_token}`, parses the ndjson, and shows
+  the latest `claimed` voucher for the member. The patch inserts it in `BasicUserInfo`.
+- **Composes with `member-gov-actions.patch`** (both edit `UserInfo.tsx`; non-overlapping hunks —
+  verified `git apply` clean on both the pristine and the member-gov-patched tree).
+
+**Graceful** apply. Gov-bot unit tests lock the 401/serve gate (`TestVouchServeAuth`). ⚠️
+**Re-anchor per release** with `BasicUserInfo`'s render + the `import BaseCard` anchor.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member

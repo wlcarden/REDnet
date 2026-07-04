@@ -1,0 +1,22 @@
+diff --git a/src/components/views/right_panel/UserInfo.tsx b/src/components/views/right_panel/UserInfo.tsx
+index d07b356..a5c10aa 100644
+--- a/src/components/views/right_panel/UserInfo.tsx
++++ b/src/components/views/right_panel/UserInfo.tsx
+@@ -56,6 +56,7 @@ import { verifyDevice, verifyUser } from "../../../verification";
+ import { Action } from "../../../dispatcher/actions";
+ import { useIsEncrypted } from "../../../hooks/useIsEncrypted";
+ import BaseCard from "./BaseCard";
++import RednetVouchProvenance from "./RednetVouchProvenance";
+ import { E2EStatus } from "../../../utils/ShieldUtils";
+ import ImageView from "../elements/ImageView";
+ import Spinner from "../elements/Spinner";
+@@ -1613,6 +1614,9 @@ const BasicUserInfo: React.FC<{
+                 {memberDetails}
+             </UserOptionsSection>
+ 
++            {/* REDnet: who vouched for this member (trust provenance). */}
++            <RednetVouchProvenance userId={member.userId} />
++
+             {adminToolsContainer}
+ 
+             {!isMe && (

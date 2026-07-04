@@ -181,11 +181,38 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("mint-endpoint %s\n" % (fmt % args))
 
     def do_GET(self):
-        (
-            self._json(200, {"ok": True})
-            if self.path == "/governance/mint/healthz"
-            else self._json(404, {"error": "not_found"})
-        )
+        if self.path == "/governance/mint/healthz":
+            return self._json(200, {"ok": True})
+        if self.path == "/governance/data/vouch.jsonl":
+            return self._serve_vouch()
+        return self._json(404, {"error": "not_found"})
+
+    def _serve_vouch(self):
+        """Serve the vouch graph, gated on a valid Matrix OpenID token (ANY member).
+
+        Previously Caddy file_server'd this UNAUTHENTICATED (`/srv/governance-data`),
+        exposing the whole trust graph to anyone reaching the front. We now require a
+        valid member token — closing that hole for untrusted networks — while any
+        authenticated member can still read it (matching the all-members provenance
+        UI). Caddy reverse-proxies /governance/data/vouch.jsonl here; the client sends
+        `Authorization: Bearer <openid access_token>`. Standalone (out-of-Element)
+        dashboards have no token and fall back to the manual-paste path.
+        """
+        auth = self.headers.get("Authorization", "")
+        token = auth[7:].strip() if auth[:7].lower() == "bearer " else ""
+        if not verify_openid(token):
+            return self._json(401, {"error": "unauthorized"})
+        try:
+            with open(bot.VOUCH_PATH, "rb") as f:
+                data = f.read()
+        except FileNotFoundError:
+            data = b""
+        self.send_response(200)
+        self.send_header("Content-Type", "application/x-ndjson")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_POST(self):
         if self.path != "/governance/mint":

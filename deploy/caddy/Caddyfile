@@ -93,16 +93,16 @@
 		}
 	}
 
-	# --- Governance dashboard data (standalone mode) ---
-	# Serves vouch.jsonl so the dashboard works outside Element's iframe (direct browser access).
-	# Same data is visible to anyone in #vouch-log; production should gate behind auth if the
-	# instance is reachable from untrusted networks.
+	# --- Governance dashboard data ---
+	# The vouch graph (trust network). Was an UNAUTHENTICATED file_server here — anyone reaching
+	# the front could pull the whole graph. Now the gov-bot serves it behind a valid Matrix OpenID
+	# token (mint_endpoint _serve_vouch): the client sends `Authorization: Bearer <openid>`, and
+	# `import sanitize` keeps that header (it only rewrites forwarded-IP headers). Out-of-Element
+	# standalone dashboards have no token and fall back to the manual-paste path.
 	handle /governance/data/vouch.jsonl {
-		header Content-Type application/x-ndjson
-		header Cache-Control "no-cache"
-		root * /srv/governance-data
-		rewrite * /vouch.jsonl
-		file_server
+		reverse_proxy gov-bot:8091 {
+			import sanitize
+		}
 	}
 
 	# --- Element Web (the soft-fork build) — front proxies / to the element container ---

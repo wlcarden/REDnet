@@ -135,3 +135,45 @@ class TestVouchRecordedFlag:
         with patch.object(me.http, "put", side_effect=OSError("boom")):
             _h, posted = me.record_vouch("tok", "@op:test", "Maria")
         assert posted is False
+
+
+class TestVouchServeAuth:
+    """/governance/data/vouch.jsonl must require a valid Matrix OpenID token — it was
+    previously served UNAUTHENTICATED (whole trust-graph leak to untrusted networks).
+    Any authenticated member is allowed (matches the all-members provenance UI)."""
+
+    def _run(self, auth):
+        h = me.Handler.__new__(me.Handler)
+        h.headers = {"Authorization": auth} if auth is not None else {}
+        h.path = "/governance/data/vouch.jsonl"
+        h.wfile = MagicMock()
+        sent = {}
+        h.send_response = lambda c: sent.__setitem__("status", c)
+        h.send_header = lambda *a: None
+        h.end_headers = lambda: None
+        h._json = lambda c, o: sent.update(status=c, json=o)
+        me.Handler.do_GET(h)
+        sent["wfile"] = h.wfile
+        return sent
+
+    def test_no_auth_header_401(self):
+        assert self._run(None)["status"] == 401
+
+    def test_non_bearer_scheme_401(self):
+        assert self._run("Basic abc")["status"] == 401
+
+    def test_invalid_token_401(self):
+        with patch.object(me, "verify_openid", return_value=None):
+            assert self._run("Bearer bad")["status"] == 401
+
+    def test_valid_member_token_serves_graph(self, tmp_path):
+        f = tmp_path / "vouch.jsonl"
+        f.write_bytes(b'{"type":"claimed","account":"@a:test","voucher":"@v:test"}\n')
+        with (
+            patch.object(me, "verify_openid", return_value="@member:test"),
+            patch.object(me.bot, "VOUCH_PATH", str(f)),
+        ):
+            sent = self._run("Bearer good")
+        assert sent["status"] == 200
+        sent["wfile"].write.assert_called_once()
+        assert b"@v:test" in sent["wfile"].write.call_args[0][0]

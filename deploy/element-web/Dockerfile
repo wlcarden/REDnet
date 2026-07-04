@@ -143,6 +143,18 @@ RUN git apply --whitespace=fix onboarding-checklist.patch \
       && echo "REDnet: onboarding-checklist patch APPLIED" \
    || echo "REDnet WARNING: onboarding-checklist.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the first-run checklist."
 
+# 13) vouch provenance: "Vouched by @x" in the UserInfo panel (the trust chain).
+#     Fetches the gov-bot's vouch graph from /governance/data/vouch.jsonl (now served
+#     behind a valid Matrix OpenID token — mint_endpoint _serve_vouch) with
+#     cli.getOpenIdToken(), finds the account's `claimed` record. A component + a
+#     UserInfo patch (shares UserInfo.tsx with member-gov-actions.patch — hunks don't
+#     overlap; verified applies to both pristine + member-gov-patched tree). Graceful.
+COPY src/RednetVouchProvenance.tsx ./src/components/views/right_panel/RednetVouchProvenance.tsx
+COPY vouch-provenance.patch ./vouch-provenance.patch
+RUN git apply --whitespace=fix vouch-provenance.patch \
+      && echo "REDnet: vouch-provenance patch APPLIED" \
+   || echo "REDnet WARNING: vouch-provenance.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT vouch provenance in profiles."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -221,6 +233,9 @@ RUN if grep -rqlF 'Manage member' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'keeps you safer here' webapp/ 2>/dev/null; then \
       echo "REDnet: onboarding checklist bundled"; \
     else echo "REDnet WARNING: onboarding checklist NOT bundled — re-anchor onboarding-checklist.patch + check RednetOnboardingDialog imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Vouched by' webapp/ 2>/dev/null; then \
+      echo "REDnet: vouch provenance bundled"; \
+    else echo "REDnet WARNING: vouch provenance NOT bundled — re-anchor vouch-provenance.patch + check RednetVouchProvenance imports against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4
