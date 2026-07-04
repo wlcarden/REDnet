@@ -1,0 +1,70 @@
+diff --git a/src/Roles.ts b/src/Roles.ts
+index 38b6d74..454e6ee 100644
+--- a/src/Roles.ts
++++ b/src/Roles.ts
+@@ -10,11 +10,15 @@ import { _t } from "./languageHandler";
+ 
+ export function levelRoleMap(usersDefault: number): Record<number | "undefined", string> {
+     return {
+-        undefined: _t("power_level|default"),
+-        0: _t("power_level|restricted"),
+-        [usersDefault]: _t("power_level|default"),
+-        50: _t("power_level|moderator"),
+-        100: _t("power_level|admin"),
++        // REDnet: hardcoded English role names (the fork ships en only) + an
++        // Organizer tier at PL 75. Drives role text in the UserInfo panel and
++        // timeline sender labels via textualPowerLevel().
++        undefined: "Member",
++        0: "Restricted",
++        [usersDefault]: "Member",
++        50: "Moderator",
++        75: "Organizer",
++        100: "Admin",
+     };
+ }
+ 
+diff --git a/src/components/views/rooms/EntityTile.tsx b/src/components/views/rooms/EntityTile.tsx
+index 946a5cd..33ed8a7 100644
+--- a/src/components/views/rooms/EntityTile.tsx
++++ b/src/components/views/rooms/EntityTile.tsx
+@@ -19,12 +19,16 @@ import PresenceLabel from "./PresenceLabel";
+ 
+ export enum PowerStatus {
+     Admin = "admin",
++    Organizer = "organizer",
+     Moderator = "moderator",
+ }
+ 
+-const PowerLabel: Record<PowerStatus, TranslationKey> = {
+-    [PowerStatus.Admin]: _td("power_level|admin"),
+-    [PowerStatus.Moderator]: _td("power_level|mod"),
++// REDnet: plain English labels (the fork ships en only) so we can add an
++// Organizer tier without a translation key; the render below drops _t().
++const PowerLabel: Record<PowerStatus, string> = {
++    [PowerStatus.Admin]: "Admin",
++    [PowerStatus.Organizer]: "Organizer",
++    [PowerStatus.Moderator]: "Moderator",
+ };
+ 
+ export type PresenceState = "offline" | "online" | "unavailable" | "io.element.unreachable";
+@@ -137,7 +141,7 @@ export default class EntityTile extends React.PureComponent<IProps, IState> {
+         let powerLabel;
+         const powerStatus = this.props.powerStatus;
+         if (powerStatus) {
+-            const powerText = _t(PowerLabel[powerStatus]);
++            const powerText = PowerLabel[powerStatus];
+             powerLabel = <div className="mx_EntityTile_power">{powerText}</div>;
+         }
+ 
+diff --git a/src/components/views/rooms/MemberTile.tsx b/src/components/views/rooms/MemberTile.tsx
+index acb2e51..da05d2e 100644
+--- a/src/components/views/rooms/MemberTile.tsx
++++ b/src/components/views/rooms/MemberTile.tsx
+@@ -178,6 +178,7 @@ export default class MemberTile extends React.Component<IProps, IState> {
+ 
+         const powerStatusMap = new Map([
+             [100, PowerStatus.Admin],
++            [75, PowerStatus.Organizer],
+             [50, PowerStatus.Moderator],
+         ]);
+ 

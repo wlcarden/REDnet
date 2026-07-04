@@ -86,6 +86,29 @@ RUN git apply --whitespace=fix panic-button.patch \
       && echo "REDnet: panic-button patch APPLIED" \
    || echo "REDnet WARNING: panic-button.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the panic menu item (members use !duress by hand)."
 
+# 9) Wave-1 legibility UI (make the governance model visible), all graceful:
+#    - role-labels.patch: repoints Roles.ts + EntityTile so power levels read as
+#      REDnet roles (Member/Moderator/Organizer/Admin, incl. a PL75 Organizer tier).
+#    - retention-indicator.patch + RednetRetentionPill: a room-header pill showing
+#      the disappearing-message window (per-room m.room.retention, else the
+#      config default org.rednet.retention.default_days; durable rooms show none).
+#    - governance-nav.patch + RednetGovernanceButton: an organizer-only space-panel
+#      button opening the /governance/ dashboard.
+COPY src/RednetRetentionPill.tsx ./src/components/views/rooms/RednetRetentionPill.tsx
+COPY src/RednetGovernanceButton.tsx ./src/components/views/spaces/RednetGovernanceButton.tsx
+COPY role-labels.patch ./role-labels.patch
+COPY retention-indicator.patch ./retention-indicator.patch
+COPY governance-nav.patch ./governance-nav.patch
+RUN git apply --whitespace=fix role-labels.patch \
+      && echo "REDnet: role-labels patch APPLIED" \
+   || echo "REDnet WARNING: role-labels.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT REDnet role labels."
+RUN git apply --whitespace=fix retention-indicator.patch \
+      && echo "REDnet: retention-indicator patch APPLIED" \
+   || echo "REDnet WARNING: retention-indicator.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the retention pill."
+RUN git apply --whitespace=fix governance-nav.patch \
+      && echo "REDnet: governance-nav patch APPLIED" \
+   || echo "REDnet WARNING: governance-nav.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the governance dashboard button."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -143,6 +166,18 @@ RUN if grep -rqlF 'wipe this device' webapp/ 2>/dev/null; then \
     else \
       echo "REDnet WARNING: Panic control NOT bundled — re-anchor panic-button.patch + check RednetPanicDialog imports against ${ELEMENT_VERSION}."; \
     fi
+
+# Wave-1 legibility sentinels (each a distinctive hardcoded string webpack keeps
+# only if the corresponding patch/component wired in). Graceful — warn, don't fail.
+RUN if grep -rqlF 'Organizer' webapp/ 2>/dev/null; then \
+      echo "REDnet: role labels bundled"; \
+    else echo "REDnet WARNING: role-labels NOT bundled — re-anchor role-labels.patch against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Messages here disappear after' webapp/ 2>/dev/null; then \
+      echo "REDnet: retention indicator bundled"; \
+    else echo "REDnet WARNING: retention pill NOT bundled — re-anchor retention-indicator.patch + check RednetRetentionPill imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Governance dashboard' webapp/ 2>/dev/null; then \
+      echo "REDnet: governance nav button bundled"; \
+    else echo "REDnet WARNING: governance button NOT bundled — re-anchor governance-nav.patch + check RednetGovernanceButton imports against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4

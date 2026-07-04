@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.." || exit 1   # -> deploy/
 : "${REDNET_DOMAIN:?}"; : "${REDNET_BRAND:=REDnet}"; : "${ELEMENT_VERSION:=v1.11.86}"
 : "${REDNET_PUBLIC_BASE:=https://${REDNET_DOMAIN}}"
 : "${REDNET_CALLS_ENABLED:=false}"
+: "${REDNET_RETENTION_DAYS:=7}"
 say(){ printf '\n=== %s ===\n' "$*"; }
 
 say "render element-web/config.json + home.html (homeserver + brand from rednet.env)"
@@ -15,6 +16,7 @@ RENDER_SED=(
   -e "s#__REDNET_BRAND__#${REDNET_BRAND}#g"
   -e "s#__REDNET_PUBLIC_BASE__#${REDNET_PUBLIC_BASE}#g"
   -e "s#__REDNET_CALLS_ENABLED__#${REDNET_CALLS_ENABLED}#g"
+  -e "s#__REDNET_RETENTION_DAYS__#${REDNET_RETENTION_DAYS}#g"
 )
 sed "${RENDER_SED[@]}" element-web/config.json.template > element-web/config.json
 sed "${RENDER_SED[@]}" element-web/branding/home.html.template > element-web/branding/home.html

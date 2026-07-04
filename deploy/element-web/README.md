@@ -142,6 +142,51 @@ account hits one confirm-gated **Panic — wipe this device** item in the user m
 (`ensureDMExists`, `sendTextMessage`, `defaultDispatcher`, and the `logout` action's
 `clearStorage` behaviour) are pinned to `ELEMENT_VERSION`.
 
+## Legibility UI: role labels, retention pill, governance nav
+
+Three small additions that make REDnet's governance model visible in the client. All
+**graceful** (a non-applying patch just drops that one affordance) and CI `git apply
+--check`ed.
+
+### Role labels (`role-labels.patch`)
+
+Repoints the stock power-level → role text so it reads in REDnet terms and adds a **PL 75
+Organizer** tier (stock Element only labels 50/100):
+
+- `Roles.ts` `levelRoleMap()` — drives the role text in the UserInfo panel + timeline sender
+  labels (via `textualPowerLevel`). Hardcoded English (the fork ships en only), which also
+  sidesteps the compile-time `_t()` key gate — `power_level|organizer` isn't a real key.
+- `EntityTile.tsx` — adds `PowerStatus.Organizer`, switches `PowerLabel` to plain strings, and
+  drops the `_t()` wrapper at the render; `MemberTile.tsx` adds `[75, Organizer]` to the
+  member-list badge map. So the member-list chip shows **Organizer** too.
+
+### Retention indicator (`RednetRetentionPill.tsx` + `retention-indicator.patch`)
+
+Stock Element has **no** retention UI, so the disappearing-message window is invisible. This
+adds a room-header pill (amber `Nd`, tooltip "Messages here disappear after N days"). Data
+source, in order: durable rooms (config `org.rednet.retention.exempt_localparts`, e.g.
+`#reference`, `#vouch-log`) show **nothing**; else a per-room `m.room.retention` `max_lifetime`;
+else the deploy default `org.rednet.retention.default_days`.
+
+- That default is the server retention (`REDNET_RETENTION_DAYS`) the client **can't** read from
+  `homeserver.yaml`, so `build.sh` threads it into `config.json` (`__REDNET_RETENTION_DAYS__`).
+- `RednetRetentionPill.tsx` copied into `src/components/views/rooms/`; the patch inserts it in
+  `RoomHeader.tsx`. Styled in `branding/rednet-overrides.css`.
+
+### Governance dashboard nav (`RednetGovernanceButton.tsx` + `governance-nav.patch`)
+
+Promotes the `/governance/` dashboard from a room widget to a persistent space-panel footer
+button — **organizer-only**: it renders only for a PL≥75 member of `#governance` (members
+aren't in that room), so a non-organizer never sees a dashboard they can't use. The dashboard
+also auth-gates server-side (`mint_endpoint` verifies PL via the Matrix OpenID token), so this
+is UX, not the security boundary. Copied into `src/components/views/spaces/`; the patch inserts
+it in `SpacePanel.tsx` next to `QuickSettingsButton`.
+
+⚠️ **Re-anchor per release**: `Roles.ts`/`EntityTile`/`MemberTile` power-level shapes,
+`RoomHeader.tsx`'s heading block, `SpacePanel.tsx`'s footer, and the SDK imports
+(`SdkConfig`, `MatrixClientPeg`, `room.currentState.getStateEvents`) are pinned to
+`ELEMENT_VERSION`.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member

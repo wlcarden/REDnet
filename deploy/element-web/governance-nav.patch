@@ -1,0 +1,21 @@
+diff --git a/src/components/views/spaces/SpacePanel.tsx b/src/components/views/spaces/SpacePanel.tsx
+index af48444..e5f637f 100644
+--- a/src/components/views/spaces/SpacePanel.tsx
++++ b/src/components/views/spaces/SpacePanel.tsx
+@@ -43,6 +43,7 @@ import {
+     UPDATE_STATUS_INDICATOR,
+ } from "../../../stores/notifications/RoomNotificationStateStore";
+ import SpaceContextMenu from "../context_menus/SpaceContextMenu";
++import RednetGovernanceButton from "./RednetGovernanceButton";
+ import IconizedContextMenu, {
+     IconizedContextMenuCheckbox,
+     IconizedContextMenuOptionList,
+@@ -426,6 +427,8 @@ const SpacePanel: React.FC = () => {
+ 
+                         <ThreadsActivityCentre displayButtonLabel={!isPanelCollapsed} />
+ 
++                        <RednetGovernanceButton />
++
+                         <QuickSettingsButton isPanelCollapsed={isPanelCollapsed} />
+                     </nav>
+                 </DragDropContext>
