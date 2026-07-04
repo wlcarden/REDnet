@@ -158,6 +158,17 @@ RUN git apply --whitespace=fix vouch-provenance.patch \
       && echo "REDnet: vouch-provenance patch APPLIED" \
    || echo "REDnet WARNING: vouch-provenance.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT vouch provenance in profiles."
 
+# 14) room lifecycle: organizer/admin Archive/Delete actions in a room's right-click
+#     menu, each behind a typed-confirm dialog, sending `!gov archive|delete <roomId>`
+#     to #gov-bot. A dialog + a gated options component + a RoomGeneralContextMenu patch.
+#     Graceful: organizers still have the chat commands.
+COPY src/RednetRoomLifecycleDialog.tsx ./src/components/views/dialogs/RednetRoomLifecycleDialog.tsx
+COPY src/RednetRoomLifecycleOptions.tsx ./src/components/views/context_menus/RednetRoomLifecycleOptions.tsx
+COPY room-lifecycle.patch ./room-lifecycle.patch
+RUN git apply --whitespace=fix room-lifecycle.patch \
+      && echo "REDnet: room-lifecycle patch APPLIED" \
+   || echo "REDnet WARNING: room-lifecycle.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT room archive/delete menu items (organizers use !gov)."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -245,6 +256,9 @@ RUN if grep -rqlF 'Vouched by' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Confirm vouch' webapp/ 2>/dev/null; then \
       echo "REDnet: confirm-vouch action bundled"; \
     else echo "REDnet WARNING: confirm-vouch NOT bundled — check RednetMemberGovDialog + RednetVouchProvenance edits against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Archive room' webapp/ 2>/dev/null; then \
+      echo "REDnet: room-lifecycle actions bundled"; \
+    else echo "REDnet WARNING: room-lifecycle NOT bundled — re-anchor room-lifecycle.patch + check RednetRoomLifecycle* imports against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4

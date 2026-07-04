@@ -268,6 +268,22 @@ Widget API (unaffected); standalone dashboards have no token and fall back to ma
 **Graceful** apply. Gov-bot unit tests lock the 401/serve gate (`TestVouchServeAuth`). ⚠️
 **Re-anchor per release** with `BasicUserInfo`'s render + the `import BaseCard` anchor.
 
+## Room lifecycle (`RednetRoomLifecycleDialog` + `RednetRoomLifecycleOptions` + `room-lifecycle.patch`)
+
+Organizer/admin room-lifecycle actions in a room's right-click menu (`RoomGeneralContextMenu`):
+**Archive room** (organizer, PL≥75 in #governance) and **Delete room** (admin, PL≥100), each
+behind a **typed-confirm** dialog (you must type the room's name to enable the button). They send
+`!gov archive <roomId>` / `!gov delete <roomId>` to #gov-bot, where `handle_command` enforces the
+real PL and does the work (archive locks the room read-only + unlinks it from its space; delete
+purges it). `resolve_room_ref` accepts a raw `!roomId`, so no alias is needed.
+
+- `RednetRoomLifecycleOptions.tsx` (copied into `src/components/views/context_menus/`) gates on
+  the viewer's #governance PL and renders the menu items after Leave; `RednetRoomLifecycleDialog.tsx`
+  (copied into `dialogs/`) is the typed-confirm. `room-lifecycle.patch` inserts the options
+  component into `RoomGeneralContextMenu`.
+
+**Graceful** apply. ⚠️ **Re-anchor per release** with `RoomGeneralContextMenu`'s render block.
+
 ## Recovery, Phase 1: self-held passphrase (`rednet-module/src/onboarding.ts`)
 
 **Browser E2E proven** (2/2 PASS, 2026-06-19). Recovery is native Matrix 4S keyed by a **member
