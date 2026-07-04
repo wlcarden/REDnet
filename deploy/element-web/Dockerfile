@@ -96,6 +96,9 @@ RUN git apply --whitespace=fix panic-button.patch \
 #      button opening the /governance/ dashboard.
 COPY src/RednetRetentionPill.tsx ./src/components/views/rooms/RednetRetentionPill.tsx
 COPY src/RednetGovernanceButton.tsx ./src/components/views/spaces/RednetGovernanceButton.tsx
+# RednetGovernanceButton opens a menu including Pending requests (approve/deny),
+# so the requests dialog must be present before the build.
+COPY src/RednetRequestsDialog.tsx ./src/components/views/dialogs/RednetRequestsDialog.tsx
 COPY role-labels.patch ./role-labels.patch
 COPY retention-indicator.patch ./retention-indicator.patch
 COPY governance-nav.patch ./governance-nav.patch
@@ -221,6 +224,9 @@ RUN if grep -rqlF 'Organizer' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Messages here disappear after' webapp/ 2>/dev/null; then \
       echo "REDnet: retention indicator bundled"; \
     else echo "REDnet WARNING: retention pill NOT bundled — re-anchor retention-indicator.patch + check RednetRetentionPill imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Pending requests' webapp/ 2>/dev/null; then \
+      echo "REDnet: pending-requests dialog bundled"; \
+    else echo "REDnet WARNING: pending-requests dialog NOT bundled — check RednetRequestsDialog + RednetGovernanceButton menu against ${ELEMENT_VERSION}."; fi
 RUN if grep -rqlF 'Governance dashboard' webapp/ 2>/dev/null; then \
       echo "REDnet: governance nav button bundled"; \
     else echo "REDnet WARNING: governance button NOT bundled — re-anchor governance-nav.patch + check RednetGovernanceButton imports against ${ELEMENT_VERSION}."; fi
