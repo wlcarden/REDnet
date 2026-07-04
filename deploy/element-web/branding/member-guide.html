@@ -213,9 +213,11 @@
     </ul>
 
     <div class="callout callout-green">
-      <strong>First time?</strong> Open <code>#welcome</code> in the sidebar and read the
-      pinned message. It has your recovery passphrase instructions. Then explore
-      <code>#general</code> and say hello.
+      <strong>First time?</strong> Right after you log in, a one-time checklist walks you
+      through the essentials &mdash; saving your passphrase, turning off lock-screen
+      previews, keeping your identity out of chat, and how retention works (this guide
+      covers each in depth). Then open <code>#welcome</code> in the sidebar for the pinned
+      recovery instructions, explore <code>#general</code>, and say hello.
     </div>
   </div>
 
@@ -391,8 +393,10 @@
     <div class="section-label">Message retention</div>
     <p>
       Most rooms have automatic message retention enabled. Messages older than
-      the retention period are automatically deleted from the server. The
-      <code>#reference</code> room is exempt so that pinned resources persist.
+      the retention period are automatically deleted from the server. Each room shows
+      its window as a pill in the header &mdash; e.g. <em>messages disappear after 30
+      days</em> &mdash; so you can see it at a glance. The <code>#reference</code> room
+      is exempt so that pinned resources persist.
       Do not treat retention as a guarantee that messages disappear from every
       device; members who were online may have cached copies locally.
     </p>
@@ -463,6 +467,11 @@
       You can also write the reason directly after the username:<br>
       <code>!report @username suspicious login from new device</code>
     </p>
+    <p>
+      If you can point to one of their messages, the quickest way is to right-click
+      (or long-press) it and choose <strong>Report to organizers</strong> &mdash; same
+      private alert, one step.
+    </p>
 
     <div class="callout callout-blue">
       <strong>Reports are confidential.</strong>
@@ -516,13 +525,19 @@
     <p>
       Need a room for a project, working group, or region? You can't create
       rooms directly — every room here is set up encrypted and connected to
-      the community by an organizer. Ask for one through your bot DM:
+      the community by an organizer. Ask for one:
     </p>
     <ol class="steps">
-      <li>Open your DM with <code>@rednet-gov</code></li>
-      <li>For a room: <code>!gov request room "Kitchen Crew" --why "coordinate food runs"</code></li>
-      <li>For a whole sub-space (a folder that groups several rooms &mdash; e.g. a region or chapter): <code>!gov request space "Northwest Chapter" --why "regional coordination"</code></li>
+      <li>Click the <strong>+</strong> next to the room list and choose
+        <strong>Request a room or space</strong></li>
+      <li>Pick room or space, give it a name and a short why, and send</li>
     </ol>
+    <p>
+      Or do the same from your DM with <code>@rednet-gov</code>:
+      <code>!gov request room "Kitchen Crew" --why "coordinate food runs"</code>
+      (use <code>!gov request space "Northwest Chapter" --why "..."</code> for a whole
+      sub-space &mdash; a folder that groups several rooms, e.g. a region or chapter).
+    </p>
     <p>
       An organizer reviews it and you'll hear back in the same DM. If it's
       approved, you're invited automatically — and you become the room's

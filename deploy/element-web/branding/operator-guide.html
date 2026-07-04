@@ -244,6 +244,13 @@
       your identity once (that's how the app checks you're an organizer). Requires the organizer
       role (PL&nbsp;75). Each token is single-use and expires in 7 days.
     </p>
+    <p>
+      For a quick single invite without opening the dashboard, use the
+      <strong>Governance</strong> menu at the bottom of the space panel &rarr;
+      <strong>Invite someone</strong> &mdash; enter a label, mint, and copy the join
+      link to hand off. The dashboard <strong>Mint</strong> tab stays the place for
+      batches and print-card formats.
+    </p>
 
     <div class="section-label">From the terminal &mdash; mint a single invite</div>
     <div class="cmd"><span class="comment"># The label says who the invite is for. Be specific.</span>
@@ -281,7 +288,15 @@
       After someone registers, confirm their vouch. This posts a join announcement
       to <code>#welcome</code> and marks the invite as claimed in the vouch log.
     </p>
-
+    <div class="callout callout-blue">
+      <strong>In the app (primary):</strong> open the member's profile and click
+      <strong>Confirm vouch</strong> &mdash; one click. For the fuller form (a label, or
+      recording that someone else vouched), use <strong>Manage member</strong> in the
+      same profile. Their profile then shows <strong>&ldquo;Vouched by&nbsp;you&rdquo;</strong>.
+      Confirming is what fills in that &ldquo;Vouched by&rdquo; line for everyone &mdash; so do it,
+      or the trust chain stays blank.
+    </div>
+    <p>The terminal equivalent:</p>
     <div class="cmd">./confirm-vouch.sh @maria</div>
 
     <div class="section-label">Querying the vouch graph</div>
@@ -305,6 +320,13 @@
       Open <a href="/governance/" style="color:#3E93DE;font-weight:600;">/governance/</a>
       in your browser. The dashboard has four tabs — no terminal needed.
     </p>
+    <div class="callout callout-blue">
+      <strong>The Governance menu.</strong> You don't have to type a URL: an
+      organizer-only <strong>Governance</strong> button sits at the bottom of the left
+      space panel. It opens the <strong>Governance dashboard</strong>, <strong>Pending
+      requests</strong> (approve/deny member room requests), and <strong>Invite
+      someone</strong>.
+    </div>
 
     <div class="section-label">Dashboard tab</div>
     <p>
@@ -426,6 +448,15 @@
 <span class="comment"># Revoke a voucher and everyone they introduced (admin only):</span>
 !gov revoke-chain @voucher <span class="flag">--reason</span> <span class="string">"reason"</span></div>
 
+    <div class="callout callout-blue">
+      <strong>Most of these are one click in the app.</strong> Open a member's profile
+      &rarr; <strong>Manage member</strong> to <strong>Confirm vouch</strong>,
+      <strong>Set role</strong>, or <strong>Revoke access</strong> &mdash; same commands,
+      same audit record in <code>#gov-bot</code>. To report a message, right-click it
+      &rarr; <strong>Report to organizers</strong>. The <code>!gov</code> commands here
+      still work and are the way to script, or to act from your phone.
+    </div>
+
     <div class="section-label">Community management (rooms &amp; spaces)</div>
     <p>
       Room creation is server-locked to the system accounts — members'
@@ -456,6 +487,15 @@
 <span class="comment"># Wind down (archive = read-only + unlinked; delete = purged, admin only):</span>
 !gov archive kitchen-crew
 !gov delete kitchen-crew <span class="flag">--confirm</span></div>
+
+    <div class="callout callout-blue">
+      <strong>In the app:</strong> the <strong>Governance</strong> menu &rarr;
+      <strong>Pending requests</strong> lists every open request with
+      <strong>Approve</strong> / <strong>Deny</strong> buttons &mdash; no watching chat or
+      copying <code>REQ-</code> ids. To wind a room down, right-click it in the room list
+      &rarr; <strong>Archive room</strong> (organizer) or <strong>Delete room</strong>
+      (admin; type-to-confirm). Same effects as the commands above.
+    </div>
 
     <div class="callout callout-blue">
       <strong>Approved requesters become moderators.</strong>
