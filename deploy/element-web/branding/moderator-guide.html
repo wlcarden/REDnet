@@ -216,6 +216,13 @@
       and handle community-wide actions. Regular members are
       <span class="pl-badge pl-0">PL 0</span>.
     </p>
+    <p>
+      Each person's role now shows as a small label next to their name
+      (Moderator&nbsp;/ Organizer&nbsp;/ Admin), so you can tell at a glance who to
+      escalate to. Setting roles, confirming vouches, and revoking access live in a
+      member profile's <strong>Manage member</strong> dialog &mdash; those are organizer
+      (PL&nbsp;75+) actions, so that item won't appear for you.
+    </p>
 
     <div class="compare">
       <div class="compare-col compare-yes">
@@ -366,6 +373,15 @@
       <code>!gov</code> commands. As a moderator you can run audits
       and report compromised accounts without needing server access.
     </p>
+    <div class="callout callout-blue">
+      <strong>To report a message, right-click it (or long-press) &rarr; Report to
+      organizers.</strong> This sends a private, coercion-aware report to the gov bot &mdash;
+      the reported person is never notified. It's the fastest path, and the one to point
+      members at. (The native Element &ldquo;Report&rdquo; was removed because it routed to the
+      homeserver admin, not your organizers.) Use the <code>!gov</code>/<code>!report</code>
+      commands below when you're reporting an <em>account</em> rather than a specific
+      message, or running an audit.
+    </div>
 
     <div class="section-label">Commands you can use</div>
     <div class="cmd"><span class="comment"># Check network status:</span>
@@ -388,8 +404,9 @@
 
     <div class="callout callout-blue">
       <strong>Members report through a private DM.</strong>
-      Regular members do not have access to <code>#gov-bot</code>. They use
-      <code>!report</code> in a private DM with <code>@rednet-gov</code>.
+      Regular members do not have access to <code>#gov-bot</code>. They right-click a
+      message &rarr; <strong>Report to organizers</strong> (or type <code>!report</code>
+      in a private DM with <code>@rednet-gov</code>).
       Reports filed this way appear in <code>#gov-bot</code> as alerts.
       The reporter's identity is visible to operators but not to the
       person being reported.
