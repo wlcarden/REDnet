@@ -137,3 +137,67 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run typecheck
+
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      element: ${{ steps.filter.outputs.element }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            element:
+              - 'deploy/element-web/**'
+              - '.github/workflows/ci.yml'
+
+  element-image-build:
+    # The fast `element-build` job above only `git apply --check`s the patches and typechecks the
+    # module — it never applies the patches for real, COPYs the soft-fork .tsx components, or runs
+    # webpack. So a bad component import/JSX or a patch that applies-but-breaks-compilation passes
+    # CI and only fails the local build. This job closes that: it builds the actual Element image
+    # from the Dockerfile (the source of truth — no logic to keep in sync), which applies every
+    # patch, COPYs every component, compiles with webpack, and runs the bundle sentinels. Gated to
+    # Element changes so non-Element PRs stay fast.
+    name: Element Web — full image build
+    needs: changes
+    if: needs.changes.outputs.element == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/element-web
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Dockerfile COPYs config.json + home.html (normally rendered from rednet.env by
+      # build.sh). Render dummy values so the build proceeds — they're runtime-only assets, not
+      # compiled, so CI values don't matter; this job tests that the patches + components COMPILE.
+      - name: Render config.json + home.html (dummy CI values)
+        run: |
+          sed -e 's/__REDNET_RETENTION_DAYS__/7/g' \
+              -e 's/__REDNET_CALLS_ENABLED__/false/g' \
+              -e 's/__REDNET_[A-Z_]*__/ci.example/g' \
+              config.json.template > config.json
+          sed 's/__REDNET_[A-Z_]*__/ci.example/g' branding/home.html.template > branding/home.html
+
+      - name: Build the Element image (applies patches, compiles components, runs sentinels)
+        run: |
+          set -o pipefail
+          docker build --progress=plain -t rednet-element-ci . 2>&1 | tee /tmp/element-build.log
+
+      - name: Fail on any unbundled REDnet patch or component
+        run: |
+          # A compile error already fails the build step above (pipefail). This catches the
+          # graceful cases: a patch that applied-but-didn't-bundle echoes "REDnet WARNING/XXX".
+          # But buildkit also prints each RUN's command TEXT, which contains those strings as
+          # literals in the un-taken else-branches — so match only echoed OUTPUT by excluding the
+          # command-definition lines (they carry `RUN `, `echo "`, or `||`).
+          hits=$(grep -E "REDnet (WARNING|XXX)" /tmp/element-build.log | grep -vE 'RUN |echo "|\|\|' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::A REDnet soft-fork patch or component did not apply/bundle:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "All REDnet patches applied and all soft-fork components bundled."
