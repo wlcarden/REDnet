@@ -109,6 +109,18 @@ RUN git apply --whitespace=fix governance-nav.patch \
       && echo "REDnet: governance-nav patch APPLIED" \
    || echo "REDnet WARNING: governance-nav.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the governance dashboard button."
 
+# 10) message "Report to organizers" — the coercion-aware replacement for the
+#     native Report we removed (hide-affordances). Adds a MessageContextMenu item
+#     that sends `!report @sender` to the @rednet-gov DM (gov bot alerts organizers).
+#     Shares MessageContextMenu.tsx with hide-affordances.patch but the hunks don't
+#     overlap (verified applies to both the pristine + hide-affordances-patched tree).
+#     Graceful: members can still !report in their gov-bot DM by hand.
+COPY src/RednetReportDialog.tsx ./src/components/views/dialogs/RednetReportDialog.tsx
+COPY report-to-organizers.patch ./report-to-organizers.patch
+RUN git apply --whitespace=fix report-to-organizers.patch \
+      && echo "REDnet: report-to-organizers patch APPLIED" \
+   || echo "REDnet WARNING: report-to-organizers.patch did not apply to ${ELEMENT_VERSION}. Re-anchor it (README). Building WITHOUT the Report-to-organizers item (members use !report by hand)."
+
 RUN yarn install --frozen-lockfile
 RUN yarn build
 COPY config.json ./webapp/config.json
@@ -178,6 +190,9 @@ RUN if grep -rqlF 'Messages here disappear after' webapp/ 2>/dev/null; then \
 RUN if grep -rqlF 'Governance dashboard' webapp/ 2>/dev/null; then \
       echo "REDnet: governance nav button bundled"; \
     else echo "REDnet WARNING: governance button NOT bundled — re-anchor governance-nav.patch + check RednetGovernanceButton imports against ${ELEMENT_VERSION}."; fi
+RUN if grep -rqlF 'Report to organizers' webapp/ 2>/dev/null; then \
+      echo "REDnet: report-to-organizers bundled"; \
+    else echo "REDnet WARNING: report-to-organizers NOT bundled — re-anchor report-to-organizers.patch + check RednetReportDialog imports against ${ELEMENT_VERSION}."; fi
 
 # --- serve the static SPA on :80; the front Caddy reverse-proxies to this ---
 # caddy:2-alpine v2.11.4

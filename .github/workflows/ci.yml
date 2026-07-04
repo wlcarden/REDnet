@@ -125,6 +125,7 @@ jobs:
           git apply --check "${{ github.workspace }}/deploy/element-web/role-labels.patch"
           git apply --check "${{ github.workspace }}/deploy/element-web/retention-indicator.patch"
           git apply --check "${{ github.workspace }}/deploy/element-web/governance-nav.patch"
+          git apply --check "${{ github.workspace }}/deploy/element-web/report-to-organizers.patch"
           echo "All patches apply cleanly to ${{ steps.ver.outputs.version }}"
 
       - name: Verify module builds
