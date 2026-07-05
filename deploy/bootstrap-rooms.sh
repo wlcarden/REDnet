@@ -153,7 +153,7 @@ CHANNELS
   #general — open discussion
   #announcements — organizer posts (read-only)
 
-Public-safe durable info — crisis lines, legal and mutual-aid resources — lives on the permanent /reference page (open it in your browser). Keep sensitive specifics — meeting points, personal contacts — in chat, where they're members-only.
+Public-safe durable info — legal, digital-security, and mutual-aid resources — lives on the permanent /reference page (open it in your browser). Keep sensitive specifics — meeting points, personal contacts — in chat, where they're members-only.
 
 Head to #general to start chatting."
   send_notice "$WELCOME" "$WELCOME_MSG" && echo "  #welcome notice sent (plaintext, pre-E2EE)"
