@@ -16,24 +16,38 @@
   .brand { font-size: 13px; font-weight: 700; letter-spacing: -0.3px; }
   .brand b { color: #E5484D; }
   h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin: 14px 0 8px; }
-  .lede { color: #8B8D98; font-size: 15px; max-width: 60ch; }
+  .lede { color: #8B8D98; font-size: 15px; max-width: 62ch; }
+  .freshness { display: flex; align-items: baseline; gap: 8px; margin-top: 14px; font-size: 12.5px; color: #8B8D98; }
+  .freshness .dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #30A46C; transform: translateY(-1px); }
+  .freshness b { color: #ECEDEE; font-weight: 600; }
   .section { background: #16181B; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px 24px; margin-top: 18px; }
-  .section-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 12px; }
+  .section-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .section-sub { color: #8B8D98; font-size: 13px; margin-bottom: 8px; }
   p { margin-bottom: 12px; }
   ul { list-style: none; }
-  li { padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+  li { padding: 14px 0; border-top: 1px solid rgba(255,255,255,0.06); }
   li:first-child { border-top: none; }
-  .k { color: #ECEDEE; font-weight: 600; }
-  .v { color: #8B8D98; }
+  .item-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+  .k { color: #ECEDEE; font-weight: 600; font-size: 15px; }
+  a.k { color: #ECEDEE; text-decoration: none; }
+  a.k:hover { color: #FFFFFF; text-decoration: underline; }
+  .v { color: #8B8D98; font-size: 14px; margin-top: 3px; }
   a { color: #3E93DE; }
+  .meta { font-size: 12.5px; color: #62646C; margin-top: 5px; word-break: break-word; }
+  .meta a { color: #8B8D98; }
+  .meta .ph { color: #ECEDEE; font-weight: 600; letter-spacing: 0.02em; }
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; transform: translateY(-1px); }
+  .tag-nat { background: rgba(62,147,222,0.12); color: #7FB7EA; }
+  .tag-dc { background: rgba(48,164,108,0.12); color: #54C08A; }
+  .tag-md { background: rgba(48,164,108,0.10); color: #54C08A; }
+  .caveat { display: block; margin-top: 6px; color: #E5A536; font-size: 12.5px; line-height: 1.5; }
   code { font-family: 'SF Mono','Fira Code','JetBrains Mono',monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 6px; color: #ECEDEE; }
   .callout { border-radius: 0 10px 10px 0; padding: 14px 16px; margin: 14px 0; color: #C4C7C9; font-size: 14px; }
   .callout strong { color: #ECEDEE; font-weight: 600; }
   .callout-amber { background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; }
   .callout-red { background: rgba(229,72,77,0.10); border-left: 3px solid #E5484D; }
   .callout-blue { background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; }
-  .placeholder { color: #62646C; font-style: italic; }
-  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); color: #62646C; font-size: 12px; }
+  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); color: #62646C; font-size: 12px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -42,10 +56,16 @@
     <div class="brand"><b>RED</b>net</div>
     <h1>Reference</h1>
     <p class="lede">
-      Durable, public-safe information — crisis lines, legal and mutual-aid
-      resources, and general guidance. This page does not auto-delete, so it's the
-      place for things worth keeping that are safe for anyone to see.
+      Durable, public-safe resources — know-your-rights and legal support, digital
+      security, and mutual aid. This page does not auto-delete, so it's the place for
+      things worth keeping that are safe for anyone to see.
     </p>
+    <div class="freshness">
+      <span class="dot"></span>
+      <span>Links and phone numbers below were checked against each organization's
+      official site on <b>4 July 2026</b>. Details change — confirm before relying on
+      one in an emergency.</span>
+    </div>
   </header>
 
   <div class="callout callout-amber">
@@ -57,45 +77,118 @@
   </div>
 
   <!-- ============================================================
-       OPERATORS: edit this file to fill in your community's details.
+       OPERATORS: edit this file to fit your community and location.
        It lives at deploy/element-web/branding/reference.html and is served live at
        /reference — no rebuild needed, just edit and save.
+
+       The resources below are researched, verified national + Washington-DC-metro
+       links (checked 2026-07-04). They are a starting point, not the final word:
+         - LOCALIZE. Add your own county / Northern Virginia / neighborhood contacts —
+           regional coverage below is deliberately thin. Remove what doesn't fit.
+         - RE-VERIFY periodically. Re-open each link and re-confirm the NLG-DC number
+           before you republish; update the "checked on" date in the header.
        RULE OF THUMB: if it would help an adversary who found this URL, it does NOT
        belong here — put it in chat. Public hotlines, org links, and generic guidance
        are fine. Exact locations, personal contacts, and operational plans are not.
+       TAGS: "National" = works anywhere in the US · "DC-metro" / "Maryland" = local.
        ============================================================ -->
 
   <div class="section">
-    <div class="section-title">Crisis &amp; support lines</div>
-    <p class="v">Public, always-available lines. Safe to list here because they're already public.</p>
+    <div class="section-title">Know your rights &amp; legal support</div>
+    <p class="section-sub">Before an action: read the guides. If someone is arrested: legal support and bail.</p>
     <ul>
-      <li><span class="k">Add a public crisis / safety line</span> — <span class="v placeholder">name + number</span></li>
-      <li><span class="k">Add a legal-aid or bail line</span> — <span class="v placeholder">org name + number</span></li>
-      <li><span class="k">Add a medical / harm-reduction line</span> — <span class="v placeholder">org name + number</span></li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.aclu.org/know-your-rights/protesters-rights">ACLU — Protesters' Rights</a><span class="tag tag-nat">National</span></div>
+        <div class="v">Your First Amendment rights before, during, and after a demonstration — what police can and can't do.</div>
+        <div class="meta"><a href="https://www.aclu.org/know-your-rights/protesters-rights">aclu.org/know-your-rights/protesters-rights</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.acludc.org/know-your-rights/know-your-rights-demonstrations-dc/">ACLU of DC — Demonstrations in D.C.</a><span class="tag tag-dc">DC-metro</span></div>
+        <div class="v">Know-your-rights for protests in Washington, DC, including permit rules and before/during/after guidance.</div>
+        <div class="meta"><a href="https://www.acludc.org/know-your-rights/know-your-rights-demonstrations-dc/">acludc.org/know-your-rights</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.nlg.org/massdefenseprogram/">National Lawyers Guild — Mass Defense Program</a><span class="tag tag-nat">National</span></div>
+        <div class="v">Trains and deploys legal observers, runs know-your-rights trainings and jail support, and finds representation for arrested protesters through local chapters.</div>
+        <div class="meta"><a href="https://www.nlg.org/massdefenseprogram/">nlg.org/massdefenseprogram</a> · <a href="mailto:massdef@nlg.org">massdef@nlg.org</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.nlgdc.org/">NLG Washington, DC Chapter — Legal Support</a><span class="tag tag-dc">DC-metro</span></div>
+        <div class="v">The DC chapter of the National Lawyers Guild — protest legal observers, jail support, and arrest support for DC-area actions.</div>
+        <div class="meta">
+          Request intake: <a href="mailto:dcmassdefense@gmail.com">dcmassdefense@gmail.com</a> · <a href="https://www.nlgdc.org/">nlgdc.org</a>
+          <span class="caveat">A hotline, <span class="ph">202-850-0010</span>, is listed on the NLG national chapter directory. The DC chapter directs new requests to the email above, and protest hotlines are often stood up per event — confirm the current arrest-support number with NLG-DC before an action rather than assuming this one is staffed.</span>
+        </div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.communityjusticeexchange.org/en/nbfn-directory">National Bail Fund Network — Directory</a><span class="tag tag-nat">National</span></div>
+        <div class="v">Directory of 90+ community bail and bond funds across the US — use it to find a fund that can post bail in your area.</div>
+        <div class="meta"><a href="https://www.communityjusticeexchange.org/en/nbfn-directory">communityjusticeexchange.org/en/nbfn-directory</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.baltimoreactionlegal.org/community-bail-fund">Baltimore Action Legal Team — Community Bail Fund</a><span class="tag tag-md">Maryland</span></div>
+        <div class="v">A community bail fund serving Baltimore and Maryland, operating since 2015.</div>
+        <div class="meta"><a href="https://www.baltimoreactionlegal.org/community-bail-fund">baltimoreactionlegal.org/community-bail-fund</a></div>
+      </li>
     </ul>
   </div>
 
   <div class="section">
-    <div class="section-title">Legal &amp; mutual-aid resources</div>
+    <div class="section-title">Digital security</div>
+    <p class="section-sub">Protect your phone, your accounts, and the people you organize with.</p>
     <ul>
-      <li><span class="k">Add a legal-observer / know-your-rights org</span> — <span class="v placeholder">name + link</span></li>
-      <li><span class="k">Add local mutual-aid / clinics / shelters</span> — <span class="v placeholder">public orgs + links</span></li>
-      <li><span class="k">Add a press / documentation resource</span> — <span class="v placeholder">org + link</span></li>
+      <li>
+        <div class="item-head"><a class="k" href="https://ssd.eff.org/">EFF — Surveillance Self-Defense</a><span class="tag tag-nat">National</span></div>
+        <div class="v">Practical, plain-language digital-security guides from the Electronic Frontier Foundation — device encryption, turning off biometric unlock before a protest, and encrypted messaging with Signal.</div>
+        <div class="meta"><a href="https://ssd.eff.org/">ssd.eff.org</a> · Protest guide: <a href="https://ssd.eff.org/module/attending-protest">Attending a Protest</a> · <a href="https://ssd.eff.org/playlist/activist-or-protester">Activist or Protester playlist</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.accessnow.org/help/">Access Now — Digital Security Helpline</a><span class="tag tag-nat">National / intl</span></div>
+        <div class="v">Free, confidential digital-security help for activists, journalists, and human-rights defenders — both preventive advice and rapid response if you think you've been targeted.</div>
+        <div class="meta">
+          <a href="https://www.accessnow.org/help/">accessnow.org/help</a> · <a href="mailto:help@accessnow.org">help@accessnow.org</a>
+          <span class="caveat">No phone line — reach them by email or the web form. They aim to respond within ~2 hours (initial reply, not a fix), and support is for members of civil society.</span>
+        </div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://freedom.press/digisec/">Freedom of the Press Foundation — Digital Security</a><span class="tag tag-nat">National</span></div>
+        <div class="v">Journalist-centered guides — encrypting messages, locking down accounts and devices, resisting hacking and harassment — much of which applies directly to activists too.</div>
+        <div class="meta"><a href="https://freedom.press/digisec/">freedom.press/digisec</a></div>
+      </li>
     </ul>
   </div>
 
   <div class="section">
-    <div class="section-title">General safety guidance</div>
-    <p class="placeholder">
-      Add durable, non-specific guidance that's safe to be public — e.g. general
-      know-your-rights basics, what to do if stopped, how to reach a legal observer.
-      Keep it generic; anything specific to your community goes in chat.
-    </p>
-    <div class="callout callout-red">
-      <strong>Under duress?</strong> Your avatar menu has <strong>Panic — wipe this
-      device</strong>: it wipes this device and locks your account (reversible). See
-      the <a href="/safety">safety guide</a>.
-    </div>
+    <div class="section-title">Mutual aid &amp; documenting abuses</div>
+    <p class="section-sub">Find support near you, and know your rights to record what happens.</p>
+    <ul>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.mutualaidhub.org/">Mutual Aid Hub</a><span class="tag tag-nat">National</span></div>
+        <div class="v">A searchable map to find mutual-aid networks and community support projects near you — join efforts, offer resources, or request help.</div>
+        <div class="meta"><a href="https://www.mutualaidhub.org/">mutualaidhub.org</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://serveyourcitydc.org/">Serve Your City / Ward 6 Mutual Aid</a><span class="tag tag-dc">DC-metro</span></div>
+        <div class="v">A Washington, DC nonprofit and hub for #DCMutualAid, coordinating neighbor-to-neighbor support across the city.</div>
+        <div class="meta"><a href="https://serveyourcitydc.org/">serveyourcitydc.org</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://www.aclu.org/know-your-rights/recording-and-documenting-police-and-federal-agents">ACLU — Recording &amp; Documenting Police</a><span class="tag tag-nat">National</span></div>
+        <div class="v">Your right to film police and federal agents in public, and how to document what you see safely.</div>
+        <div class="meta"><a href="https://www.aclu.org/know-your-rights/recording-and-documenting-police-and-federal-agents">aclu.org/know-your-rights/recording-and-documenting-police-and-federal-agents</a></div>
+      </li>
+      <li>
+        <div class="item-head"><a class="k" href="https://pressfreedomtracker.us/">U.S. Press Freedom Tracker</a><span class="tag tag-nat">National</span></div>
+        <div class="v">A Freedom of the Press Foundation project documenting press-freedom violations in the US — arrests, assaults, and equipment seizures, including at protests.</div>
+        <div class="meta"><a href="https://pressfreedomtracker.us/">pressfreedomtracker.us</a></div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>Under duress?</strong> Your avatar menu has <strong>Panic — wipe this
+    device</strong>: it wipes this device and locks your account (reversible). See
+    the <a href="/safety">safety guide</a>.
   </div>
 
   <div class="callout callout-blue">
@@ -103,12 +196,14 @@
     rooms are members-only and encrypted. Sensitive, operational details are meant to
     roll off after a few days (that's the point: a seized server reveals little). Share
     them in the relevant room and re-share when they change. This page is only for the
-    durable, public-safe things above.
+    durable, public-safe resources above.
   </div>
 
   <footer>
     RED<b style="color:#E5484D">net</b> · Reference · Public, permanent, organizer-maintained.
-    Not chat, not private — keep sensitive details out.
+    Not chat, not private — keep sensitive details out.<br>
+    Resources verified against official sources on 4 July 2026. Re-confirm before relying;
+    hotline numbers and links change over time.
   </footer>
 </div>
 </body>
