@@ -25,6 +25,13 @@ docker compose --profile web up -d element    # start it; the front proxies / to
 
 Pin the version in `rednet.env`: `ELEMENT_VERSION=v1.11.86` (use an exact upstream tag).
 
+**CI covers this two ways.** The fast `element-build` job `git apply --check`s every patch against the
+pinned tag on each PR. A second **`element-image-build`** job (gated by a `changes` paths-filter to
+`deploy/element-web/**`) does a full `docker build` of this image — applying every patch for real,
+COPYing the components, compiling with webpack, and running the bundle sentinels — so a patch that
+applies-but-breaks-compilation, or a component with a bad import/JSX, fails CI instead of only the
+local build.
+
 ## The silent-onboarding integration (`integration.patch`)
 
 One hunk in `src/components/structures/MatrixChat.tsx`, applied best-effort by the Dockerfile (it

@@ -93,7 +93,7 @@ rooms, sets power levels, adds to Draupnir management — one command).
 
 ## ⚠️ Before production
 
-Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. Run backups (`backup.sh` with `RESTIC_REPOSITORY`/`RESTIC_PASSWORD` set, repo password held off-core) + monitoring (`--profile monitoring`) + the WireGuard tunnel. Run the Spike 04 restore drill. Bootstrap operators with `bootstrap-operator.sh` (creates account, invites to all rooms, sets power levels, adds to Draupnir management room). Then `!draupnir rooms add` the community rooms. Run `invite-to-community.sh` for any CLI-provisioned users.
+Image digests are pinned (PRODUCTION.md §2). Move the front to a separate box. Run backups (`backup.sh` with `RESTIC_REPOSITORY`/`RESTIC_PASSWORD` set, repo password held off-core) + monitoring (`--profile monitoring`) + the WireGuard tunnel. Run the Spike 04 restore drill. Bootstrap operators with `bootstrap-operator.sh` (creates account, invites to all rooms, sets power levels, adds to Draupnir management room). Then `!draupnir rooms add` the community rooms. Run `invite-to-community.sh` for any CLI-provisioned users. Fill in the public `/reference` page (`element-web/branding/reference.html`) — it's served live by the front (edit + save, no rebuild).
 
 ## Operational profiles
 

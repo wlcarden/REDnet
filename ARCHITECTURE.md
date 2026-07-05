@@ -1,6 +1,6 @@
 # REDnet — System Reference (how it all works, and what you get)
 
-**Status:** Architecture shakedown (2026-06-16). The third doc: `DESIGN.md` = _why_, `SPEC.md` = _what to build_, this = **_how it works end-to-end + what features the community actually gets_**. Goal: nothing about the running system is a surprise before it touches hardware.
+**Status:** Architecture shakedown (2026-06-16). The third doc: `DESIGN.md` = _why_, `SPEC.md` = _what to build_, this = **_how it works end-to-end + what features the community actually gets_**. Goal: nothing about the running system is a surprise before it touches hardware. **Build status (2026-07-04):** the stack described here is built and CI-verified in-sandbox ([deploy/](deploy/)); the real-infra + external-review items are in §12 and [README § Project status](README.md#project-status).
 
 Everything here is either empirically verified in `spikes/` + `prototype/` (flagged ✅) or primary-source-researched (flagged with the source area). Genuine unknowns are in §12.
 
@@ -135,7 +135,7 @@ This matters because onboarding, recovery, and the honeypot all hinge on it.
 | Element Call (voice/video)                              | ✅ (needs media node)                 | ✅ (needs media node)       | **Deferred**; separable add-on                                                              |
 | Multi-account; widgets                                  | ✅                                    | ❌ / limited                |                                                                                             |
 
-**Enabled in REDnet:** rooms, spaces, threads (web), replies/reactions/edits, formatting, mentions, pins, polls, files, voice messages, static location, search (web/desktop), power-level moderation + Draupnir.
+**Enabled in REDnet:** rooms, spaces, threads (web), replies/reactions/edits, formatting, mentions, pins, polls, files, voice messages, static location, search (web/desktop), power-level moderation + Draupnir; a public static `/reference` page for durable public-safe info (hotline / legal / mutual-aid links).
 
 **Disabled by our hardening:** **presence** (server kill switch → ⚠️ everyone shows "Offline" permanently — the one clean server-side off-switch), URL previews, public room directory, federation, guest access. **Typing + read receipts have _no_ clean server-side off-switch** — only presence does; the honest mitigations are private read receipts + "don't send typing" enforced **by our Element Web fork** (stock clients can opt out but can't be forced). _This corrects the SPEC's "presence/typing/receipts off" to "presence off server-side; typing/receipts suppressed client-side via the fork."_
 
@@ -191,6 +191,6 @@ This matters because onboarding, recovery, and the honeypot all hinge on it.
 - `DEC` **Mobile-search gap** — accept it, route archivists to Element Desktop, or run a search bot/bridge. (Real constraint for an archive-heavy org.)
 - `DEC` **Threads on mobile** — enable the EX labs flag (beta), or keep discussion in flat rooms until GA.
 
-**Verify-before-deploy (researcher thin-evidence flags):** EX Threads GA status; `feature_pinning` default-on in your Element Web build; the UnifiedPush Android fix release tag (~26.04.3); Draupnir's native-E2EE vs Pantalaimon requirement; the exact `postLoginSetup` patch against the current `element-web` HEAD; whether `embedded_pages` HTML executes scripts (don't rely on it); Element's self-branded-apps branding scope + price.
+**Verify-before-deploy (researcher thin-evidence flags):** EX Threads GA status; `feature_pinning` default-on; the UnifiedPush Android fix release tag (~26.04.3); whether `embedded_pages` HTML executes scripts (don't rely on it); Element's self-branded-apps branding scope + price. **Resolved since (built):** the `postLoginSetup` / `integration.patch` is pinned to `ELEMENT_VERSION` (v1.11.86) and CI `git apply --check`s it every PR (plus a full image build); **Draupnir runs against native-E2EE Synapse without Pantalaimon** (acts on encrypted rooms without decrypting — see `deploy/`).
 
 **Already empirically settled (no longer open):** retention purges encrypted rooms ✅; two-tier topology + media ✅; backup is recoverable ✅; silent E2EE bootstrap ✅; MAS no-PII delegation ✅; Element-Web hand-off must be in-session ✅.
