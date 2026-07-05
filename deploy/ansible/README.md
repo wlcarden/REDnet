@@ -72,7 +72,7 @@ cd /opt/rednet/deploy
 `deploy.sh` detects the Ansible-provisioned stack (services already running, `REDNET_ROLE=core` in
 `rednet.env`), verifies Synapse and MAS are responding, then runs the bootstrap chain:
 
-1. Creates rooms (#welcome, #general, #announcements, #reference, etc.)
+1. Creates rooms (#welcome, #general, #announcements, etc.)
 2. Sets up governance infrastructure (#vouch-log, #governance)
 3. Configures Draupnir (moderation bot)
 4. Starts gov-bot (governance bot)

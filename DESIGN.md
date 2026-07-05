@@ -174,7 +174,7 @@ E2EE means message **content** is ciphertext server-side in every row. "Metadata
 
 ### 10a. Enforced (mandatory; users can't misconfigure away)
 
-**Homeserver:** mandatory E2EE, no plaintext rooms; cross-signing auto-bootstrapped + required (invisible but ON); **retention** — 7-day server-wide default, **per-room configurable** (named presets — e.g. Ephemeral 1h / Sensitive 24h / Standard 7d / Reference 30d — are nice-to-have, not mandatory), **media ≤ text**, paired with a **durable-reference surface** (pinned messages / a docs space) so short retention doesn't drive screenshotting; URL previews off; remote-media caching off; **presence disabled** (all users appear offline; `presence.enabled: false` in Synapse config); typing/receipts minimized on the web fork (honest: receipts/typing can't be fully disabled server-side; stock Element X mobile does not suppress them by default); guest access off; public directory off; **closed federation** (whitelist `[]` + no federation listener); **default room version 12** (creator retains infinite power level — cannot be demoted by a co-admin); **message rate limits** raised for closed-network profile (`rc_message` 0.5/s burst 50) to support bot burst operations without requiring a synapse-admin credential.
+**Homeserver:** mandatory E2EE, no plaintext rooms; cross-signing auto-bootstrapped + required (invisible but ON); **retention** — 7-day server-wide default, **per-room configurable** (named presets — e.g. Ephemeral 1h / Sensitive 24h / Standard 7d / Durable 30d — are nice-to-have, not mandatory), **media ≤ text**, capped by a **hard 30-day ceiling** (Synapse clamps every room to ≤30d — nothing persists longer), paired with a **durable-reference surface** (a public static `/reference` page) so short retention doesn't drive screenshotting; URL previews off; remote-media caching off; **presence disabled** (all users appear offline; `presence.enabled: false` in Synapse config); typing/receipts minimized on the web fork (honest: receipts/typing can't be fully disabled server-side; stock Element X mobile does not suppress them by default); guest access off; public directory off; **closed federation** (whitelist `[]` + no federation listener); **default room version 12** (creator retains infinite power level — cannot be demoted by a co-admin); **message rate limits** raised for closed-network profile (`rc_message` 0.5/s burst 50) to support bot burst operations without requiring a synapse-admin credential.
 
 **Identity/onboarding:** single-use, short-expiry, **no-PII** registration tokens; no email/phone; **MAS** for OIDC/Element X; **phased recovery** (Phase 0: accept-loss + device redundancy; Phase 1: passphrase; Phase 2: governance-gated escrow with passphrase-default — see §7 and [RECOVERY.md](RECOVERY.md)).
 
@@ -223,7 +223,7 @@ REDnet ships as a **forkable repo**: a deploying org sets jurisdiction, domain, 
 - Synapse + PostgreSQL (retention needs Synapse); **MAS included** for Element X mobile.
 - Onboarding via thin custom web page → pseudonymous no-PII account → auto key-backup → auto room-join; Element Web pre-baked.
 - **Recovery: accept-loss for v1** (no escrow; device redundancy / "also log in on web" is the recovery story); governance-gated identity-recovery hooks (dormant claim secret on the card) reserved for v2 (§7).
-- **Retention: 7-day default, per-room configurable** (presets optional), media ≤ text, paired with a durable-reference surface (§10).
+- **Retention: 7-day default, per-room configurable** (presets optional), **hard 30-day ceiling** (nothing persists longer), media ≤ text, paired with a durable-reference surface (the static `/reference` page — §10).
 - **No onion** (hurts non-technical access; the Orbot niche belongs to Tier 2).
 - Exposure-footprint minimization across the four axes (§6); no third-party telemetry.
 - **Calls deferred** to an isolated post-v1 Tier-1 module; Tier-2 voice = async voice notes (§8).
@@ -235,7 +235,7 @@ REDnet ships as a **forkable repo**: a deploying org sets jurisdiction, domain, 
 - `TODO` **Calls:** ship the Tier-1 calling module post-v1, or not at all? (Discord-UX appeal vs. the third exposed box + bandwidth.)
 - `TODO` **Topology detail:** how many front boxes; same/different jurisdiction for front vs. core vs. media.
 - `TODO` **Admission strictness:** liberal (scales fast, more informant risk) vs. strict per-vouch.
-- `TODO` **Coercion machinery in v1:** minimum (peer lockout + revocation) vs. add duress codes / canaries now.
+- ✅ **Coercion machinery** — resolved: shipped **duress panic-wipe** (Element panic button + gov-bot `!duress`, self-lock + reversible) alongside M-of-N revocation; anomaly canaries remain v2.
 - `TODO` **matrix-viewer preview:** include in v1 or defer.
 
 ### Spikes (verify before/within build — hands-on, not research)

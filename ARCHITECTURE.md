@@ -173,7 +173,7 @@ This matters because onboarding, recovery, and the honeypot all hinge on it.
 
 ## 10. What the community can and can't do (the honest summary)
 
-**Can:** run a real organizing town square — Spaces of channels, threaded discussion (web), files/images, voice messages, polls, pinned info + a durable Reference room, moderation with community ban-lists, on both web (full) and mobile (good). Content is encrypted; history auto-expires; joining is a 2-tap card scan with no PII.
+**Can:** run a real organizing town square — Spaces of channels, threaded discussion (web), files/images, voice messages, polls, pinned info + a durable public `/reference` page, moderation with community ban-lists, on both web (full) and mobile (good). Content is encrypted; history auto-expires; joining is a 2-tap card scan with no PII.
 
 **Can't / weak:** search history on mobile (or in the browser for encrypted rooms — desktop app only); casual drop-in voice; custom-emoji/sticker culture; native events/scheduling; Discord-style invite-link joining. Threads on mobile are beta. And the operator carries real load: a soft-forked client to maintain, push to decide, Synapse to keep current, Draupnir to run.
 
