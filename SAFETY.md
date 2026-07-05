@@ -54,7 +54,9 @@ Encryption protects messages _in transit and on the server._ It does **nothing**
 phone in their hand, or has infected it with spyware (like Pegasus). On your own screen, your messages are
 readable (that's the point), so anyone who controls your device reads what you read. **Your device security
 is your job, and it's the weakest point.** Lock it with a strong passcode, keep it updated, don't tap
-suspicious links, and have a plan if it might be seized.
+suspicious links, and have a plan if it might be seized. If you're about to lose control of your
+device, the app's user menu has a **Panic — wipe this device** button: it erases REDnet from the
+device and locks your account (your organizers can restore it later), so a seized phone reveals nothing.
 
 **The fact that you're using an encrypted app.**
 Someone who can watch your internet connection (an internet provider, a border checkpoint, a state telecom)
@@ -96,7 +98,7 @@ receipts), or use the website for sensitive conversations.
 Because messages are encrypted, searching through old conversations works **only on the desktop app**
 (Element Desktop or the website), where your device has stored the decrypted copies. The mobile app
 cannot search encrypted message history. If you need to find something, use the website or desktop.
-For must-find information, your community may pin important messages or keep a #reference room.
+For must-find information, your community may pin important messages, and durable public-safe resources (hotlines, legal and mutual-aid links) live on the **/reference page** — open it in your browser.
 
 ---
 

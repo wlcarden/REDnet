@@ -137,7 +137,8 @@ operator's temporary password is printed once — they should change it on first
 ### Governance tooling (DESIGN §11)
 
 Attributed invite minting, vouch provenance, compartmented sub-spaces, and coercion
-canary. All actions logged to `#vouch-log` (append-only, E2EE, retention-exempt).
+canary. All actions logged to `#vouch-log` (append-only, E2EE, ≤30 days like every room) and to
+**`vouch.jsonl` — the permanent on-disk audit trail**, immune to Matrix retention.
 
 ```bash
 # Set your operator identity (or add to rednet.env):

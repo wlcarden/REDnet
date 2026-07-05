@@ -11,7 +11,7 @@
 
 ## 1. v1 scope
 
-**In v1:** hardened Synapse + PostgreSQL + MAS on a no-public-IP **core**; a disposable clearnet **front** proxy over WireGuard; self-hosted **Element Web** (primary) + a thin **onboarding PWA**; **Element X** as the native mobile option; **Draupnir** moderation bot (also delivers retention presets); a **Reference room** for durable info; encrypted off-box **backups**; WireGuard-only **monitoring** and admin.
+**In v1:** hardened Synapse + PostgreSQL + MAS on a no-public-IP **core**; a disposable clearnet **front** proxy over WireGuard; self-hosted **Element Web** (primary) + a thin **onboarding PWA**; **Element X** as the native mobile option; **Draupnir** moderation bot (also delivers retention presets); a public static **/reference page** for durable public-safe info; encrypted off-box **backups**; WireGuard-only **monitoring** and admin.
 
 **Deferred / OFF in v1:** group **calls** (post-v1 isolated module — DESIGN §8); **matrix-viewer** public preview (conflicts with E2EE — see §11); **Policy Servers** (MSC4284, emerging); **v2 identity recovery** (hooks reserved — §6).
 
@@ -93,7 +93,7 @@ retention:
   enabled: true
   default_policy: { max_lifetime: 7d } # DEC: 7d default
   allowed_lifetime_min: 1h
-  allowed_lifetime_max: 30d # ★ permissive ceiling — do NOT clamp short here
+  allowed_lifetime_max: 30d # ★ HARD anti-forensic ceiling — Synapse clamps EVERY room to ≤30d; nothing on the server persists longer (a seized server reveals ≤30d)
   purge_jobs:
     - { longest_max_lifetime: 1d, interval: 30m } # tight, so 1h/24h presets purge promptly
     - { shortest_max_lifetime: 1d, interval: 12h }
@@ -127,7 +127,7 @@ MAS structurally prevents handing a logged-in session from a web page into Eleme
 **Track A — Web / PWA (primary, the seamless path). ~2 user actions, fully silent keys.**
 
 1. Scan card QR → branded onboarding PWA (our code) on the front.
-2. A **customized Element Web first-run** logs in the no-PII account (minted via MAS — Admin-API `POST /api/admin/v1/users` or `register-user`) and, **on Element Web's own session/device**, silently runs matrix-js-sdk `bootstrapCrossSigning` + `bootstrapSecretStorage` with an **app-supplied `createSecretStorageKey`** (key never shown — no UIA, MSC3967), auto-joins the welcome + Reference rooms, and prompts once for a **display name**. Done — the user is already in Element Web on a verified device.
+2. A **customized Element Web first-run** logs in the no-PII account (minted via MAS — Admin-API `POST /api/admin/v1/users` or `register-user`) and, **on Element Web's own session/device**, silently runs matrix-js-sdk `bootstrapCrossSigning` + `bootstrapSecretStorage` with an **app-supplied `createSecretStorageKey`** (key never shown — no UIA, MSC3967), auto-joins the welcome room, and prompts once for a **display name**. Done — the user is already in Element Web on a verified device.
    - ✅ **Verified (milestone D, `prototype/onboarding/handoff.mjs`):** because the bootstrapped device _is_ the Element Web session, Element Web shows **no recovery nag** (cross-signed device, keys cached). ★ **Do NOT** build this as a _separate_ PWA that hands a token to a _fresh_ Element Web login — that fresh login is an unverified new device that can't unlock the already-set-up secret storage, so Element Web re-prompts "verify this session / enter recovery key." **The crypto bootstrap must run in Element Web's own session/store.**
 
 **Track B — Element X (native mobile option). ~5 user actions, incl. one unavoidable recovery-key screen.**
@@ -140,15 +140,17 @@ MAS structurally prevents handing a logged-in session from a web page into Eleme
 
 **Recovery = accept-loss (DESIGN §7).** No escrow. "Also log in on web" (a second session) is the free recovery. **v2 hooks reserved now:** the card carries a dormant per-account **claim secret** (low-sensitivity claim token, not a decryption key); server stores `hash(claim secret) → account`; governance log persists `token → organizer → account`. A future v2 flow = claim secret + M-of-N moderator sign-off → restore account/rooms (not history). Cheap now, impossible to retrofit onto distributed cards.
 
-## 6. Retention delivery & the Reference room
+## 6. Retention delivery & the durable-reference surface
 
 **No Element client exposes per-room retention** (element-web#18630 closed not-planned), and per-room `m.room.retention` is experimental. So **the Draupnir bot delivers presets** by writing the state event on command — folded into the moderation bot you're already shipping (§8), not a new component.
 
-Presets (friendly label → `max_lifetime`): **Ephemeral 1h · Sensitive 24h · Standard 7d · Reference 30d.** Operator types e.g. `!rednet retention sensitive`; bot checks power level, writes `m.room.retention`, and **posts a plain-language confirmation in-room** — which doubles as the missing "messages auto-delete here" signal for members.
+Presets (friendly label → `max_lifetime`): **Ephemeral 1h · Sensitive 24h · Standard 7d · Durable 30d.** Operator types e.g. `!rednet retention sensitive`; bot checks power level, writes `m.room.retention`, and **posts a plain-language confirmation in-room** — which doubles as the missing "messages auto-delete here" signal for members. ★ `allowed_lifetime_max: 30d` is a **hard ceiling** — Synapse clamps every room to ≤30d, so 30 days is the longest any preset can buy; nothing on the server persists longer, and that bound _is_ the anti-forensic guarantee, not a limit to work around.
 
-**Durable-reference surface = a dedicated "📌 Reference" room** (30-day Reference preset, **write-locked** at PL50, **local-only**, auto-joined at onboarding). Holds hotline numbers, safety plans, meeting points, know-your-rights basics. Rejected alternatives (with reasons): **pinned messages** are pointers that die on the retention clock (dangling reference); **widgets** have no maintained self-hostable manager (Dimension archived) + consent-dialog friction; **CryptPad-as-widget leaks its decryption key into federated room state** — link out to self-hosted CryptPad in a separate browser tab only, never embed; **Etherpad** is plaintext-at-rest.
+**Durable-reference surface = a public static `/reference` page**, served by the front (Caddy `handle /reference*` → the bind-mounted `element-web/branding/reference.html`) and edited live by operators — **not a Matrix room**. It carries only **public-safe** durable info (hotline / legal-aid / mutual-aid links, know-your-rights basics); anything sensitive (exact meeting points, personal contacts, plans) stays in chat, where it's members-only and rolls off (≤30d) by design. Rejected alternatives (with reasons): a **dedicated Matrix room** — can't be both permanent and members-only under the 30d ceiling, and permanent sensitive content contradicts the anti-forensic model (this is why the earlier "📌 Reference room" was retired); **pinned messages** are pointers that die on the retention clock (dangling reference); **widgets** have no maintained self-hostable manager (Dimension archived) + consent-dialog friction; **CryptPad-as-widget leaks its decryption key into federated room state** — link out to self-hosted CryptPad in a separate browser tab only, never embed; **Etherpad** is plaintext-at-rest.
 
-Honest caveats to surface in the exposure banner: retention deletes from the _server_ on a timer; it does **not** wipe device-local copies (no client-side disappearing messages exist in Element), does **not** purge state/membership/keys, and the Reference room is a longer-lived (30-day) honeypot — keep it content-only, no operational secrets.
+**The one permanent store is `vouch.jsonl`** — an on-disk file (the governance audit trail), immune to Matrix retention; `#vouch-log` is only a ≤30-day human-readable mirror of it.
+
+Honest caveats to surface in the exposure banner: retention deletes from the _server_ on a timer; it does **not** wipe device-local copies (no client-side disappearing messages exist in Element), and does **not** purge state/membership/keys. The `/reference` page is **public** — treat it as world-readable and keep it public-safe only, never operational secrets.
 
 `SPIKE` (gating): on the pinned Synapse build (≥1.110.0 for the per-room fix), **prove purge actually fires in an _encrypted_ room** — set 1h policy, post, wait past the interval, confirm rows leave `events`/`event_json`. Retention is experimental with a live 2026 bug tail (element-web#33199, 2026-04-19).
 
@@ -209,7 +211,7 @@ restic backup …    # append-only repo; ★ repo key held OFF the core (in the 
 
 Fork **`matrix-docker-ansible-deploy` (MASH)** — Ansible + Docker, first-class federation-off (`matrix_homeserver_federation_enabled: false`), native MAS role, retention, Traefik/BYO-proxy. A whitelabel hardened overlay = a vars-file + role-override layer on a **pinned, self-maintained snapshot** (mitigates the upstream single-maintainer bus factor). The **GitOps repo is the control plane** (DESIGN §11/§12): signed, M-of-N-merged commits; Ansible provisions the three boxes; no standing admin.
 
-**Per-deployment config surface (`DEC`, shipped with defaults + guidance):** `server_name`/domain, branding, **jurisdiction** (foreign-owned, non-Eyes; defaults Iceland/Switzerland — DESIGN §6b), **retention default** (7d), **admission strictness** (default: attributable vouch for the general network, stricter per-vouch for sensitive compartments), **coercion machinery** (v1 default: peer-lockout + M-of-N revocation; duress/canaries = v2).
+**Per-deployment config surface (`DEC`, shipped with defaults + guidance):** `server_name`/domain, branding, **jurisdiction** (foreign-owned, non-Eyes; defaults Iceland/Switzerland — DESIGN §6b), **retention default** (7d), **admission strictness** (default: attributable vouch for the general network, stricter per-vouch for sensitive compartments), **coercion machinery** (peer-lockout + M-of-N revocation + **duress panic-wipe** — Element panic button + gov-bot `!duress`, shipped; anomaly canaries = v2).
 
 ★ **License: MASH and ESS are AGPL-3.0.** Fine for an open, self-hosted tool distributed to at-risk groups (they get source anyway); it **forecloses a proprietary closed-source hosted-SaaS derivative**. Decide licensing posture before building a fork identity.
 
@@ -237,12 +239,12 @@ Fork **`matrix-docker-ansible-deploy` (MASH)** — Ansible + Docker, first-class
 - ✅ **Web client = soft fork** of Element Web (config + `CryptoSetupExtensions` module + `postLoginSetup()` patch) for the silent ~2-tap onboarding; commit to Tchap-style rebases + AGPL §13. _Note: the seamless onboarding is **web-only**; mobile uses Element X's native flow. Fork still earns keep via branding + enforcing typing/receipt suppression._
 - ✅ **Mobile = stock Element X from the public App Store / Play Store** (no sideload, no MDM), pointed at the server by a **deep link** in the onboarding card; generic "Element" branding (deniable, $0). Branded-in-stores (DIY: own Apple/Google dev accounts + you're the publisher; or Element Pro enterprise) = deliberate later upgrade. Mobile onboarding = Element X native (~5 taps incl. a recovery screen; harmless under accept-loss).
 - ✅ **Mobile metadata posture:** stock Element X does **not** suppress typing indicators or read receipts by default (the web fork does). Users must toggle these off manually in the mobile app. Document in `SAFETY.md`. A branded Element X build (Element Pro or own fork) could enforce suppression; accept for v1.
-- ✅ **Encrypted search = desktop-only.** E2EE messages are searchable only on Element Desktop / Element Web (where the device holds decrypted copies). Element X mobile cannot search encrypted history. Route archivists to **Element Desktop**; the Reference room + pinned messages hold must-find info. Document in `SAFETY.md`.
+- ✅ **Encrypted search = desktop-only.** E2EE messages are searchable only on Element Desktop / Element Web (where the device holds decrypted copies). Element X mobile cannot search encrypted history. Route archivists to **Element Desktop**; the `/reference` page + pinned messages hold must-find info. Document in `SAFETY.md`.
 - ✅ **Mobile search gap:** accept for v1 (subsumed by above).
 
 ### Shipping defaults (per-deployment config; override in the fork's vars)
 
-`DEC` retention **7d** · jurisdiction **config** (Iceland/Switzerland default) · admission **attributable-vouch** · coercion machinery **v1-minimum** · calls **deferred** · threads **flat/web-only on mobile** · front-box count per-deployment.
+`DEC` retention **7d** · jurisdiction **config** (Iceland/Switzerland default) · admission **attributable-vouch** · coercion machinery **duress + M-of-N revocation** · calls **deferred** · threads **flat/web-only on mobile** · front-box count per-deployment.
 
 ---
 

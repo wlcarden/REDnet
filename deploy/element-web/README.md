@@ -109,7 +109,7 @@ client-side; it's a request.
 
 **Graceful** (unlike `hide-affordances.patch`): if the patch stops applying, the build warns and ships
 a working client — members request via the `!gov request` command, which the guides + the pinned
-#reference message document. The Dockerfile greps the bundle for the button label to confirm it wired.
+#welcome message document. The Dockerfile greps the bundle for the button label to confirm it wired.
 
 ⚠️ **Re-anchor per release**: the `RoomListHeader` plus-menu structure + the dialog's SDK imports
 (`ensureDMExists`, `sendTextMessage`, `Field`) are pinned to `ELEMENT_VERSION`.
@@ -164,9 +164,11 @@ Organizer** tier (stock Element only labels 50/100):
 
 Stock Element has **no** retention UI, so the disappearing-message window is invisible. This
 adds a room-header pill (amber `Nd`, tooltip "Messages here disappear after N days"). Data
-source, in order: durable rooms (config `org.rednet.retention.exempt_localparts`, e.g.
-`#reference`, `#vouch-log`) show **nothing**; else a per-room `m.room.retention` `max_lifetime`;
-else the deploy default `org.rednet.retention.default_days`.
+source, in order: `org.rednet.retention.exempt_localparts` rooms (rooms that never auto-delete) show
+**nothing** — but that list is **empty by default** now (every room is ≤30d, the anti-forensic ceiling;
+permanent reference moved to the static `/reference` page), so in practice the pill shows a per-room
+`m.room.retention` `max_lifetime` (durable rooms like `#vouch-log` show `30d`), else the deploy default
+`org.rednet.retention.default_days`.
 
 - That default is the server retention (`REDNET_RETENTION_DAYS`) the client **can't** read from
   `homeserver.yaml`, so `build.sh` threads it into `config.json` (`__REDNET_RETENTION_DAYS__`).
