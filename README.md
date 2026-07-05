@@ -130,7 +130,7 @@ The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix
 
 | Track                  | Status                                                               | Evidence                             |
 | ---------------------- | -------------------------------------------------------------------- | ------------------------------------ |
-| **CI**                 | Static lint, integration, Docker build (3 tiers)                     | All GREEN                            |
+| **CI**                 | Lint, module + gov-bot tests, Element patch-check + full image build | All GREEN                            |
 | **Silent onboarding**  | Module builds, wires into Element                                    | Browser E2E 2/2 PASS                 |
 | **Operational drills** | Metadata scrub, backup/restore, restic                               | All 3 PASS on live stack             |
 | **Escrow crypto**      | Shamir + ECIES + scrypt + HKDF + AES-GCM (⚠️ experimental)           | 37/37 PASS                           |

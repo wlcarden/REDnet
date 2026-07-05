@@ -1,6 +1,8 @@
 # REDnet — Design & Threat Document
 
-**Status:** Draft / design stage (2026-06-16). Vetted, not yet implementation-ready. This doc is the reasoning-of-record and the eventual coding-agent brief. It captures _why_, not just _what_.
+**Status:** Design-of-record (2026-06-16). This doc is the reasoning — it captures _why_, not just _what_ — and served as the coding-agent brief.
+
+**Build status (2026-07-04):** the reference implementation described here has since been **built and CI-verified in-sandbox** (see [README § Project status](README.md#project-status) and [deploy/](deploy/)). This doc stays the design-of-record; where a decision here was later settled or shipped, §13 reflects it. Still pending before real users: a real-infra two-host dry-run and an **external crypto / E2EE security review**.
 
 **How to read this:** §1 (scope) and §4 (tier framework) are the conceptual spine. §5–§8 are the architecture. §9 (compromise map) and §10 (controls) are the security floor nothing else may breach. §11 (governance) is the social layer. §13 tracks what's settled vs. open.
 
@@ -120,7 +122,7 @@ Synapse for ~250 mostly-text users, closed federation: **~4–8 vCPU, 16 GB RAM,
 
 ## 7. Onboarding & key management
 
-**The approachable path (~2 taps):** a physical card with a QR encodes a URL carrying a single-use registration token. Scanning opens a **thin custom web onboarding page** (which we build) that auto-registers a **pseudonymous, no-PII account** via the token, auto-enrolls **key backup**, auto-bootstraps cross-signing, and the server **auto-joins** the welcome room. The user picks a display name and is in. No email, no phone, no password ceremony, no server picker. Element Web is **pre-baked** (server hard-set, picker hidden); Element X is reached by a one-tap provisioning deep link.
+**The approachable path (~2 taps):** a physical card with a QR encodes a URL carrying a single-use registration token. Scanning opens a **thin custom web onboarding page** (built — realized as the Element Web soft fork; proven end-to-end in `prototype/onboarding*`, 2/2 PASS) that auto-registers a **pseudonymous, no-PII account** via the token, auto-enrolls **key backup**, auto-bootstraps cross-signing, and the server **auto-joins** the welcome room. The user picks a display name and is in. No email, no phone, no password ceremony, no server picker. Element Web is **pre-baked** (server hard-set, picker hidden); Element X is reached by a one-tap provisioning deep link.
 
 **Why MAS is included:** Element X (the strategic mobile client, and the one that cleanly handles the **Oct-2026 mandatory device-verification cutover**) requires OIDC/MAS for in-app account creation. For mobile-from-day-one, MAS is effectively required. Its _external_ surface cost is low (it sits behind the proxy, internal); the cost is operational complexity.
 
@@ -236,18 +238,18 @@ REDnet ships as a **forkable repo**: a deploying org sets jurisdiction, domain, 
 - `TODO` **Topology detail:** how many front boxes; same/different jurisdiction for front vs. core vs. media.
 - `TODO` **Admission strictness:** liberal (scales fast, more informant risk) vs. strict per-vouch.
 - ✅ **Coercion machinery** — resolved: shipped **duress panic-wipe** (Element panic button + gov-bot `!duress`, self-lock + reversible) alongside M-of-N revocation; anomaly canaries remain v2.
-- `TODO` **matrix-viewer preview:** include in v1 or defer.
+- ✅ **matrix-viewer preview** — resolved: **deferred, OFF by default** (scaffolded behind the `viewer` profile; needs `world_readable` non-E2EE rooms — SPEC §12). Enable only for an intentional public lobby.
 
 ### Spikes (verify before/within build — hands-on, not research)
 
 - `SPIKE` Stand up the stack and **load-test ~250 users** on the §6c sizing; confirm real DB growth under the chosen retention.
-- `SPIKE` Build the **custom onboarding page** end-to-end (token-in-URL → pseudonymous account → auto key-backup → auto-join) and **get it security-reviewed** (it touches account creation + E2EE bootstrap for at-risk users).
-- `SPIKE` Verify **Synapse retention actually purges encrypted-room events** at the chosen window (historically flaky), and characterize the **device-local-history residual** (a device can out-retain the server; does client-side expiry help?).
-- `SPIKE` Validate the dormant **v2 recovery hooks** (claim secret on card + stored hash + governance-log mapping) add no v1 leak or weakness.
-- `SPIKE` Validate the **two-tier front→core** WireGuard model + front rotation/failover + tripwire alerting.
+- ✅ **Custom onboarding built + browser-E2E-proven** (token-in-URL → pseudonymous account → auto key-backup → auto-join; `prototype/onboarding*`, 2/2 PASS), shipped as the Element Web soft fork. ⏳ Still needs the **external security review** (it touches account creation + E2EE bootstrap for at-risk users).
+- ✅ **Synapse retention purges encrypted-room events** — verified on the pinned 1.155.0 build (`spikes/01-retention-purge`: 6→1, bodies purge, state + last message persist by design; re-run on any Synapse bump). The **device-local-history residual** remains an inherent limit (a device can out-retain the server).
+- ◐ **Escrow crypto + lifecycle built and tested** (Shamir + ECIES + HKDF + AES-GCM, 47/47; `spikes/05-recovery-escrow`, RECOVERY.md). The dormant v2 hooks' "no v1 leak" property + the crypto itself fold into the pending **external review**; the moderator approval tool + coordination bot are not built.
+- ✅ **Two-tier front→core** validated on KVM VMs (`deploy/ansible/validate`, 2026-06-18: off-host port scan + WG scoping + front tripwire; six latent bugs fixed). ⏳ Full app-level onboarding through a front with a **real domain + ACME** not yet run end-to-end.
 - `SPIKE` Confirm **Element X** provisioning deep-link + MAS registration UX end-to-end on iOS and Android.
 - `SPIKE` (If calls) self-host Element Call and verify reliability + isolation of the media node.
 
 ---
 
-_This document supersedes the leave-behind/mesh design. The two gating decisions (recovery model, retention) are settled; the remaining §13 open decisions are deferrable or per-deployment. The architecture is ready for a reference implementation, gated only by the §13 spikes._
+_This document supersedes the leave-behind/mesh design. The two gating decisions (recovery model, retention) are settled; the remaining §13 open decisions are deferrable or per-deployment. The reference implementation has since been built and CI-verified in-sandbox ([deploy/](deploy/)); what remains is real-infra validation (the pending §13 spikes) and an external security review._
