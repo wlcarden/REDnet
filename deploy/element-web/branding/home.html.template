@@ -92,6 +92,7 @@
 
   <div class="security">
     E2EE protects message content. The server still sees who you message and when. Disable lock-screen notification previews on mobile.
+    <a href="/features" style="color:#8B8D98; text-decoration:underline; margin-left:4px;">All features</a>
     <a href="/member-guide" style="color:#8B8D98; text-decoration:underline; margin-left:4px;">Member guide</a>
     <a href="/safety" style="color:#8B8D98; text-decoration:underline; margin-left:4px;">Safety guide</a>
   </div>

@@ -162,6 +162,7 @@
   </p>
 
   <div class="nav">
+    <a href="/features">All features</a>
     <a href="#start">Getting started</a>
     <a href="#rooms">Rooms</a>
     <a href="#messaging">Messaging</a>
@@ -176,7 +177,7 @@
 
   <!-- ==================== GETTING STARTED ==================== -->
   <div class="section" id="start">
-    <div class="section-title">Getting started</div>
+    <h2 class="section-title">Getting started</h2>
     <p>
       REDnet runs on Matrix, an encrypted messaging protocol. You access it
       through Element — either the website your organizer gave you or the
@@ -184,7 +185,7 @@
       account and the same rooms.
     </p>
 
-    <div class="section-label">The sidebar</div>
+    <h3 class="section-label">The sidebar</h3>
     <p>
       The left side of the screen has three areas:
     </p>
@@ -194,7 +195,7 @@
       <li><span class="kv-label">Spaces</span> — folders that group rooms together. Your community is a Space. Click its name to browse all rooms you have access to</li>
     </ul>
 
-    <div class="section-label">Direct messages</div>
+    <h3 class="section-label">Direct messages</h3>
     <p>
       A DM is a private conversation between you and one other person. DMs are
       encrypted the same way rooms are.
@@ -205,7 +206,7 @@
       <li><span class="kv-label">Bot DM</span> — you have a DM with <code>@rednet-gov</code> (the governance bot). This is where you report problems</li>
     </ul>
 
-    <div class="section-label">Searching messages</div>
+    <h3 class="section-label">Searching messages</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Search bar</span> — press <code>Ctrl+K</code> (or <code>Cmd+K</code> on Mac) to open search. Type a word or phrase to find messages across rooms</li>
       <li><span class="kv-label">In-room search</span> — click the search icon at the top of a room to search within that room only</li>
@@ -223,27 +224,31 @@
 
   <!-- ==================== ROOMS ==================== -->
   <div class="section" id="rooms">
-    <div class="section-title">Your rooms</div>
+    <h2 class="section-title">Your rooms</h2>
     <p>
       The community is organized into a Matrix <strong style="color:#ECEDEE;">Space</strong>,
       which groups rooms together. You were automatically added to the starter rooms
       when you joined.
     </p>
 
-    <div class="section-label">Starter rooms</div>
+    <h3 class="section-label">Starter rooms</h3>
     <ul class="room-list">
       <li><span class="room-name">welcome</span> — introductions and community announcements for new members</li>
       <li><span class="room-name">announcements</span> — organizer broadcasts (you can read but not post)</li>
       <li><span class="room-name">general</span> — open discussion for the whole community</li>
-      <li><span class="room-name">reference</span> — pinned information and resources (does not auto-delete)</li>
     </ul>
+    <p>
+      Durable resources that must never be lost — crisis lines, legal and mutual-aid
+      links — live on the permanent <a href="/reference" style="color:#3E93DE;">reference page</a>,
+      not in a chat room (chat auto-deletes; the page doesn't).
+    </p>
 
     <p>
       Organizers may invite you to additional rooms or sub-spaces for specific working
       groups. You can see all rooms you belong to in the left sidebar.
     </p>
 
-    <div class="section-label">Navigating rooms</div>
+    <h3 class="section-label">Navigating rooms</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Switch rooms</span> — click a room name in the left sidebar</li>
       <li><span class="kv-label">Find rooms</span> — click the Space name at the top to browse all rooms in the community</li>
@@ -261,15 +266,15 @@
 
   <!-- ==================== MESSAGING ==================== -->
   <div class="section" id="messaging">
-    <div class="section-title">Messaging</div>
+    <h2 class="section-title">Messaging</h2>
 
-    <div class="section-label">Sending messages</div>
+    <h3 class="section-label">Sending messages</h3>
     <p>
       Type in the box at the bottom of a room and press Enter. Your message is
       encrypted before it leaves your device.
     </p>
 
-    <div class="section-label">Formatting</div>
+    <h3 class="section-label">Formatting</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Bold</span> — wrap text in <code>**double asterisks**</code></li>
       <li><span class="kv-label">Italic</span> — wrap text in <code>*single asterisks*</code></li>
@@ -278,7 +283,7 @@
       <li><span class="kv-label">Mention someone</span> — type <code>@</code> then their display name</li>
     </ul>
 
-    <div class="section-label">Editing and deleting</div>
+    <h3 class="section-label">Editing and deleting</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Edit</span> — hover over your message (or long-press on mobile), click the pencil icon, change the text, press Enter</li>
       <li><span class="kv-label">Delete</span> — hover over your message, click the three-dot menu, select "Remove." The message is replaced with "Message deleted" for everyone</li>
@@ -291,30 +296,38 @@
       Think before you send.
     </div>
 
-    <div class="section-label">Replies and threads</div>
+    <h3 class="section-label">Replies and threads</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Reply</span> — hover over a message and click the reply arrow. Your response appears linked to the original</li>
       <li><span class="kv-label">Threads</span> — if available, click the thread icon to start a side conversation that keeps the main room uncluttered</li>
     </ul>
 
-    <div class="section-label">Files and images</div>
+    <h3 class="section-label">Files and images</h3>
     <p>
       Click the attachment icon (paperclip or +) to send files, images, or documents.
       Files are encrypted in transit and at rest. Media is subject to the community's
       retention policy and may be automatically deleted after a set period.
     </p>
+
+    <h3 class="section-label">Voice and video calls</h3>
+    <div class="callout callout-amber">
+      <strong>Not available yet.</strong> REDnet is text and files for now — live group
+      calls expose who's on a call together and from where, which the design is deliberately
+      careful about. For audio, send an <strong>encrypted voice note</strong> from the compose
+      box. See the <a href="/features#calls" style="color:#3E93DE;">feature reference</a> for why.
+    </div>
   </div>
 
   <!-- ==================== ENCRYPTION ==================== -->
   <div class="section" id="encryption">
-    <div class="section-title">Encryption</div>
+    <h2 class="section-title">Encryption</h2>
     <p>
       Every community room uses end-to-end encryption (E2EE). Your messages are
       encrypted on your device before they are sent, and only devices belonging to
       room members can decrypt them.
     </p>
 
-    <div class="section-label">The shield icon</div>
+    <h3 class="section-label">The shield icon</h3>
     <p>
       You may see a small shield icon next to messages or in room headers. This
       indicates the encryption status:
@@ -325,7 +338,7 @@
       <li><span class="kv-label">Grey shield</span> — verification has not been completed for that device yet</li>
     </ul>
 
-    <div class="section-label">Verifying sessions</div>
+    <h3 class="section-label">Verifying sessions</h3>
     <p>
       When you log in on a new device, Element asks you to verify it against an
       existing session. This proves the new device belongs to you.
@@ -346,7 +359,7 @@
       past encrypted messages.
     </div>
 
-    <div class="section-label">"Unable to decrypt" messages</div>
+    <h3 class="section-label">"Unable to decrypt" messages</h3>
     <p>
       If you see "Unable to decrypt this message," it means your current device
       does not have the key for that message. Common causes:
@@ -360,13 +373,13 @@
 
   <!-- ==================== PRIVACY ==================== -->
   <div class="section" id="privacy">
-    <div class="section-title">Privacy practices</div>
+    <h2 class="section-title">Privacy practices</h2>
     <p>
       Encryption protects message content. The practices below protect
       everything else: who you are, where you are, and what your device reveals.
     </p>
 
-    <div class="section-label">Identity</div>
+    <h3 class="section-label">Identity</h3>
     <div class="callout callout-red">
       <strong>Do not share your real name, location, or photo.</strong>
       Your username, display name, and avatar are visible to everyone in the
@@ -375,7 +388,7 @@
       your avatar.
     </div>
 
-    <div class="section-label">Lock screen notifications</div>
+    <h3 class="section-label">Lock screen notifications</h3>
     <div class="callout callout-amber">
       <strong>Turn off message previews on your lock screen.</strong>
       Anyone holding your phone can read notification content without unlocking it.<br><br>
@@ -383,14 +396,14 @@
       <strong>Android:</strong> Settings &gt; Apps &gt; Element X &gt; Notifications &gt; Sensitive notifications off
     </div>
 
-    <div class="section-label">Network hygiene</div>
+    <h3 class="section-label">Network hygiene</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Link previews</span> — the server has URL previews disabled. If you paste a link, only the raw URL appears (no embedded images or page titles)</li>
       <li><span class="kv-label">Files you receive</span> — do not open files from people you do not trust. Files sent in encrypted rooms are safe in transit, but the file itself could still be harmful</li>
       <li><span class="kv-label">External links</span> — clicking a link leaves the encrypted environment. The destination site can see your IP address and browser fingerprint</li>
     </ul>
 
-    <div class="section-label">Message retention</div>
+    <h3 class="section-label">Message retention</h3>
     <p>
       Most rooms have automatic message retention enabled. Messages older than
       the retention period are automatically deleted from the server. Each room shows
@@ -405,9 +418,9 @@
 
   <!-- ==================== DEVICES ==================== -->
   <div class="section" id="devices">
-    <div class="section-title">Devices and recovery</div>
+    <h2 class="section-title">Devices and recovery</h2>
 
-    <div class="section-label">Managing sessions</div>
+    <h3 class="section-label">Managing sessions</h3>
     <p>
       Open Settings &gt; Security to see all devices where you are logged in.
       Each session is listed with its name, last active time, and verification
@@ -418,7 +431,7 @@
       <li><span class="kv-label">Rename sessions</span> — give each session a name you recognize (e.g., "work laptop," "phone") so you can tell them apart</li>
     </ul>
 
-    <div class="section-label">Second device</div>
+    <h3 class="section-label">Second device</h3>
     <div class="callout callout-blue">
       <strong>Log in on a second device.</strong>
       If you lose your phone, a second active session (laptop, tablet) lets you
@@ -426,7 +439,7 @@
       device and verify it from your existing session.
     </div>
 
-    <div class="section-label">Recovery passphrase</div>
+    <h3 class="section-label">Recovery passphrase</h3>
     <p>
       During setup you were given a recovery passphrase. It is your last-resort
       way to restore message history and cross-signing keys if you lose all
@@ -447,13 +460,13 @@
 
   <!-- ==================== REPORTING ==================== -->
   <div class="section" id="reporting">
-    <div class="section-title">Reporting problems</div>
+    <h2 class="section-title">Reporting problems</h2>
     <p>
       If something goes wrong, you have tools to act. You do not need to wait
       for a moderator to notice.
     </p>
 
-    <div class="section-label">Report a compromised account</div>
+    <h3 class="section-label">Report a compromised account</h3>
     <p>
       If you notice a member behaving strangely (messages they deny sending,
       unfamiliar activity, unknown devices), report it through your private
@@ -481,7 +494,7 @@
       anyone; it flags the account for review.
     </div>
 
-    <div class="section-label">If your own account is compromised</div>
+    <h3 class="section-label">If your own account is compromised</h3>
     <div class="callout callout-red">
       <strong>Act fast.</strong>
       <br><br>
@@ -492,7 +505,7 @@
       the person who invited you used (text, in person, phone call).
     </div>
 
-    <div class="section-label">Panic — wipe this device (under duress)</div>
+    <h3 class="section-label">Panic — wipe this device (under duress)</h3>
     <div class="callout callout-red">
       <strong>If you are forced to unlock your device or hand over your
       account,</strong> open your avatar menu (top-left) and choose
@@ -511,7 +524,7 @@
       <code>!duress</code> in your DM with <code>@rednet-gov</code>.
     </div>
 
-    <div class="section-label">Content concerns</div>
+    <h3 class="section-label">Content concerns</h3>
     <p>
       If someone posts personal information (real names, locations, photos of
       faces), alert a moderator by DM or mention them in the room. Moderators
@@ -522,7 +535,7 @@
       same in one step.
     </p>
 
-    <div class="section-label">Request a new room or space</div>
+    <h3 class="section-label">Request a new room or space</h3>
     <p>
       Need a room for a project, working group, or region? You can't create
       rooms directly — every room here is set up encrypted and connected to
@@ -546,7 +559,7 @@
       matters. Your request is private; other members never see it.
     </p>
 
-    <div class="section-label">Joining rooms</div>
+    <h3 class="section-label">Joining rooms</h3>
     <p>
       Browse the community space to see what's there. Some rooms you can join
       right away; others show <strong>Ask to join</strong> — tap it and the
@@ -557,7 +570,7 @@
 
   <!-- ==================== ROLES ==================== -->
   <div class="section" id="roles">
-    <div class="section-title">Community roles</div>
+    <h2 class="section-title">Community roles</h2>
     <p>
       The community uses four roles. Your role determines what actions you can
       take. Most people are members.
@@ -583,37 +596,37 @@
 
   <!-- ==================== TROUBLESHOOTING ==================== -->
   <div class="section" id="help">
-    <div class="section-title">Troubleshooting</div>
+    <h2 class="section-title">Troubleshooting</h2>
 
-    <div class="section-label">"Unable to decrypt" on old messages</div>
+    <h3 class="section-label">"Unable to decrypt" on old messages</h3>
     <p>
       Verify your session (see Encryption above). If you already verified, check
       Settings &gt; Security &gt; Secure Backup. If it says "not connected,"
       enter your recovery passphrase to reconnect.
     </p>
 
-    <div class="section-label">Not receiving notifications</div>
+    <h3 class="section-label">Not receiving notifications</h3>
     <ul class="kv-list">
       <li><span class="kv-label">Check in-app settings</span> — Settings &gt; Notifications. Make sure notifications are enabled for the rooms you care about</li>
       <li><span class="kv-label">Check device settings</span> — your phone's notification settings for the Element app may be blocking alerts</li>
       <li><span class="kv-label">Background restrictions</span> — some Android phones aggressively kill background apps. Check your battery optimization settings</li>
     </ul>
 
-    <div class="section-label">Logged out unexpectedly</div>
+    <h3 class="section-label">Logged out unexpectedly</h3>
     <p>
       If the app logs you out (after an update, a device restart, or a server
       maintenance window), log back in with your username and password. If prompted
       to verify, use another active session or your recovery passphrase.
     </p>
 
-    <div class="section-label">Cannot find a room</div>
+    <h3 class="section-label">Cannot find a room</h3>
     <p>
       All rooms are inside the community Space. Click the Space name in the
       sidebar to browse rooms. If you still cannot find it, you may not have
       been invited to that room. Ask an organizer.
     </p>
 
-    <div class="section-label">Need more help</div>
+    <h3 class="section-label">Need more help</h3>
     <p>
       Ask in <code>#general</code> or send a DM to the person who invited you.
       Moderators and organizers monitor the community rooms.
