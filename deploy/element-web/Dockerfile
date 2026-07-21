@@ -187,6 +187,7 @@ COPY branding/moderator-guide.html ./webapp/moderator-guide.html
 COPY branding/member-guide.html ./webapp/member-guide.html
 COPY branding/home.html ./webapp/home.html
 COPY branding/safety.html ./webapp/safety.html
+COPY branding/features.html ./webapp/features.html
 COPY governance-widget/index.html ./webapp/governance/index.html
 RUN sed -i 's|<link rel="shortcut icon" href="vector-icons/favicon\.[^"]*\.ico">|<link rel="icon" href="vector-icons/favicon.svg" type="image/svg+xml">|' webapp/index.html \
  && sed -i 's|</head>|<link rel="stylesheet" href="rednet-overrides.css">\n</head>|' webapp/index.html
@@ -278,5 +279,5 @@ RUN if grep -rqlF 'Archive room' webapp/ 2>/dev/null; then \
 # caddy:2-alpine v2.11.4
 FROM caddy@sha256:77c07d5ebfa5be9fd6c820d2094ae662c9e7eeb9bf98346b7f639900263ee2a2 AS serve
 COPY --from=build /src/webapp /srv/element
-RUN printf ':80 {\n\troot * /srv/element\n\t@join path /join /join/\n\trewrite @join /join.html\n\t@opguide path /operator-guide /operator-guide/\n\trewrite @opguide /operator-guide.html\n\t@modguide path /moderator-guide /moderator-guide/\n\trewrite @modguide /moderator-guide.html\n\t@memguide path /member-guide /member-guide/\n\trewrite @memguide /member-guide.html\n\t@safety path /safety /safety/\n\trewrite @safety /safety.html\n\ttry_files {path} {path}/index.html /index.html\n\tfile_server\n}\n' > /etc/caddy/Caddyfile
+RUN printf ':80 {\n\troot * /srv/element\n\t@join path /join /join/\n\trewrite @join /join.html\n\t@opguide path /operator-guide /operator-guide/\n\trewrite @opguide /operator-guide.html\n\t@modguide path /moderator-guide /moderator-guide/\n\trewrite @modguide /moderator-guide.html\n\t@memguide path /member-guide /member-guide/\n\trewrite @memguide /member-guide.html\n\t@safety path /safety /safety/\n\trewrite @safety /safety.html\n\t@features path /features /features/\n\trewrite @features /features.html\n\ttry_files {path} {path}/index.html /index.html\n\tfile_server\n}\n' > /etc/caddy/Caddyfile
 EXPOSE 80

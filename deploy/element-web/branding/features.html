@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feature Reference</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #111316; color: #ECEDEE; min-height: 100vh;
+    display: flex; justify-content: center; padding: 32px 24px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .guide { max-width: 640px; width: 100%; }
+  .logo { text-align: center; margin-bottom: 22px; }
+  .logo svg { width: 160px; height: auto; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; text-align: center; margin-bottom: 7px; }
+  .subtitle { font-size: 13px; color: #8B8D98; text-align: center; line-height: 1.55; margin: 0 auto 22px; max-width: 54ch; }
+  .subtitle a { color: #3E93DE; text-decoration: none; }
+
+  .nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 26px; justify-content: center; }
+  .nav a {
+    font-size: 11px; font-weight: 600; color: #8B8D98; text-decoration: none;
+    padding: 5px 10px; border-radius: 6px; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06); transition: background 120ms, color 120ms;
+  }
+  .nav a:hover { background: rgba(229,72,77,0.1); color: #E5484D; }
+
+  .section {
+    background: #16181B; border-radius: 12px; padding: 20px 22px;
+    border: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;
+  }
+  h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 3px; }
+  .section-sub { font-size: 12px; color: #62646C; line-height: 1.5; margin-bottom: 6px; }
+
+  .feat { padding: 13px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+  .feat:first-of-type { border-top: none; }
+  .feat-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .feat-name { font-size: 13.5px; font-weight: 600; color: #ECEDEE; }
+  .feat-what { font-size: 12.5px; color: #8B8D98; line-height: 1.5; margin: 3px 0 6px; }
+  .feat-meta { font-size: 11.5px; color: #62646C; line-height: 1.55; }
+  .feat-meta .where-label { color: #8B8D98; font-weight: 600; }
+  .feat-meta b { color: #ECEDEE; font-weight: 600; }
+  .feat-meta a { color: #3E93DE; text-decoration: none; }
+  .feat-meta a:hover { text-decoration: underline; }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 11px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #ECEDEE;
+  }
+
+  .tag { font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
+  .tag-org { background: rgba(62,147,222,0.13); color: #6FB3EA; }
+  .tag-soon { background: rgba(229,165,54,0.13); color: #E5A536; }
+  .tag-auto { background: rgba(48,164,108,0.13); color: #4FBF88; }
+
+  .callout { padding: 12px 14px; border-radius: 0 8px 8px 0; font-size: 12px; line-height: 1.6; margin-top: 14px; color: #C4C7C9; }
+  .callout strong { color: #ECEDEE; font-weight: 600; }
+  .callout-amber { background: rgba(229,165,54,0.08); border-left: 3px solid #E5A536; }
+  .callout-blue { background: rgba(62,147,222,0.08); border-left: 3px solid #3E93DE; }
+
+  footer {
+    margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06);
+    text-align: center; font-size: 12px; color: #62646C; line-height: 2;
+  }
+  footer a { color: #8B8D98; text-decoration: underline; margin: 0 6px; }
+</style>
+</head>
+<body>
+<div class="guide">
+  <div class="logo">
+    <svg viewBox="0 0 252 64" role="img" aria-label="REDnet">
+      <g stroke="#E5484D" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+        <line x1="32" y1="32" x2="32" y2="14"/><line x1="32" y1="32" x2="48" y2="23"/>
+        <line x1="32" y1="32" x2="48" y2="41"/><line x1="32" y1="32" x2="32" y2="50"/>
+        <line x1="32" y1="32" x2="16" y2="41"/><line x1="32" y1="32" x2="16" y2="23"/>
+      </g>
+      <path d="M32 14 L48 23 L48 41 L32 50 L16 41 L16 23 Z" fill="none" stroke="#E5484D" stroke-width="2.5" stroke-opacity="0.4" stroke-linejoin="round"/>
+      <g fill="#E5484D">
+        <circle cx="32" cy="32" r="5.5"/><circle cx="32" cy="14" r="3.2"/><circle cx="48" cy="23" r="3.2"/>
+        <circle cx="48" cy="41" r="3.2"/><circle cx="32" cy="50" r="3.2"/><circle cx="16" cy="41" r="3.2"/><circle cx="16" cy="23" r="3.2"/>
+      </g>
+      <text x="74" y="42" font-family="Inter, system-ui, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5">
+        <tspan fill="#E5484D">RED</tspan><tspan fill="#8B8D98">net</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <h1>Feature reference</h1>
+  <p class="subtitle">
+    Everything REDnet can do — what it is, where to find it, and how to use it.
+    For step-by-step detail, follow the links into the <a href="/member-guide">member guide</a>.
+  </p>
+
+  <nav class="nav">
+    <a href="#messaging">Messaging &amp; rooms</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#safety">Safety</a>
+    <a href="#trust">Trust &amp; roles</a>
+    <a href="#account">Account</a>
+    <a href="#calls">Calls</a>
+  </nav>
+
+  <!-- ===== MESSAGING & ROOMS ===== -->
+  <section class="section" id="messaging">
+    <h2>Messaging &amp; rooms</h2>
+    <p class="section-sub">Everyday conversation. All of it end-to-end encrypted.</p>
+
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Encrypted messages</span></div>
+      <p class="feat-what">Send and read messages only room members can decrypt. The server stores ciphertext it cannot read.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the compose box in any room</b> · <a href="/member-guide#encryption">how encryption works</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Rooms &amp; spaces</span></div>
+      <p class="feat-what">Group conversations, grouped into your community Space (a folder of rooms). You're added to the starter rooms on joining.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the left sidebar</b> · <a href="/member-guide#rooms">navigating rooms</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Direct messages</span></div>
+      <p class="feat-what">Private one-to-one conversations, encrypted the same way rooms are.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the People section</b> · <a href="/member-guide#start">starting a DM</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Formatting, edit &amp; delete</span></div>
+      <p class="feat-what">Bold, italic, code, quotes and mentions with markdown. Edit or redact your own messages after sending.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>markdown in the box; hover a message → pencil / ⋯ → Remove</b> · <a href="/member-guide#messaging">messaging</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Replies, threads &amp; files</span></div>
+      <p class="feat-what">Reply inline, branch a side thread, or send encrypted files and images.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>hover a message → reply / thread icon; paperclip to attach</b> · <a href="/member-guide#messaging">messaging</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Search</span></div>
+      <p class="feat-what">Find messages across rooms (web and desktop; the mobile app can't search encrypted history).</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b><code>Ctrl</code>/<code>Cmd</code> + <code>K</code></b> · <a href="/member-guide#start">searching</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Request a room or space</span></div>
+      <p class="feat-what">You can't create rooms directly — ask an organizer, and if approved you're invited automatically and become its moderator.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>+ next to the room list → "Request a room or space"</b> · <a href="/member-guide#reporting">requesting a room</a></p>
+    </div>
+  </section>
+
+  <!-- ===== PRIVACY & ANTI-FORENSICS ===== -->
+  <section class="section" id="privacy">
+    <h2>Privacy &amp; anti-forensics</h2>
+    <p class="section-sub">What protects everything encryption doesn't — who you are, and what a seized server reveals.</p>
+
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Disappearing messages</span> <span class="tag tag-auto">Automatic</span></div>
+      <p class="feat-what">Chat auto-deletes from the server after a few days (30 at most). A seized server reveals only a short window — that's the point.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the pill in each room header shows its window</b> · <a href="/member-guide#privacy">retention</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Reference page</span></div>
+      <p class="feat-what">Durable, public-safe resources (crisis, legal, digital-security, mutual-aid) that never auto-delete. Keep sensitive specifics in chat instead.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b><a href="/reference">/reference</a></b>, linked in the app</p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Identity hygiene</span></div>
+      <p class="feat-what">Your handle and avatar are visible to everyone in the community — keep them unlinked from your real name, face, or other platforms.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>your profile / Settings</b> · <a href="/member-guide#privacy">privacy practices</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Lock-screen previews off</span></div>
+      <p class="feat-what">Stop message content from showing on your locked screen, where it bypasses encryption.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>your phone's notification settings for Element X</b> · <a href="/member-guide#privacy">how to disable</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">No public discovery</span> <span class="tag tag-auto">Built in</span></div>
+      <p class="feat-what">The community isn't searchable, listed, or indexed — it's invite-only, and closed to outside federation. There's nothing to enable; it's how the server is built.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>server-enforced</b> · <a href="/safety">what's protected</a></p>
+    </div>
+  </section>
+
+  <!-- ===== SAFETY & COERCION ===== -->
+  <section class="section" id="safety">
+    <h2>Safety &amp; coercion</h2>
+    <p class="section-sub">Tools for when something goes wrong — or when you're forced.</p>
+
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Panic — wipe this device</span></div>
+      <p class="feat-what">Under duress, one confirmed action erases this device (messages, keys, session) and alerts organizers, who lock your account. Fully reversible when you're safe.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>avatar menu (top-left) → "Panic — wipe this device"</b> (or <code>!duress</code> to <code>@rednet-gov</code>) · <a href="/member-guide#reporting">under duress</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Report to organizers</span></div>
+      <p class="feat-what">Flag a compromised account or harmful content, confidentially. The reported person is never notified; only organizers see who filed it.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>right-click / long-press a message → "Report to organizers"</b> (or <code>!report</code> in your <code>@rednet-gov</code> DM) · <a href="/member-guide#reporting">reporting</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">What's protected, what isn't</span></div>
+      <p class="feat-what">The honest threat model — what a seized server, a lost phone, or a network watcher can and can't learn, and where your own habits are the defense.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b><a href="/safety">/safety</a></b></p>
+    </div>
+  </section>
+
+  <!-- ===== TRUST & ROLES ===== -->
+  <section class="section" id="trust">
+    <h2>Trust &amp; roles</h2>
+    <p class="section-sub">How membership is vetted, and who can do what.</p>
+
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Vouched invites</span></div>
+      <p class="feat-what">There are no open invite links — every member joins through a named voucher, recorded in an append-only trust record. Vouching for someone ties your name to theirs.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>a single-use invite from an organizer</b> · <a href="/member-guide#roles">roles</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">See who vouched</span></div>
+      <p class="feat-what">A member's profile shows who vouched for them — the trust chain, visible where you'd look someone up.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>click a member → their profile ("Vouched by …")</b></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Roles &amp; labels</span></div>
+      <p class="feat-what">Member, Moderator, Organizer, Admin — shown as a labeled chip by each name so you can see who's who.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the member list and profiles</b> · <a href="/member-guide#roles">roles</a> · <a href="/moderator-guide">moderator guide</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Governance menu</span> <span class="tag tag-org">Organizers</span></div>
+      <p class="feat-what">Mint invites, review pending room requests (approve/deny), create rooms, and add members — all in-app, no console needed.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the governance button in the left space panel</b> · <a href="/operator-guide">operator guide</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Manage member &amp; room lifecycle</span> <span class="tag tag-org">Organizers</span></div>
+      <p class="feat-what">Set a member's role, confirm a vouch, or revoke access; archive or delete a room from its menu.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>a member's profile → "Manage member"; a room's menu → Archive / Delete</b> · <a href="/operator-guide">operator guide</a></p>
+    </div>
+  </section>
+
+  <!-- ===== ACCOUNT & RECOVERY ===== -->
+  <section class="section" id="account">
+    <h2>Account &amp; recovery</h2>
+    <p class="section-sub">Keeping access to your account and your history.</p>
+
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Recovery passphrase</span></div>
+      <p class="feat-what">Your last-resort key to restore message history and cross-signing if you lose every device. No one can reset it for you — store it offline.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>shown once at signup; Settings → Security</b> · <a href="/member-guide#devices">devices &amp; recovery</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Sessions &amp; second device</span></div>
+      <p class="feat-what">A second logged-in device keeps you in without the passphrase. Sign out a lost or old device to revoke its keys.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>Settings → Security</b> · <a href="/member-guide#devices">managing sessions</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">Session verification</span></div>
+      <p class="feat-what">Prove a new login is really you by matching emoji/numbers against an existing session — this restores your key access.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>the "Verify this session" prompt on a new device</b> · <a href="/member-guide#encryption">verifying sessions</a></p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-name">First-run checklist</span></div>
+      <p class="feat-what">A one-time walkthrough of the safety basics: save your passphrase, kill lock-screen previews, keep your identity out of chat, know the retention window.</p>
+      <p class="feat-meta"><span class="where-label">Where:</span> <b>shown once, right after your first login</b></p>
+    </div>
+  </section>
+
+  <!-- ===== CALLS ===== -->
+  <section class="section" id="calls">
+    <h2>Voice &amp; video calls <span class="tag tag-soon">Not yet</span></h2>
+    <p class="section-sub">The one thing REDnet deliberately doesn't do — yet.</p>
+    <div class="callout callout-amber">
+      <strong>Group calls aren't available.</strong> REDnet is text and files for now, on purpose:
+      a live call has to route your real network address to a media server that can't hide behind
+      the usual protections, so it exposes who's on a call together and from where — the one thing
+      the rest of the design works hardest to avoid. It may arrive later as an optional, clearly-labeled
+      add-on for communities that accept that trade-off. For audio in the meantime, send an
+      <strong>encrypted voice note</strong> (the paperclip / microphone in the compose box) — it rides
+      the same end-to-end encryption as any other message.
+    </div>
+  </section>
+
+  <footer>
+    Full how-to: <a href="/member-guide">Member guide</a> · <a href="/safety">Safety</a> · <a href="/reference">Reference</a><br>
+    For roles: <a href="/moderator-guide">Moderator guide</a> · <a href="/operator-guide">Operator guide</a>
+  </footer>
+</div>
+</body>
+</html>
