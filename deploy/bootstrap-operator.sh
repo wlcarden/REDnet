@@ -37,7 +37,7 @@ EXISTING=false
 DRAUPNIR=true
 
 case "${1:-}" in
-  "") echo "Usage: $0 <username> [--role admin|moderator] [--existing] [--no-draupnir]" >&2; exit 1 ;;
+  "") echo "Usage: $0 <username> [--role admin|organizer|moderator] [--existing] [--no-draupnir]" >&2; exit 1 ;;
   -*) echo "ERR: first argument must be a username, not a flag" >&2; exit 1 ;;
   *)  USERNAME="$1"; shift ;;
 esac

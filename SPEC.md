@@ -3,7 +3,7 @@
 **Status:** Implementation spec (2026-06-16). Companion to `DESIGN.md`. **Build status (2026-07-04):** most of this spec is **built and CI-verified in-sandbox** (see [README § Project status](README.md#project-status) + [deploy/](deploy/)); the §13 spikes marked ✅ are done, and real-infra + external-review items remain.
 **Relationship:** `DESIGN.md` = the _why_ (threat model, tier doctrine, decisions-of-record). This `SPEC.md` = the _what to build_ (components, versions, config, runbooks). Where they conflict, DESIGN.md governs intent; this doc governs implementation.
 
-**Pinned versions (verified 2026-06-16; pin exact builds at deploy):** Synapse **1.155.0** · MAS **1.18.0** · Draupnir **3.1.0** · Matrix spec **1.18** · Element Web **1.12.x** · Element X **26.06.x** · matrix-js-sdk **26.x**. Deployment base: a **fork of `matrix-docker-ansible-deploy` (MASH)**.
+**Pinned versions (verified 2026-06-16; pin exact builds at deploy):** Synapse **1.155.0** · MAS **1.19.0** · Draupnir **3.1.0** · Matrix spec **1.18** · Element Web **1.11.86** · Element X **26.06.x** · matrix-js-sdk **26.x**. Deployment base: a **fork of `matrix-docker-ansible-deploy` (MASH)**.
 
 > Legend: `★` = a gotcha that silently breaks things if wrong. `SPIKE` = must verify on real infra before relying on it. `DEC` = per-deployment decision with a shipped default.
 
@@ -21,7 +21,7 @@
 | ------------------- | -------------------------------------------- | ---------------- | ---------------------------- | --------------------------------------------------------------------------- |
 | Homeserver          | Synapse 1.155.0 (**monolith, no workers**)   | core             | no                           | Matrix server; the metadata honeypot                                        |
 | Database            | PostgreSQL (≥14), `LC_COLLATE=C`             | core             | no (localhost)               | All state + encrypted key-backup secrets                                    |
-| Auth                | MAS 1.18.0                                   | core             | no                           | OIDC/auth for Element X; no-PII account creation via Admin API              |
+| Auth                | MAS 1.19.0                                   | core             | no                           | OIDC/auth for Element X; no-PII account creation via Admin API              |
 | Reverse proxy / TLS | **Caddy** (auto-ACME)                        | front            | **443 only**                 | TLS term; routes to core over WireGuard; serves `.well-known` + Element Web |
 | Web client          | Element Web 1.12.x (pre-baked)               | front (static)   | served                       | Browser door — the primary client                                           |
 | Onboarding          | built — Element Web soft fork + `/join` page | front (static)   | served                       | Silent no-PII account + key bootstrap                                       |

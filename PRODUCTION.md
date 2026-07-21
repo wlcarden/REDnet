@@ -15,8 +15,8 @@ The onboarding/recovery code is **bespoke and security-critical**, and self-revi
 code at this stakes level.
 
 - **Scope (scoped, not full-product):** the escrow construction is the review target. Specifically:
-  - The Shamir + ECIES + HKDF + AES-256-GCM pipeline (`spikes/05-escrow-construction/`,
-    `spikes/06-escrow-lifecycle/`, the TS port in `deploy/element-web/rednet-module/`)
+  - The Shamir + ECIES + HKDF + AES-256-GCM pipeline (the escrow spikes `spikes/05-recovery-escrow/`
+    … `spikes/09-escrow-auth/`, ported to `deploy/element-web/rednet-module/`)
   - The `mode` flag logic (passphrase-default vs. moderators-only opt-in)
   - The threat analysis in `RECOVERY.md` §4 (seizure properties by mode)
   - The test vectors (47/47 behavioral tests) as the specification

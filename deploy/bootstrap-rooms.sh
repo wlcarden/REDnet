@@ -110,7 +110,7 @@ echo "  space -> ${SPACE_ID:-ERR}"
 
 say "channels"
 # Welcome is created plain so the system account can send a plaintext notice BEFORE enabling E2EE.
-# The notice stays readable forever (no key management); all subsequent messages are encrypted.
+# The notice stays plaintext-readable with no key management; all subsequent messages are encrypted.
 WELCOME=$(create_room_plain welcome  "Welcome"       "Start here — read the pinned message, save your recovery passphrase."  "")
 ANNOUNCE=$(create_room announcements "Announcements" "Organizer updates. Read-only for members — moderators and above can post."  '{"events_default":50}' "")
 # Durable reference (hotlines, safety plans, meeting points) is the permanent static /reference

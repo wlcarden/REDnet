@@ -603,7 +603,7 @@ Organizers create them directly with !gov room / !gov space."
 
     VOUCHLOG_ID=$(resolve_room vouch-log)
     [ -n "$VOUCHLOG_ID" ] && update_topic "$VOUCHLOG_ID" \
-      "Append-only audit trail: vouches, claims, role changes, revocations. Retention-exempt — do not delete events." \
+      "Append-only audit trail (mirror). The permanent record is vouch.jsonl; this room keeps ~30 days." \
       && ok "#vouch-log topic updated"
 
     if [ "$MSG_CRITICAL_FAIL" -eq 0 ]; then

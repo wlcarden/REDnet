@@ -253,3 +253,36 @@ The bootstrap generates LiveKit API keys (gitignored), renders the `.well-known/
 discovery endpoint, and starts the LiveKit SFU + JWT auth service. Caddy routes `/_livekit/*` to the
 JWT service and serves the well-known. Element Web picks up call support via `element_call` config +
 feature flags (rendered from `REDNET_CALLS_ENABLED`).
+
+#### ⚠ Before enabling — hardening checklist (2026-07 security research)
+
+Group calls are the biggest metadata tradeoff in the design and are deferred deliberately. A
+current-sources review confirmed the picture: **call content is genuinely E2EE** (the SFU only
+relays ciphertext frames, keyed over Matrix's own audited Olm), but the media node
+**irreducibly exposes each participant's real IP, co-presence, and call timing** — WebRTC is UDP
+and cannot ride Tor, so this cannot be hidden (comparable to Signal's own group-call exposure).
+Element Call's E2EE implementation is **not independently audited**, and its SFrame layer has
+**no per-sender authentication** (a malicious in-call member can forge another's media — an
+insider attack, bounded by vouched membership). Enable only as an **opt-in module on a SEPARATE
+public-IP box** (never the core), for communities that accept that tradeoff.
+
+Do all of the following before setting `REDNET_CALLS_ENABLED=true` in production:
+
+1. **Re-verify image currency, then pin.** These images move fast; the pins were last bumped
+   2026-07-21 to `livekit-server:v1.13.4` and `lk-jwt-service:v0.5.0`. Check for newer releases.
+2. **Set `LIVEKIT_FULL_ACCESS_HOMESERVERS` to your domain — never `*`.** `lk-jwt-service` v0.5.0+
+   requires it and refuses to start without it; every release before v0.5.0 defaulted to a `*`
+   wildcard that let any federated user trigger SFU room creation. `bootstrap-calls.sh` now
+   renders it to `REDNET_DOMAIN`; if you already have a `livekit/.env`, add the line by hand.
+3. **Verify the discovery format + CORS.** Current clients discover the SFU via the
+   `org.matrix.msc4143.rtc_foci` key inside `/.well-known/matrix/client` (served with
+   `Access-Control-Allow-Origin` + `application/json`), not the legacy separate
+   `/.well-known/element/call.json` this module still renders. Confirm which your client versions
+   use and that CORS is present — a documented Element X self-host failure was a missing-CORS
+   well-known.
+4. **Confirm LiveKit is not logging participant IPs**, or the "disposable, no-data media box"
+   property doesn't hold.
+5. **Run the SFU on a dedicated public-IP host, not the core** (DESIGN §8: the media node needs
+   ~201 open UDP ports and cannot hide behind the front). Add an honest in-call notice that a
+   call exposes the participant's IP and who is on it; route the highest-risk _who-hidden_ voice
+   need to async encrypted voice notes instead.

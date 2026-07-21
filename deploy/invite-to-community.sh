@@ -3,7 +3,7 @@
 #
 # Synapse auto_join_rooms does NOT fire for users created via `mas register-user` (confirmed empirically) —
 # it only fires on Synapse's own registration path. This script fills that gap: run it after provisioning a
-# user to server-side invite them into the same 5 rooms the client-side joinStarterRooms() targets.
+# user to server-side invite them into the same 4 rooms the client-side joinStarterRooms() targets.
 #
 # Usage: ./invite-to-community.sh <username>
 # Requires: rednet.env sourced (or REDNET_DOMAIN set), stack running, system account exists.
