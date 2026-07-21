@@ -7,8 +7,9 @@
  * visible in the room header so members can see how long messages last here.
  *
  * Data source (in priority order):
- *   1. durable rooms (config `org.rednet.retention.exempt_localparts`, e.g. #reference,
- *      #vouch-log) render NOTHING — they don't auto-delete;
+ *   1. rooms whose localpart is in config `org.rednet.retention.exempt_localparts` render
+ *      NOTHING (they don't auto-delete). That list is currently empty: everything is
+ *      <=30 days, and durable public-safe info lives on the static /reference page;
  *   2. a per-room `m.room.retention` state event's `max_lifetime` (ms), if present;
  *   3. otherwise the deploy default `org.rednet.retention.default_days` (threaded from
  *      REDNET_RETENTION_DAYS via build.sh into config.json — the server default the client
@@ -34,7 +35,7 @@ export default function RednetRetentionPill({
   const cfg = ((SdkConfig.get() as any) || {})["org.rednet.retention"] || {};
   const exempt: string[] = cfg.exempt_localparts || [];
 
-  // #reference / #vouch-log and the like are durable — never show a window for them.
+  // Exempt localparts (if any are configured) are durable; never show a window for them.
   const alias = room.getCanonicalAlias();
   const localpart = alias ? alias.slice(1).split(":")[0] : "";
   if (localpart && exempt.includes(localpart)) return null;

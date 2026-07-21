@@ -35,7 +35,7 @@ const ITEMS: { t: string; d: string }[] = [
   },
   {
     t: "Know the retention window",
-    d: "Chat auto-deletes after a few days. Anything durable — hotlines, safety plans, meeting points — belongs in #reference, which doesn't delete.",
+    d: "Chat auto-deletes after a few days, by design. Public-safe references like crisis lines and legal aid live on the permanent reference page; sensitive specifics like meeting points stay in chat, where they roll off.",
   },
 ];
 
@@ -50,7 +50,7 @@ export default function RednetOnboardingDialog({
     <BaseDialog title="Welcome — a few safety basics" onFinished={onFinished}>
       <p style={{ marginTop: 0 }}>
         A minute now keeps you safer here. Tick each as you go — you can revisit
-        all of this in the member guide and #reference.
+        all of this in the member guide and the reference page.
       </p>
       <ul style={{ listStyle: "none", padding: 0, margin: "0 0 8px" }}>
         {ITEMS.map((item, i) => (
