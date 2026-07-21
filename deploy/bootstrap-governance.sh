@@ -4,8 +4,8 @@
 #
 # Creates:
 #   #vouch-log   — append-only audit trail of invite vouches, claims, role changes,
-#                  and revocations. Invite-only, retention-exempt (the audit trail
-#                  must outlive the 7-day message default). E2EE.
+#                  and revocations. Invite-only, E2EE, kept at the 30d ceiling — the
+#                  permanent record is vouch.jsonl, not this room.
 #   #governance  — organizer coordination (who's minting, policy discussion).
 #                  Invite-only, E2EE.
 #   vouch.jsonl  — local index for fast CLI queries (gitignored).

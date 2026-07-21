@@ -36,7 +36,7 @@ SPACE_ARG=""
 
 case "${1:-}" in
   @*) USER="$1"; shift ;;
-  *)  echo "Usage: $0 @user moderator|admin|member --rooms \"#r1,#r2\" | --space \"#space\"" >&2; exit 1 ;;
+  *)  echo "Usage: $0 @user moderator|organizer|admin|member --rooms \"#r1,#r2\" | --space \"#space\"" >&2; exit 1 ;;
 esac
 
 case "${1:-}" in

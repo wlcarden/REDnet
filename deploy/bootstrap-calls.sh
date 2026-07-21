@@ -33,12 +33,21 @@ EOF
 LIVEKIT_API_KEY=${LK_API_KEY}
 LIVEKIT_API_SECRET=${LK_API_SECRET}
 LIVEKIT_URL=ws://livekit:7880
+# Required by lk-jwt-service v0.5.0+ (it refuses to start without this). Scope SFU
+# room-creation to THIS homeserver only — never leave it at the old "*" wildcard default.
+LIVEKIT_FULL_ACCESS_HOMESERVERS=${REDNET_DOMAIN}
 EOF
   chmod 600 "$ENV_FILE"
   echo "Generated JWT service env -> $ENV_FILE"
 fi
 
-# 2. Render the well-known call discovery
+# 2. Render the Element Call discovery.
+# VERIFY AT ENABLE TIME (2026-07 research): current Element Call clients discover the SFU
+# via the "org.matrix.msc4143.rtc_foci" key INSIDE /.well-known/matrix/client (served with
+# CORS "Access-Control-Allow-Origin" + application/json), NOT this separate legacy
+# /.well-known/element/call.json. Confirm which format your client versions use; if needed,
+# add rtc_foci to the client well-known and ensure CORS is served (a documented Element X
+# self-host failure was exactly a missing-CORS well-known). See deploy/README "Before enabling".
 CALL_WELLKNOWN="caddy/well-known-call.json"
 cat > "$CALL_WELLKNOWN" <<EOF
 {

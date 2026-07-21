@@ -125,8 +125,7 @@ export class RednetCryptoSetup extends CryptoSetupExtensionsBase {
     if (defaultKeyId) {
       const entry = await client.secretStorage.getKey(defaultKeyId);
       const desc = entry?.[1] as
-        | { passphrase?: { salt: string; iterations: number } }
-        | undefined;
+        { passphrase?: { salt: string; iterations: number } } | undefined;
       if (desc?.passphrase) {
         this.cachedKey = await deriveRecoveryKeyFromPassphrase(
           passphrase,
@@ -276,7 +275,6 @@ export class RednetCryptoSetup extends CryptoSetupExtensionsBase {
     "community",
     "welcome",
     "announcements",
-    "reference",
     "general",
   ];
 

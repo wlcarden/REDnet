@@ -152,7 +152,7 @@ services:
   # runs on a SEPARATE public-IP box in production (WebRTC needs direct UDP). Single-host dev
   # runs it here. bootstrap-calls.sh generates secrets and starts this profile. ---
   livekit:
-    image: livekit/livekit-server:v1.8
+    image: livekit/livekit-server:v1.13.4
     profiles: ["calls"]
     restart: unless-stopped
     command: ["--config", "/etc/livekit.yaml", "--config", "/etc/livekit.secrets.yaml"]
@@ -168,7 +168,11 @@ services:
       - "50000-50200:50000-50200/udp"
 
   lk-jwt-service:
-    image: ghcr.io/element-hq/lk-jwt-service:v0.3.0
+    # v0.5.0+ REQUIRES LIVEKIT_FULL_ACCESS_HOMESERVERS and refuses to start without it;
+    # bootstrap-calls.sh renders it to REDNET_DOMAIN in livekit/.env. Every release BEFORE
+    # v0.5.0 silently defaulted it to the "*" wildcard (any federated user could trigger SFU
+    # room creation). Re-verify version currency before enabling (pins bumped 2026-07-21).
+    image: ghcr.io/element-hq/lk-jwt-service:v0.5.0
     profiles: ["calls"]
     restart: unless-stopped
     depends_on:

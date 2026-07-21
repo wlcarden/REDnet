@@ -149,7 +149,7 @@ The project [evaluated and retired](DESIGN.md#2-design-history-why-hosted-matrix
 ### Not yet built
 
 - **QR onboarding flow** — built (`mint-invite.sh` + `/join` landing page); needs live-stack validation
-- **Governance tooling** — built (attributed invites, vouch provenance, compartments, canary, revocation, in-client widget); needs live-stack validation
+- **Governance tooling** — built (attributed invites, vouch provenance, compartments, canary, revocation, in-client governance UI surfaces); needs live-stack validation
 - **Phase-2 recovery** — crypto + lifecycle built (37 escrow-crypto + 10 lifecycle = 47 tests; ⚠️ experimental pending external review); moderator approval tool + coordination bot remain ([RECOVERY.md](RECOVERY.md))
 - **Group calls** — scaffolded (LiveKit SFU + JWT service + Caddy routing); needs production media node ([DESIGN.md §8](DESIGN.md))
 - **Public preview** — scaffolded (matrix-viewer, OFF by default); requires `world_readable` rooms which **cannot be E2EE** and are SEO-indexed. If enabled, scope to a single intentional non-sensitive public lobby; never member rooms ([SPEC.md §12](SPEC.md))

@@ -133,8 +133,9 @@ For the coercion threat model — a member's device is seized, they're forced to
 unlock it, or they're pressured to hand over their account. One action both
 protects them and signals the community.
 
-**Wire signal.** The client's panic control (a confirm-gated "wipe this device"
-item; the client side ships separately) sends `!duress` as plaintext to the
+**Wire signal.** The client's panic control is the confirm-gated "Panic — wipe this
+device" item in the Element fork (`panic-button.patch` / `RednetPanicDialog`; see
+[element-web/README.md](element-web/README.md)). It sends `!duress` as plaintext to the
 member's bot DM — the same non-E2EE channel as `!report`, so the bot can read
 it — then wipes the local device. A member can also type `!duress` by hand.
 
