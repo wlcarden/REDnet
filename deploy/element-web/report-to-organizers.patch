@@ -1,5 +1,5 @@
 diff --git a/src/components/views/context_menus/MessageContextMenu.tsx b/src/components/views/context_menus/MessageContextMenu.tsx
-index d574965..59e7af9 100644
+index d574965..08792af 100644
 --- a/src/components/views/context_menus/MessageContextMenu.tsx
 +++ b/src/components/views/context_menus/MessageContextMenu.tsx
 @@ -25,6 +25,7 @@ import { MatrixClientPeg } from "../../../MatrixClientPeg";
@@ -10,20 +10,23 @@ index d574965..59e7af9 100644
  import Resend from "../../../Resend";
  import SettingsStore from "../../../settings/SettingsStore";
  import { isUrlPermitted } from "../../../HtmlUtils";
-@@ -659,6 +660,16 @@ export default class MessageContextMenu extends React.Component<IProps, IState>
+@@ -659,6 +660,19 @@ export default class MessageContextMenu extends React.Component<IProps, IState>
                  {endPollButton}
                  {forwardButton}
                  {permalinkButton}
 +                {/* REDnet: report this message to organizers (the coercion-aware
-+                    !report -> #gov-bot flow that replaces the removed native Report). */}
-+                <IconizedContextMenuOption
-+                    iconClassName="mx_MessageContextMenu_iconReport"
-+                    label="Report to organizers"
-+                    onClick={() => {
-+                        Modal.createDialog(RednetReportDialog, { mxEvent: this.props.mxEvent });
-+                        this.closeMenu();
-+                    }}
-+                />
++                    !report -> #gov-bot flow that replaces the removed native Report).
++                    Gated on sender !== me to match native Report (no self-report). */}
++                {this.props.mxEvent.getSender() !== MatrixClientPeg.safeGet().getUserId() && (
++                    <IconizedContextMenuOption
++                        iconClassName="mx_MessageContextMenu_iconReport"
++                        label="Report to organizers"
++                        onClick={() => {
++                            Modal.createDialog(RednetReportDialog, { mxEvent: this.props.mxEvent });
++                            this.closeMenu();
++                        }}
++                    />
++                )}
                  {reportEventButton}
                  {externalURLButton}
                  {jumpToRelatedEventButton}
